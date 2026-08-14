@@ -1,0 +1,19 @@
+{
+  "name": "multipliers-team-harness",
+  "owner": {
+    "name": "Michael Truong",
+    "email": "michael@multipliers.dev"
+  },
+  "metadata": {
+    "description": "Portable planning methodology + Cloud-hooks primitive. Default On installs the skills; Cloud-hooks still need one-time repo wiring.",
+    "version": "1.0.0",
+    "pluginRoot": "plugins"
+  },
+  "plugins": [
+    {
+      "name": "team-harness",
+      "source": "team-harness",
+      "description": "Planning methodology skill (canonical procedure) and Cloud-hooks installer/bridge + bootstrap recipe"
+    }
+  ]
+}
