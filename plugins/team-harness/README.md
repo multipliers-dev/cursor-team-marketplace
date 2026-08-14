@@ -1,13 +1,14 @@
 # team-harness
 
-Cursor plugin: portable **planning methodology** + **Cloud-hooks** primitive.
+Cursor plugin: portable **planning methodology**, **new-repo bootstrap**, and **Cloud-hooks** primitive.
 
 ## Skills
 
-| Skill                   | Invoke                   | Role                                                     |
-| ----------------------- | ------------------------ | -------------------------------------------------------- |
-| `planning-methodology`  | `/planning-methodology`  | Full staged-plan / merge-safe procedure (canonical copy) |
-| `cloud-hooks-bootstrap` | `/cloud-hooks-bootstrap` | One-time Husky Cloud wiring using scripts in `scripts/`  |
+| Skill                   | Invoke                   | Role                                                                          |
+| ----------------------- | ------------------------ | ----------------------------------------------------------------------------- |
+| `planning-methodology`  | `/planning-methodology`  | Full staged-plan / merge-safe procedure (canonical copy)                      |
+| `new-repo-bootstrap`    | `/new-repo-bootstrap`    | 5-minute checklist: what the team layer already provides vs what to add in-repo |
+| `cloud-hooks-bootstrap` | `/cloud-hooks-bootstrap` | One-time Husky Cloud wiring using scripts in `scripts/`                       |
 
 ## Scripts (portable primitive)
 

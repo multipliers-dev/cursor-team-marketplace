@@ -1,10 +1,11 @@
 # cursor-team-marketplace
 
-Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships two capabilities with different portability semantics.
+Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships three capabilities with different portability semantics.
 
-| Component | After **Default On** | Meaning |
+| Component | After install | Meaning |
 | --- | --- | --- |
-| **Planning methodology skill** | Automatic skill install | Single canonical planning procedure for every repo |
+| **Planning methodology skill** | Skill available in Agent chats | Single canonical planning procedure for every repo |
+| **New-repo bootstrap skill** | `/new-repo-bootstrap` | 5-minute checklist: inherited team layer vs in-repo adds |
 | **Cloud-hooks primitive** | Scripts + bootstrap skill available | **Not** automatic Cloud-safety — each Husky repo still needs one-time `prepare` / wiring |
 
 ## Import + Default On
@@ -18,7 +19,7 @@ Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev
 
 ```bash
 ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor/plugins/local/team-harness
-# Reload Cursor window, then invoke /planning-methodology (e.g. in ai-learning)
+# Reload Cursor window, then invoke /planning-methodology or /new-repo-bootstrap (e.g. in ai-learning)
 ```
 
 ## Layout
@@ -29,6 +30,7 @@ ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor
 └── plugins/team-harness/
     ├── .cursor-plugin/plugin.json
     ├── skills/planning-methodology/
+    ├── skills/new-repo-bootstrap/
     ├── skills/cloud-hooks-bootstrap/
     └── scripts/   # prepare-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh
 ```
@@ -38,3 +40,4 @@ ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor
 - No Team Rules in this package (Rules pointer lands separately in Cursor Team Rules)
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
 - No claim that Default On makes Husky Cloud-safe without repo wiring
+- No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
