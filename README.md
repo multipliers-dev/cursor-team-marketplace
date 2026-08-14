@@ -49,3 +49,4 @@ sh scripts/check.sh
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
 - No claim that Default On makes Husky Cloud-safe without repo wiring
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
+- No org-level `.github` repo or team-wide GitHub PR convention system (thin in-repo template via `/new-repo-bootstrap` when useful)

@@ -7,7 +7,7 @@ Cursor plugin: portable **planning methodology**, **new-repo bootstrap**, and **
 | Skill                   | Invoke                   | Role                                                                          |
 | ----------------------- | ------------------------ | ----------------------------------------------------------------------------- |
 | `planning-methodology`  | `/planning-methodology`  | Full staged-plan / merge-safe procedure (canonical copy)                      |
-| `new-repo-bootstrap`    | `/new-repo-bootstrap`    | 5-minute checklist: what the team layer already provides vs what to add in-repo |
+| `new-repo-bootstrap`    | `/new-repo-bootstrap`    | 5-minute checklist: inherited team layer vs in-repo adds (optional thin GitHub PR template) |
 | `cloud-hooks-bootstrap` | `/cloud-hooks-bootstrap` | One-time Husky Cloud wiring using scripts in `scripts/`                       |
 
 ## Scripts (portable primitive)
