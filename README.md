@@ -35,6 +35,14 @@ ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor
     └── scripts/   # prepare-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh
 ```
 
+## Checks
+
+The `Protect main` ruleset requires a GitHub check named **`test`**. Locally:
+
+```bash
+sh scripts/check.sh
+```
+
 ## Explicit non-goals
 
 - No Team Rules in this package (Rules pointer lands separately in Cursor Team Rules)
