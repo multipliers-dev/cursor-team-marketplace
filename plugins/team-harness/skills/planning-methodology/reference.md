@@ -67,6 +67,8 @@ Authority: Open PR only — implement and open the PR; do not merge.
 Topology: start from that repo’s latest origin/main; branch represents only this slice; PR base must be main.
 
 Deliverables: implementation only. Do not edit the plan file — it lives in <plan-repo>. Do not mark the todo completed here.
+
+Verification: PR contains only this slice’s implementation; plan file was not edited.
 ```
 
 ```text
@@ -79,6 +81,8 @@ Authority: Open PR only — implement and open the PR; do not merge.
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
 Deliverables: mark <slice-id> completed in plan frontmatter (plan-status only).
+
+Verification: frontmatter marks <slice-id> completed and links the implementation PR(s).
 ```
 ````
 

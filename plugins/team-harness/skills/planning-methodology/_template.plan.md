@@ -146,6 +146,8 @@ Prerequisites: implementation PRs actually merged to each target repo’s main (
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
 Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans/archive/YYYY-MM-DD-slug.plan.md, mark plan-closure completed, update agent prompt references to the archived path.
+
+Verification: confirm all prerequisite implementation PRs are merged and slice todos are completed before archiving.
 ```
 
 #### Cross-repo variants
@@ -164,6 +166,8 @@ Authority: Open PR only — implement and open the PR; do not merge.
 Topology: start from that repo’s latest origin/main; branch represents only this slice; PR base must be main.
 
 Deliverables: implementation only. Do not edit the plan file — it lives in <plan-repo>. Do not mark the todo completed here.
+
+Verification: PR contains only this slice’s implementation; plan file was not edited.
 ```
 
 Plan-status PR (in `<plan-repo>`):
@@ -178,4 +182,6 @@ Authority: Open PR only — implement and open the PR; do not merge.
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
 Deliverables: mark <slice-id> completed in plan frontmatter (plan-status only).
+
+Verification: frontmatter marks <slice-id> completed and links the implementation PR(s).
 ```
