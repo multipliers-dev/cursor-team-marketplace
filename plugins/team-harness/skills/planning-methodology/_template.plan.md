@@ -96,17 +96,92 @@ After the last implementation slice merges:
 
 ## Agent prompts (copy/paste for Cursor)
 
-Use a **fresh Agent-mode chat** per slice.
+Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exactly one `### <todo-id>` heading copied from that todo’s `id` — do not rename ids to match prose.
 
 > **Same-repo template behavior.** The slice prompts below assume the plan file and the implementation land in the **same repo**, so each marks its own todo `completed` in the same PR. For a **cross-repo slice** (authoritative plan lives in a different repo than the implementation), do **not** edit the plan from the implementation repo — use the cross-repo variant below instead.
 
-- **Slice 1 — slice-1** (same-repo)
-  - "Implement slice 1 (slice-1) from `@.cursor/plans/<slug>.plan.md` only. Start from latest `origin/main`, verify the branch represents only this slice before opening, verify GitHub PR base is `main`. **Agent instruction:** Do not merge. Stop after opening the PR. Mark `slice-1` completed in plan frontmatter. Do not start later slices. Do not archive the plan."
-- **Slice 2 — slice-2** (same-repo)
-  - "Implement slice 2 (slice-2) from `@.cursor/plans/<slug>.plan.md` only. Prerequisite: slice 1 merged. Start from latest `origin/main`, verify the branch represents only this slice before opening, verify GitHub PR base is `main`. **Agent instruction:** Do not merge. Stop after opening the PR. Mark `slice-2` completed in plan frontmatter. Do not start plan-closure. Do not archive the plan."
-- **Cross-repo slice — implementation PR** (variant; use when the plan lives in a different repo)
-  - "Implement slice `<slice-id>` from `@<plan-repo>/.cursor/plans/<slug>.plan.md` only, in `<implementation-repo>`. Start from that repo’s latest `origin/main`, verify the branch represents only this slice before opening, verify GitHub PR base is `main`. **Agent instruction:** Do not merge. Stop after opening the PR. **Do not edit the plan file** — it lives in `<plan-repo>`. Do not mark the todo completed here. Do not start other slices."
-- **Cross-repo slice — plan-status PR** (variant; records completion in the plan-owning repo)
-  - "Open the plan-status PR for slice `<slice-id>` from `@.cursor/plans/<slug>.plan.md` only, in `<plan-repo>`. Prerequisite: the implementation PR(s) in `<implementation-repo>` are open/merged and satisfy the slice’s completion condition (link them). Start from latest `origin/main`, verify slice-only branch, verify GitHub PR base is `main`. Mark `<slice-id>` completed in plan frontmatter (plan-status only). **Agent instruction:** Do not merge. Stop after opening the PR. Do not start other slices. Do not archive the plan."
-- **Plan closure — plan-closure**
-  - "Execute plan-closure from `@.cursor/plans/<slug>.plan.md` only. Prerequisites: implementation PRs actually **merged** to each target repo’s `main` (not merely frontmatter `completed`), including any cross-repo implementation PRs and their plan-status PR. Start from latest `origin/main`, verify slice-only branch, open PR targeting `main`, verify base is `main`. Docs-only: verify merges, add `# Shipped`, archive plan, mark `plan-closure` completed. **Agent instruction:** Do not merge. Stop after opening the PR."
+### slice-1
+
+```text
+@.cursor/plans/<slug>.plan.md
+
+Implement slice slice-1 only. Do not start slice-2 or later slices. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: …. Mark slice-1 completed in plan frontmatter in this PR.
+
+Verification: ….
+```
+
+### slice-2
+
+```text
+@.cursor/plans/<slug>.plan.md
+
+Implement slice slice-2 only. Prerequisite: slice-1 merged. Do not start plan-closure. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: …. Mark slice-2 completed in plan frontmatter in this PR.
+
+Verification: ….
+```
+
+### plan-closure
+
+```text
+@.cursor/plans/<slug>.plan.md
+
+Execute only plan-closure.
+
+Authority: Open PR only — docs-only archive PR; do not merge.
+
+Prerequisites: implementation PRs actually merged to each target repo’s main (not merely frontmatter completed), including any cross-repo implementation PRs and their plan-status PR.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans/archive/YYYY-MM-DD-slug.plan.md, mark plan-closure completed, update agent prompt references to the archived path.
+
+Verification: confirm all prerequisite implementation PRs are merged and slice todos are completed before archiving.
+```
+
+#### Cross-repo variants
+
+When the authoritative plan lives in a different repo than the implementation, use one of these **instead of** the same-repo prompt. Do not add a second `###` heading matching a default todo id.
+
+Implementation PR (in `<implementation-repo>`; do not edit the plan):
+
+```text
+@<plan-repo>/.cursor/plans/<slug>.plan.md
+
+Implement slice <slice-id> only, in <implementation-repo>. Do not start other slices.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from that repo’s latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: implementation only. Do not edit the plan file — it lives in <plan-repo>. Do not mark the todo completed here.
+
+Verification: PR contains only this slice’s implementation; plan file was not edited.
+```
+
+Plan-status PR (in `<plan-repo>`):
+
+```text
+@.cursor/plans/<slug>.plan.md
+
+Open the plan-status PR for slice <slice-id> only, in <plan-repo>. Prerequisite: the implementation PR(s) in <implementation-repo> are open/merged and satisfy the slice’s completion condition (link them). Do not start other slices. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: mark <slice-id> completed in plan frontmatter (plan-status only).
+
+Verification: frontmatter marks <slice-id> completed and links the implementation PR(s).
+```

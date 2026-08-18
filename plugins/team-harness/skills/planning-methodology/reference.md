@@ -32,23 +32,59 @@ plan recommends authority → human accepts by pasting the slice prompt → agen
 
 ## Example prompts
 
+Present each prompt as `### <todo-id>` plus a fenced `text` block. Frontmatter todo ids are authoritative; headings are copied from them. Every default todo has exactly one matching heading. Full skeleton: [_template.plan.md](_template.plan.md).
+
 Same-repo slice (plan file and code in the same repo → mark the todo in the same PR):
 
-```markdown
-## Agent prompts (copy/paste for Cursor)
+````markdown
+### slice-1
 
-- **Slice 1 — slice-1**
-  - "Implement slice 1 (slice-1) from `@.cursor/plans/<slug>.plan.md` only. Start from latest `origin/main`, verify the branch represents only this slice before opening, verify GitHub PR base is `main`. **Agent instruction:** Do not merge. Stop after opening the PR. Mark `slice-1` completed in plan frontmatter. Do not start later slices."
+```text
+@.cursor/plans/<slug>.plan.md
+
+Implement slice slice-1 only. Do not start later slices. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: …. Mark slice-1 completed in plan frontmatter in this PR.
+
+Verification: ….
+```
+````
+
+Cross-repo slice (authoritative plan lives elsewhere → do not edit the plan from the implementation repo; record completion via a plan-status PR in the plan-owning repo). These are variants, not extra headings matching a default todo id:
+
+````markdown
+```text
+@<plan-repo>/.cursor/plans/<slug>.plan.md
+
+Implement slice <slice-id> only, in <implementation-repo>. Do not start other slices.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from that repo’s latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: implementation only. Do not edit the plan file — it lives in <plan-repo>. Do not mark the todo completed here.
+
+Verification: PR contains only this slice’s implementation; plan file was not edited.
 ```
 
-Cross-repo slice (authoritative plan lives elsewhere → do not edit the plan from the implementation repo; record completion via a plan-status PR in the plan-owning repo):
+```text
+@.cursor/plans/<slug>.plan.md
 
-```markdown
-- **Cross-repo slice `<slice-id>` — implementation PR**
-  - "Implement `<slice-id>` from `@<plan-repo>/.cursor/plans/<slug>.plan.md` only, in `<implementation-repo>`. **Agent instruction:** Do not merge. Stop after opening the PR. Do not edit the plan file (it lives in `<plan-repo>`). Do not mark the todo completed here."
-- **Cross-repo slice `<slice-id>` — plan-status PR**
-  - "Open the plan-status PR for `<slice-id>` in `<plan-repo>`. Prerequisite: implementation PR(s) satisfy the completion condition (link them). Mark `<slice-id>` completed in frontmatter (plan-status only). **Agent instruction:** Do not merge. Stop after opening the PR."
+Open the plan-status PR for slice <slice-id> only, in <plan-repo>. Prerequisite: implementation PR(s) satisfy the completion condition (link them). Do not start other slices. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: mark <slice-id> completed in plan frontmatter (plan-status only).
+
+Verification: frontmatter marks <slice-id> completed and links the implementation PR(s).
 ```
+````
 
 Closure verifies the implementation PRs are actually **merged** (all repos), not just that frontmatter says `completed`.
 
