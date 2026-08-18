@@ -97,7 +97,7 @@ For multi-PR plans under `.cursor/plans/`:
    - **Same-repo slice** (plan file and implementation are in the same repo): mark **its** todo `completed` in frontmatter in the **same** PR as the code.
    - **Cross-repo slice** (authoritative plan lives in a different repo than the implementation): do **not** duplicate or edit the plan from the implementation repo. Land the implementation PR(s) in their own repo, then record completion via a dedicated **plan-status PR** in the plan-owning repo after the implementation PR(s) satisfy the slice’s completion condition.
 6. Do not archive inside implementation PRs unless the PR is the closure PR.
-7. Include **Agent prompts (copy/paste for Cursor)** — one prompt per agent-executable frontmatter todo (including `plan-closure`, Manual gates, and any cross-repo plan-status PR). Each prompt: `@` plan path, slice id, scope boundaries (`only` / `do not start …`), deliverables/stop, verbatim Agent instruction, prerequisites, topology reminders when opening a PR, and the completion-recording rule from item 5 — same-repo prompts say “mark `<slice>` completed in plan frontmatter in this PR”; cross-repo implementation prompts say “do not edit the plan; record completion via the plan-status PR in the plan-owning repo.”
+7. Include **Agent prompts (copy/paste for Cursor)** — one prompt per agent-executable frontmatter todo (including `plan-closure`, Manual gates, and any cross-repo plan-status PR). Present each prompt as `### <todo-id>` (heading copied from the existing frontmatter `id`; do not rename ids to match prose) plus a fenced `text` block with labeled Authority / Topology / Deliverables / Verification lines. Do not use quoted one-line bullets. Every default frontmatter todo has exactly one corresponding `### <todo-id>` heading. Each prompt: `@` plan path, slice id, scope boundaries (`only` / `do not start …`), deliverables/stop, verbatim Agent instruction, prerequisites, topology reminders when opening a PR, and the completion-recording rule from item 5 — same-repo prompts say “mark `<slice>` completed in plan frontmatter in this PR”; cross-repo implementation prompts say “do not edit the plan; record completion via the plan-status PR in the plan-owning repo.” This skill owns those structural prompt-layout invariants; repo `_template.plan.md` copies may specialize wording (domain notes, examples) but must not change the layout structure.
 8. Include plan-level `## Recommended execution authority` table plus per-slice authority blocks.
 
 ## Active vs archived
@@ -129,8 +129,8 @@ Call out: execution authority, PR target `main`, which todo was marked completed
 
 ## Ownership reminder
 
-| Layer      | Contents                                                                       |
-| ---------- | ------------------------------------------------------------------------------ |
-| Team Rules | Short invariants + pointer to this skill — not a second copy of this procedure |
-| This skill | Full portable methodology                                                      |
-| Repo       | Domain supplements only                                                        |
+| Layer      | Contents                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| Team Rules | Short invariants + pointer to this skill — not a second copy of this procedure                                |
+| This skill | Full portable methodology, including canonical agent-prompt **layout** (heading + fence + labeled lines)      |
+| Repo       | Domain supplements and wording specialization only — do not change prompt-layout structure                    |
