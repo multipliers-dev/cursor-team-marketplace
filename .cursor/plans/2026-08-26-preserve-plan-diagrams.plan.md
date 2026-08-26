@@ -188,7 +188,7 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 
 Deliverables: Native plan conversion item in planning-methodology SKILL.md; reference.md anti-pattern; _template.plan.md slice comment; plugin.json 1.3.0. Mark preserve-plan-diagrams completed in plan frontmatter in this PR.
 
-Verification: sh scripts/check.sh; mermaid in this plan is not replaced by a prose paraphrase in the skill; no consumer-repo planning-standards.md edits.
+Verification: sh scripts/check.sh; skill explicitly requires source mermaid/implementation-critical structure to survive native-plan conversion; do not reproduce this plan's example diagram in the skill; no consumer-repo planning-standards.md edits.
 ```
 
 ### plan-closure
