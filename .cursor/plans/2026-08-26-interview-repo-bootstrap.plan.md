@@ -1,0 +1,252 @@
+---
+name: Interview repo bootstrap
+overview: Add team-harness skill and script to bootstrap an empty directory into a pre-wired agentic SDLC repo (TypeScript + Vitest + minimal AGENTS.md + pre-commit + minimal GitHub Actions CI + GitHub remote) — universal execution, verification, and enforcement; no product decisions.
+todos:
+  - id: plan-review
+    content: "Plan-only PR — commit plan artifact and open PR for review; do not implement"
+    status: completed
+  - id: interview-repo-bootstrap
+    content: "PR: templates/interview-repo preset, interview-repo-bootstrap.sh, skill, docs, check.sh; hook+CI smoke; plugin 1.4.0"
+    status: pending
+  - id: plan-closure
+    content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md"
+    status: pending
+isProject: false
+---
+
+# Interview repo bootstrap skill
+
+## Recommended execution authority
+
+| Slice | Recommended authority | Agent instruction |
+| --- | --- | --- |
+| plan-review | Plan-only PR | Do not implement. Stop after opening the plan-only PR. |
+| interview-repo-bootstrap | Open PR only | Do not merge. Stop after opening the PR. |
+| plan-closure | Open PR only | Do not merge. Stop after opening the PR. |
+
+Repo default: **Open PR only** (see team skill `/planning-methodology`).
+
+## Repository topology
+
+Multi-slice plans stack execution order, not Git branches. Integration branch is `main`.
+
+**Before implementation:** start from latest `origin/main`.
+
+**Before opening the PR:** branch represents only this slice — prior-slice work is on the integration branch, not via branch ancestry.
+
+**After opening the PR:** GitHub PR base is `main`; diff excludes prior-slice work except through merged `main`.
+
+---
+
+## Plan review
+
+**Recommended authority:** Plan-only PR
+
+**Rationale:**
+
+- Capture interview bootstrap scope, five-layer model, shared primitives, and operational sequence before implementation
+- Expected diff is plan artifact only
+
+**Agent instruction:** Do not implement. Stop after opening the plan-only PR.
+
+---
+
+## Slice — interview-repo-bootstrap
+
+**Recommended authority:** Open PR only
+
+**Rationale:**
+
+- Single merge-safe plugin feature: minimal interview preset composed from shared hook primitives
+- Distinct from `/new-repo-bootstrap` (production harness) and `/cloud-hooks-bootstrap` (manual hook wiring into existing repos)
+
+**Agent instruction:** Do not merge. Stop after opening the PR.
+
+**Prerequisite:** `plan-review` merged (or plan reviewed).
+
+**Goal:** Add `/interview-repo-bootstrap` — in-place script + skill that copies shared templates and canonical hook scripts, runs hook smoke, creates GitHub remote.
+
+### Problem
+
+Timed technical interviews require a clean-slate GitHub repo, but minutes are lost on `git init`, `gh repo create`, TypeScript tooling, agent instructions, hooks, and CI. The interview scenario is often: **dropped into an empty directory** — not “create me a folder under `~/code`.”
+
+Relevance failure modes:
+
+1. Savepoints instructions in README instead of `AGENTS.md` — agent did not inherit intended behavior.
+2. Pre-commit hook unreliable in the environment — debugging hook infrastructure mid-build.
+
+### Design principle
+
+**Preconfigure universal execution, verification, and enforcement. Leave architecture and product decisions empty.**
+
+**Five-layer model** (conceptual center of the skill):
+
+```
+AGENTS.md              instruct
+      ↓
+Vitest + TypeScript    verify
+      ↓
+pre-commit             enforce locally
+      ↓
+GitHub Actions         enforce remotely
+      ↓
+Git + GitHub           persist/share
+```
+
+**Scope test:** *Would I want this capability regardless of what technical problem the interviewer gives me?*
+
+| Yes (include) | No (exclude) |
+| --- | --- |
+| Vitest, typechecking, `AGENTS.md` | React, Savepoints, database |
+| Cloud-hooks primitive, minimal CI | PR templates, Bugbot, plans |
+| Reliable pre-commit (`test` + `typecheck`) | ESLint, Prettier, lint-staged, deploy |
+
+### Shared primitives (no duplicated hook logic)
+
+```
+team-harness/
+├── scripts/                    ← canonical hook primitives (single source)
+├── templates/interview-repo/   ← interview preset files only
+└── skills/
+    ├── cloud-hooks-bootstrap/
+    ├── new-repo-bootstrap/
+    └── interview-repo-bootstrap/
+```
+
+- `interview-repo-bootstrap.sh` **copies** from `templates/interview-repo/` and `scripts/` — no heredoc duplicates.
+- One-shot; does **not** invoke `/cloud-hooks-bootstrap` as a skill step.
+- Resolve plugin root from script location (`$(dirname "$0")/..`).
+
+### Skill boundary
+
+```
+interview-repo-bootstrap → minimal preset → STOP
+new-repo-bootstrap     → production/team harness
+```
+
+Do not chain into `/new-repo-bootstrap` or `/cloud-hooks-bootstrap` after success.
+
+### Cursor + Husky wiring
+
+Naive `husky` is not enough on Cursor Cloud. Copy canonical files from `plugins/team-harness/scripts/` plus template `.cursor/hooks.json` (`sessionStart` only — no `afterFileEdit`).
+
+**Core invariants:**
+
+- **`git init` before `npm install`** — Husky `prepare` expects a Git repository.
+- `npm test` uses `vitest run --passWithNoTests` (green with zero tests; no sample `*.test.ts`).
+- Hook smoke: direct `sh .husky/pre-commit` then `git commit` must exercise hook via git.
+
+### Operational sequence
+
+```
+guard empty directory
+  → git init -b main
+  → copy preset + primitives
+  → npm install
+  → direct hook smoke
+  → git add .
+  → git commit
+  → verify commit exercised hook
+  → gh repo create --push
+  → print URLs (+ optional gh run watch)
+```
+
+**CLI:** `interview-repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]`
+
+- Default: in-place (`$PWD`); `--dir` for create-elsewhere.
+- Guards: not inside parent worktree; non-empty dir refuses (allowlist e.g. `.DS_Store` only); no existing `.git/`.
+- `--dry-run`: check tooling exists; no `gh auth`; no writes.
+
+### Deliverables
+
+1. [`plugins/team-harness/templates/interview-repo/`](plugins/team-harness/templates/interview-repo/) — preset files (AGENTS.md, README template, package.json with `--passWithNoTests`, tsconfig, src/index.ts, .husky/pre-commit, .cursor/hooks.json, .github/workflows/ci.yml; vitest.config.ts only if ESM smoke requires)
+2. [`plugins/team-harness/scripts/interview-repo-bootstrap.sh`](plugins/team-harness/scripts/interview-repo-bootstrap.sh)
+3. [`plugins/team-harness/skills/interview-repo-bootstrap/SKILL.md`](plugins/team-harness/skills/interview-repo-bootstrap/SKILL.md)
+4. Docs: team-harness README, root README, plugin.json 1.4.0; align cloud-hooks-bootstrap + optional new-repo-bootstrap cross-refs
+5. [`scripts/check.sh`](scripts/check.sh) — validate new script + templates exist
+
+### Acceptance
+
+- [ ] `./scripts/check.sh` passes
+- [ ] `--dry-run` works without gh auth
+- [ ] Live smoke: full sequence including `git commit` hook + optional CI green on push
+- [ ] No sample tests; no product harness; no duplicate hook logic
+- [ ] Skill frontmatter `name` matches directory name
+
+### Explicit non-goals
+
+- No `.nvmrc` / `engines`; no interview provenance in README
+- No lint-staged, formatting, build in hooks/CI; no product CI jobs
+- No copying full harness from codenames/resumes/portfolio
+- No changes to private `interview-technical-builds.md` in this slice (optional follow-up)
+
+---
+
+## Plan closure (docs-only PR)
+
+**Recommended authority:** Open PR only
+
+**Agent instruction:** Do not merge. Stop after opening the PR.
+
+After `interview-repo-bootstrap` merges:
+
+1. Verify slice todo `completed`
+2. Add `# Shipped` closure note
+3. Move to `.cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md`
+4. Mark `plan-closure` completed; update agent prompt paths
+
+---
+
+## Agent prompts (copy/paste for Cursor)
+
+Use a **fresh Agent-mode chat** per slice.
+
+### plan-review
+
+```text
+@.cursor/plans/2026-08-26-interview-repo-bootstrap.plan.md
+
+Execute only plan-review. Do not start implementation slices.
+
+Authority: Plan-only PR — commit the plan artifact only; do not implement. Stop after opening the plan-only PR.
+
+Topology: start from latest origin/main; branch represents only the plan artifact; PR base must be main.
+
+Deliverables: plan file under .cursor/plans/; mark plan-review completed in frontmatter in the same PR.
+
+Verification: plan satisfies planning-methodology envelope; no implementation changes included.
+```
+
+### interview-repo-bootstrap
+
+```text
+@.cursor/plans/2026-08-26-interview-repo-bootstrap.plan.md
+
+Implement slice interview-repo-bootstrap only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: templates/interview-repo/, interview-repo-bootstrap.sh, skill, docs, check.sh updates, plugin 1.4.0. Mark interview-repo-bootstrap completed in plan frontmatter in this PR.
+
+Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; git commit exercises hook); optional gh run watch on first CI push.
+```
+
+### plan-closure
+
+```text
+@.cursor/plans/2026-08-26-interview-repo-bootstrap.plan.md
+
+Execute only plan-closure.
+
+Authority: Open PR only — docs-only archive PR; do not merge.
+
+Prerequisites: interview-repo-bootstrap merged and marked completed in frontmatter.
+
+Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
+
+Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md, mark plan-closure completed, update agent prompt references to archived path.
+
+Verification: prerequisite implementation PR merged; slice todo completed before archiving.
+```
