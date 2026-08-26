@@ -103,3 +103,5 @@ Revert if:
 ## Agent behavior
 
 When asked to bootstrap a new repo: walk this checklist, add only the in-repo items that apply, offer the thin GitHub PR template when the repo will use GitHub PRs and lacks one, invoke `/cloud-hooks-bootstrap` for Husky repos (including `environment.json` when Cloud Agents are expected), keep Bugbot manual, leave `ai-learning` unharnessed, open **Open PR only** changes targeting `main`, and state clearly what was inherited vs added in-repo.
+
+For **timed technical interviews** dropped into an empty directory, use `/interview-repo-bootstrap` instead — it is a one-shot minimal preset and must not chain into this checklist or `/cloud-hooks-bootstrap`.

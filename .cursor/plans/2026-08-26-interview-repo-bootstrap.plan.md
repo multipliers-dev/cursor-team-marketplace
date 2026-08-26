@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: interview-repo-bootstrap
     content: "PR: templates/interview-repo preset (incl. environment.json + prepare), bootstrap script with hook allowlist copy, skill, docs, check.sh; hook+CI smoke; plugin 1.5.0"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md"
     status: pending
