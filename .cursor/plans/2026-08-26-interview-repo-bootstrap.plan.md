@@ -6,7 +6,7 @@ todos:
     content: "Plan-only PR — commit plan artifact and open PR for review; do not implement"
     status: completed
   - id: interview-repo-bootstrap
-    content: "PR: templates/interview-repo preset, interview-repo-bootstrap.sh, skill, docs, check.sh; hook+CI smoke; plugin 1.4.0"
+    content: "PR: templates/interview-repo preset, interview-repo-bootstrap.sh, skill, docs, check.sh; hook+CI smoke; plugin 1.5.0"
     status: pending
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md"
@@ -158,7 +158,7 @@ echo "[interview-bootstrap] pre-commit verify"
 **Bootstrap harness (steps 6–8):**
 
 1. **Direct smoke:** `sh .husky/pre-commit` passes and stdout contains the sentinel line.
-2. **Git path smoke:** run `git commit` with output captured (stdout + stderr).
+2. **Git path smoke:** run `git -c user.name="Interview Bootstrap" -c user.email="bootstrap@localhost" commit -m "Initial commit"` with output captured (stdout + stderr). Use `-m` and inline `-c user.*` so fresh VMs and non-interactive shells never block on editor or missing identity.
 3. **Assert:** captured commit output contains `[interview-bootstrap] pre-commit verify`.
 4. **Abort** if commit succeeds but the sentinel is absent — hook was bypassed or not wired.
 
@@ -173,7 +173,7 @@ guard empty directory          (actually empty — any entry → refuse)
   → npm install
   → direct hook smoke            (sh .husky/pre-commit + sentinel)
   → git add .
-  → git commit                   (capture output; assert sentinel)
+  → git commit -m "Initial commit"   (inline user.name/email; capture output; assert sentinel)
   → abort if sentinel missing
   → gh repo create --push
   → print URLs (+ optional gh run watch)
@@ -187,10 +187,10 @@ guard empty directory          (actually empty — any entry → refuse)
 
 ### Deliverables
 
-1. [`plugins/team-harness/templates/interview-repo/`](plugins/team-harness/templates/interview-repo/) — preset files (AGENTS.md, README template, package.json with `--passWithNoTests`, tsconfig, src/index.ts, `.husky/pre-commit` with sentinel echo, .cursor/hooks.json, .github/workflows/ci.yml; vitest.config.ts only if ESM smoke requires)
+1. [`plugins/team-harness/templates/interview-repo/`](plugins/team-harness/templates/interview-repo/) — preset files (`.gitignore` with `node_modules/`, `dist/`, `.env*`, `.DS_Store`; AGENTS.md; README template; package.json with `--passWithNoTests`; tsconfig; src/index.ts; `.husky/pre-commit` with sentinel echo; `.cursor/hooks.json`; `.github/workflows/ci.yml`; vitest.config.ts only if ESM smoke requires). **`.gitignore` must be copied before `npm install`** so `git add .` never stages `node_modules/`.
 2. [`plugins/team-harness/scripts/interview-repo-bootstrap.sh`](plugins/team-harness/scripts/interview-repo-bootstrap.sh)
 3. [`plugins/team-harness/skills/interview-repo-bootstrap/SKILL.md`](plugins/team-harness/skills/interview-repo-bootstrap/SKILL.md)
-4. Docs: team-harness README, root README, plugin.json 1.4.0; align cloud-hooks-bootstrap + optional new-repo-bootstrap cross-refs
+4. Docs: team-harness README, root README; bump [`plugin.json`](plugins/team-harness/.cursor-plugin/plugin.json) to **1.5.0** (main is already 1.4.0 from cloud-env-bootstrap); align cloud-hooks-bootstrap + optional new-repo-bootstrap cross-refs
 5. [`scripts/check.sh`](scripts/check.sh) — validate new script + templates exist
 
 ### Acceptance
@@ -198,7 +198,7 @@ guard empty directory          (actually empty — any entry → refuse)
 - [ ] `./scripts/check.sh` passes
 - [ ] `--dry-run` works without gh auth
 - [ ] Empty-directory guard: any file (including `.DS_Store`) → refuse with listed paths
-- [ ] Live smoke: direct pre-commit + `git commit` output contains `[interview-bootstrap] pre-commit verify`; abort if sentinel missing
+- [ ] Live smoke: direct pre-commit + non-interactive `git commit -m` with inline user identity; output contains `[interview-bootstrap] pre-commit verify`; abort if sentinel missing
 - [ ] Optional CI green on first push
 - [ ] No sample tests; no product harness; no duplicate hook logic
 - [ ] Skill frontmatter `name` matches directory name
@@ -258,9 +258,9 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: templates/interview-repo/, interview-repo-bootstrap.sh, skill, docs, check.sh updates, plugin 1.4.0. Mark interview-repo-bootstrap completed in plan frontmatter in this PR.
+Deliverables: templates/interview-repo/ (including .gitignore before npm install), interview-repo-bootstrap.sh, skill, docs, check.sh updates, plugin 1.5.0. Mark interview-repo-bootstrap completed in plan frontmatter in this PR.
 
-Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; direct pre-commit sentinel; git commit output must contain `[interview-bootstrap] pre-commit verify`); optional gh run watch on first CI push.
+Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; direct pre-commit sentinel; non-interactive git commit with -m and inline user.name/email; commit output must contain `[interview-bootstrap] pre-commit verify`); optional gh run watch on first CI push.
 ```
 
 ### plan-closure
