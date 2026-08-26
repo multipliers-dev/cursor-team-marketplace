@@ -91,6 +91,13 @@ resolve_paths() {
   fi
 }
 
+validate_repo_name() {
+  repo=$1
+  if ! printf '%s' "$repo" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+    die "invalid GitHub repo name: $repo (must match ^[A-Za-z0-9._-]+\$)"
+  fi
+}
+
 check_tooling() {
   require_cmd sh
   require_cmd git
@@ -133,13 +140,43 @@ guard_empty_directory() {
 
 substitute_repo_name() {
   repo=$1
-  for file in README.md package.json .cursor/environment.json; do
-    target="$TARGET_DIR/$file"
-    if [ -f "$target" ]; then
-      sed "s/__REPO_NAME__/$repo/g" "$target" >"$target.tmp"
-      mv "$target.tmp" "$target"
-    fi
-  done
+  node - "$TARGET_DIR" "$repo" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+
+const targetDir = process.argv[2];
+const repo = process.argv[3];
+const placeholder = '__REPO_NAME__';
+
+function replaceLiteral(filePath) {
+  const full = path.join(targetDir, filePath);
+  if (!fs.existsSync(full)) {
+    throw new Error(`${filePath}: missing file`);
+  }
+  const text = fs.readFileSync(full, 'utf8');
+  if (!text.includes(placeholder)) {
+    throw new Error(`${filePath}: missing placeholder ${placeholder}`);
+  }
+  fs.writeFileSync(full, text.split(placeholder).join(repo));
+}
+
+function replaceJsonName(filePath) {
+  const full = path.join(targetDir, filePath);
+  if (!fs.existsSync(full)) {
+    throw new Error(`${filePath}: missing file`);
+  }
+  const data = JSON.parse(fs.readFileSync(full, 'utf8'));
+  if (data.name !== placeholder) {
+    throw new Error(`${filePath}: expected name to be ${placeholder}`);
+  }
+  data.name = repo;
+  fs.writeFileSync(full, `${JSON.stringify(data, null, 2)}\n`);
+}
+
+replaceLiteral('README.md');
+replaceJsonName('package.json');
+replaceJsonName('.cursor/environment.json');
+NODE
 }
 
 copy_template_tree() {
@@ -237,6 +274,7 @@ dry_run_summary() {
 main() {
   parse_args "$@"
   resolve_paths
+  validate_repo_name "$REPO_NAME"
   check_tooling
   if [ "$DRY_RUN" -eq 0 ]; then
     guard_not_inside_parent_worktree

@@ -23,6 +23,33 @@ assert_dry_run_no_writes() {
   fi
 }
 
+assert_dir_unchanged() {
+  dir=$1
+  if [ -n "$(find "$dir" -mindepth 1 -maxdepth 1 2>/dev/null | head -1)" ]; then
+    echo "error: bootstrap wrote to $dir despite expected failure" >&2
+    find "$dir" -mindepth 1 -maxdepth 1 -print >&2
+    exit 1
+  fi
+}
+
+assert_invalid_repo_name() {
+  name=$1
+  dir=$2
+  if out=$(sh "$BOOTSTRAP" --name "$name" --dir "$dir" 2>&1); then
+    echo "error: expected invalid repo name to fail: $name" >&2
+    exit 1
+  fi
+  case "$out" in
+    *"invalid GitHub repo name"*) ;;
+    *)
+      echo "error: invalid repo name output missing clear error for $name:" >&2
+      printf '%s\n' "$out" >&2
+      exit 1
+      ;;
+  esac
+  assert_dir_unchanged "$dir"
+}
+
 # Default dry-run (current directory).
 sh "$BOOTSTRAP" --dry-run
 
@@ -34,6 +61,63 @@ assert_dry_run_no_writes "$MISSING"
   echo "error: dry-run created missing target directory: $MISSING" >&2
   exit 1
 }
+
+# Invalid GitHub repo names must fail before any writes.
+EMPTY="$WORKDIR/empty-name-check"
+mkdir -p "$EMPTY"
+assert_invalid_repo_name 'org/repo' "$EMPTY"
+assert_invalid_repo_name 'bad&name' "$EMPTY"
+if out=$(sh "$BOOTSTRAP" --dry-run --name 'org/repo' --dir "$EMPTY" 2>&1); then
+  echo "error: expected dry-run with invalid repo name to fail" >&2
+  exit 1
+fi
+case "$out" in
+  *"invalid GitHub repo name"*) ;;
+  *)
+    echo "error: dry-run invalid repo name output missing clear error:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+    ;;
+esac
+
+# Literal substitution keeps JSON valid for names with sed-special characters.
+SUBST="$WORKDIR/subst-check"
+mkdir -p "$SUBST/.cursor"
+cp "$ROOT/plugins/team-harness/templates/interview-repo/README.md" "$SUBST/"
+cp "$ROOT/plugins/team-harness/templates/interview-repo/package.json" "$SUBST/"
+cp "$ROOT/plugins/team-harness/templates/interview-repo/.cursor/environment.json" "$SUBST/.cursor/"
+node - "$SUBST" 'my.repo_name-test' <<'NODE'
+const fs = require('fs');
+const path = require('path');
+
+const targetDir = process.argv[2];
+const repo = process.argv[3];
+const placeholder = '__REPO_NAME__';
+
+function replaceLiteral(filePath) {
+  const full = path.join(targetDir, filePath);
+  const text = fs.readFileSync(full, 'utf8');
+  fs.writeFileSync(full, text.split(placeholder).join(repo));
+}
+
+function replaceJsonName(filePath) {
+  const full = path.join(targetDir, filePath);
+  const data = JSON.parse(fs.readFileSync(full, 'utf8'));
+  data.name = repo;
+  fs.writeFileSync(full, `${JSON.stringify(data, null, 2)}\n`);
+}
+
+replaceLiteral('README.md');
+replaceJsonName('package.json');
+replaceJsonName('.cursor/environment.json');
+
+const pkg = JSON.parse(fs.readFileSync(path.join(targetDir, 'package.json'), 'utf8'));
+const env = JSON.parse(fs.readFileSync(path.join(targetDir, '.cursor/environment.json'), 'utf8'));
+const readme = fs.readFileSync(path.join(targetDir, 'README.md'), 'utf8');
+if (pkg.name !== repo || env.name !== repo || readme !== `# ${repo}\n`) {
+  throw new Error('literal substitution mismatch');
+}
+NODE
 
 # Non-empty directory guard — any entry (including hidden) must refuse and list paths.
 NONEMPTY="$WORKDIR/nonempty"
@@ -76,4 +160,4 @@ case "$out" in
     ;;
 esac
 
-echo "ok interview-repo-bootstrap runtime (dry-run, missing-path dry-run, non-empty guard, file target)"
+echo "ok interview-repo-bootstrap runtime (dry-run, invalid repo names, literal substitution, non-empty guard, file target)"
