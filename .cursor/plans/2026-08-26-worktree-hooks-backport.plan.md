@@ -172,7 +172,7 @@ Do not archive inside the implementation PR.
 
 - Do **not** change `ensure-hooks.sh` / sessionStart for this fix
 - Do **not** require retrofitting `portfolio` / `resumes` in the same PR (already-wired copies; optional follow-up when those repos next touch hooks)
-- Do **not** re-implement in marketplace — port from codenames `main` (`e8b2691` lineage)
+- Do **not** re-implement in marketplace — port from codenames `main` as landed in [merged PR #546](https://github.com/multipliers-dev/codenames-ai-guesser/pull/546) (merge commit `53f6aa0`), not an earlier pre-fix commit on that PR branch
 - Do **not** treat “shim exists” / “verify exits 0” as sufficient merge criteria for the implementation slice
 
 ---
