@@ -134,19 +134,47 @@ Naive `husky` is not enough on Cursor Cloud. Copy canonical files from `plugins/
 
 - **`git init` before `npm install`** — Husky `prepare` expects a Git repository.
 - `npm test` uses `vitest run --passWithNoTests` (green with zero tests; no sample `*.test.ts`).
-- Hook smoke: direct `sh .husky/pre-commit` then `git commit` must exercise hook via git.
+- Hook smoke: direct `sh .husky/pre-commit`, then `git commit` must run the hook via Git — verified by a **sentinel assertion** (see Hook smoke verification below), not assumed from exit code alone.
+
+### Empty-directory guard
+
+The target directory must be **actually empty** before bootstrap writes anything.
+
+- List every entry in the target directory (including dotfiles).
+- **Refuse if any entry exists** — no allowlist, no “probably harmless” exceptions, no agent-invented permitted files.
+- Error message must print the offending paths so the user can `--dir` elsewhere or remove files manually.
+- Rationale: accidental overwrite in an interview is worse than forcing an explicit directory choice; macOS `.DS_Store` is not special-cased.
+
+### Hook smoke verification
+
+Do not treat a successful `git commit` as proof the hook ran — hooks can be bypassed or miswired.
+
+**Sentinel in template `.husky/pre-commit`** (after `npm test` and `npm run typecheck` succeed):
+
+```sh
+echo "[interview-bootstrap] pre-commit verify"
+```
+
+**Bootstrap harness (steps 6–8):**
+
+1. **Direct smoke:** `sh .husky/pre-commit` passes and stdout contains the sentinel line.
+2. **Git path smoke:** run `git commit` with output captured (stdout + stderr).
+3. **Assert:** captured commit output contains `[interview-bootstrap] pre-commit verify`.
+4. **Abort** if commit succeeds but the sentinel is absent — hook was bypassed or not wired.
+
+Optional secondary check: if using a marker file instead of echo, document the exact path in the plan and assert it exists post-commit; prefer the echo sentinel for simplicity (no extra gitignored artifact).
 
 ### Operational sequence
 
 ```
-guard empty directory
+guard empty directory          (actually empty — any entry → refuse)
   → git init -b main
   → copy preset + primitives
   → npm install
-  → direct hook smoke
+  → direct hook smoke            (sh .husky/pre-commit + sentinel)
   → git add .
-  → git commit
-  → verify commit exercised hook
+  → git commit                   (capture output; assert sentinel)
+  → abort if sentinel missing
   → gh repo create --push
   → print URLs (+ optional gh run watch)
 ```
@@ -154,12 +182,12 @@ guard empty directory
 **CLI:** `interview-repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]`
 
 - Default: in-place (`$PWD`); `--dir` for create-elsewhere.
-- Guards: not inside parent worktree; non-empty dir refuses (allowlist e.g. `.DS_Store` only); no existing `.git/`.
+- Guards: not inside parent worktree; **directory must be actually empty** (any entry → list paths and refuse); no existing `.git/` before `git init`.
 - `--dry-run`: check tooling exists; no `gh auth`; no writes.
 
 ### Deliverables
 
-1. [`plugins/team-harness/templates/interview-repo/`](plugins/team-harness/templates/interview-repo/) — preset files (AGENTS.md, README template, package.json with `--passWithNoTests`, tsconfig, src/index.ts, .husky/pre-commit, .cursor/hooks.json, .github/workflows/ci.yml; vitest.config.ts only if ESM smoke requires)
+1. [`plugins/team-harness/templates/interview-repo/`](plugins/team-harness/templates/interview-repo/) — preset files (AGENTS.md, README template, package.json with `--passWithNoTests`, tsconfig, src/index.ts, `.husky/pre-commit` with sentinel echo, .cursor/hooks.json, .github/workflows/ci.yml; vitest.config.ts only if ESM smoke requires)
 2. [`plugins/team-harness/scripts/interview-repo-bootstrap.sh`](plugins/team-harness/scripts/interview-repo-bootstrap.sh)
 3. [`plugins/team-harness/skills/interview-repo-bootstrap/SKILL.md`](plugins/team-harness/skills/interview-repo-bootstrap/SKILL.md)
 4. Docs: team-harness README, root README, plugin.json 1.4.0; align cloud-hooks-bootstrap + optional new-repo-bootstrap cross-refs
@@ -169,7 +197,9 @@ guard empty directory
 
 - [ ] `./scripts/check.sh` passes
 - [ ] `--dry-run` works without gh auth
-- [ ] Live smoke: full sequence including `git commit` hook + optional CI green on push
+- [ ] Empty-directory guard: any file (including `.DS_Store`) → refuse with listed paths
+- [ ] Live smoke: direct pre-commit + `git commit` output contains `[interview-bootstrap] pre-commit verify`; abort if sentinel missing
+- [ ] Optional CI green on first push
 - [ ] No sample tests; no product harness; no duplicate hook logic
 - [ ] Skill frontmatter `name` matches directory name
 
@@ -230,7 +260,7 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 
 Deliverables: templates/interview-repo/, interview-repo-bootstrap.sh, skill, docs, check.sh updates, plugin 1.4.0. Mark interview-repo-bootstrap completed in plan frontmatter in this PR.
 
-Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; git commit exercises hook); optional gh run watch on first CI push.
+Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; direct pre-commit sentinel; git commit output must contain `[interview-bootstrap] pre-commit verify`); optional gh run watch on first CI push.
 ```
 
 ### plan-closure
