@@ -16,6 +16,8 @@ plan recommends authority → human accepts by pasting the slice prompt → agen
 
 **Expected diff:** plan artifact only.
 
+**Conversion verification:** source diagrams and implementation-critical structure preserved (not prose-only summaries). See Native plan conversion in the skill.
+
 ## Manual verification gate
 
 **Allowed:** run only the named verification; write only allowed gitignored paths; report verdict.
@@ -29,6 +31,11 @@ plan recommends authority → human accepts by pasting the slice prompt → agen
 - Use **Merge granted** only with rationale + preconditions + verification (config/docs/low-risk)
 - Use **Manual verification gate** for evidence-only slices before closure
 - Recommend authority **per slice**; topology default is branch-from and PR-target `main`
+- When converting a native Cursor plan, wrap-and-slice: add the envelope, preserve mermaid/diagrams and implementation-critical tables/checklists in the executing slice or a Design/Context section — do not compress them into prose
+
+### Anti-pattern: diagram → prose
+
+Replacing a mermaid flowchart (e.g. a four-layer capability model) with a one-line summary like "four capability layers (day-job vs interview-format vs …)" loses structure agents need at execution time. A summary may accompany a diagram; it must not replace it.
 
 ## Example prompts
 

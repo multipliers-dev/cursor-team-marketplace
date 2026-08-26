@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: preserve-plan-diagrams
     content: "PR: native-plan conversion rule in SKILL.md + reference anti-pattern + template comment + plugin.json 1.3.0"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-preserve-plan-diagrams.plan.md"
     status: pending

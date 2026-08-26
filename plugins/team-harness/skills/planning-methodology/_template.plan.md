@@ -44,6 +44,8 @@ Multi-slice plans stack execution order, not Git branches. Integration branch is
 
 ## Slice 1 — First merge-safe slice
 
+<!-- When converting from a native Cursor plan, paste mermaid/diagrams from the source into the slice that will execute them. Do not invent dummy diagrams in this boilerplate. -->
+
 **Recommended authority:** Open PR only
 
 **Rationale:**
