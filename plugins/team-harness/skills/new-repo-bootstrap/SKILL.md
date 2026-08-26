@@ -20,7 +20,7 @@ Do **not** copy product harness from `codenames-ai-guesser`, `resumes`, or `port
 | **Team Rules** | Short always-on invariants (authority, topology, stop-after-open, do-not-defer, tools/comms) | Enforced in every Agent chat |
 | **Planning methodology** | `/planning-methodology` — full staged-plan procedure | User Marketplace today; Team Default On is a known Cursor product blocker — not a packaging failure |
 | **Team MCP** | PostHog, Notion, Vercel after you authenticate once | GitHub MCP stays local PAT-backed readonly; `gh` handles writes; GitHub App covers Cloud/Bugbot |
-| **Cloud-hooks scripts** | Canonical installer/bridge + `/cloud-hooks-bootstrap` | **Not** automatic Cloud-safety — Husky repos still need one-time `prepare` / wiring |
+| **Cloud-hooks scripts** | Canonical Husky bridge + Cloud Node scripts + `/cloud-hooks-bootstrap` | **Not** automatic Cloud-safety — Husky repos still need one-time `prepare` / wiring; Cloud Agents also need committed `environment.json` lifecycle |
 
 User Rules / `~/.cursor` follow this machine only. They are weaker for Cloud Agents and new machines.
 
@@ -31,7 +31,7 @@ User Rules / `~/.cursor` follow this machine only. They are weaker for Cloud Age
 3. **Optional thin GitHub PR template** — `.github/pull_request_template.md` when the repo will open GitHub PRs and does not already have a template. Human / GitHub New-PR skeleton only (Summary, execution-authority checkboxes, test plan, rollback). Not a second copy of Team Rules or `/planning-methodology`. Domain sections stay in-repo. See [Thin GitHub PR template](#thin-github-pr-template).
 4. **Domain rules / planning supplements** — only if this domain is special (API contracts, facts-vs-prose, route checklists). Do not promote product checklists to the team layer.
 5. **Husky** — if the repo uses Husky, one-time wire Cloud-aware `prepare` + ensure-hooks via `/cloud-hooks-bootstrap`. Default On / plugin install alone is not enough.
-6. **Cloud Agent env** — add `.cursor/environment.json` the first time you use Cloud Agents on this repo, after a successful Build.
+6. **Cloud Agent env** — if Cloud Agents are expected, establish `.cursor/environment.json` (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major than the Cloud base image) **during bootstrap**, alongside `/cloud-hooks-bootstrap` Husky wiring — not deferred to first Cloud use. See `/cloud-hooks-bootstrap` for the recipe. If only `package.json` `engines.node` suggests a newer major, decide whether to add a `.nvmrc` pin first. Skip only when Cloud Agents are **not** expected (same spirit as leaving `ai-learning` unharnessed).
 7. **Bugbot** — keep **manual invoke only**. Do not enable automatic runs on every PR. Add `.cursor/BUGBOT.md` only if this repo needs an on-demand review guide.
 8. **Optional** Prettier `afterFileEdit` — independent of Husky; only if you want Agent-edit auto-format.
 
@@ -102,4 +102,4 @@ Revert if:
 
 ## Agent behavior
 
-When asked to bootstrap a new repo: walk this checklist, add only the in-repo items that apply, offer the thin GitHub PR template when the repo will use GitHub PRs and lacks one, invoke `/cloud-hooks-bootstrap` for Husky repos, keep Bugbot manual, leave `ai-learning` unharnessed, open **Open PR only** changes targeting `main`, and state clearly what was inherited vs added in-repo.
+When asked to bootstrap a new repo: walk this checklist, add only the in-repo items that apply, offer the thin GitHub PR template when the repo will use GitHub PRs and lacks one, invoke `/cloud-hooks-bootstrap` for Husky repos (including `environment.json` when Cloud Agents are expected), keep Bugbot manual, leave `ai-learning` unharnessed, open **Open PR only** changes targeting `main`, and state clearly what was inherited vs added in-repo.
