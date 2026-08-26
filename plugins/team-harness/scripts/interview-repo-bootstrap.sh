@@ -75,10 +75,15 @@ parse_args() {
 resolve_paths() {
   if [ -z "$TARGET_DIR" ]; then
     TARGET_DIR=$PWD
+  elif [ -e "$TARGET_DIR" ] && [ ! -d "$TARGET_DIR" ]; then
+    die "target path is not a directory: $TARGET_DIR"
   elif [ -d "$TARGET_DIR" ]; then
     TARGET_DIR=$(CDPATH= cd "$TARGET_DIR" && pwd)
-  elif [ "$DRY_RUN" -eq 0 ]; then
-    die "target directory does not exist: $TARGET_DIR"
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    : # missing path is ok for dry-run summary; no writes
+  else
+    mkdir -p "$TARGET_DIR"
+    TARGET_DIR=$(CDPATH= cd "$TARGET_DIR" && pwd)
   fi
 
   if [ -z "$REPO_NAME" ]; then
@@ -233,8 +238,10 @@ main() {
   parse_args "$@"
   resolve_paths
   check_tooling
-  guard_not_inside_parent_worktree
-  guard_empty_directory
+  if [ "$DRY_RUN" -eq 0 ]; then
+    guard_not_inside_parent_worktree
+    guard_empty_directory
+  fi
 
   if [ "$DRY_RUN" -eq 1 ]; then
     dry_run_summary

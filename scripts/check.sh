@@ -126,3 +126,4 @@ for script in plugins/team-harness/scripts/*.sh; do
 done
 
 sh scripts/test-cloud-agent-install-runtime.sh
+sh scripts/test-interview-repo-bootstrap-runtime.sh
