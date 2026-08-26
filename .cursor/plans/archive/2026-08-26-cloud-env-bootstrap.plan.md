@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-cloud-env-bootstrap.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -220,7 +220,7 @@ Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exa
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-26-cloud-env-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-26-cloud-env-bootstrap.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -236,7 +236,7 @@ Verification: plan satisfies /planning-methodology; mermaid three-layer diagram 
 ### cloud-env-bootstrap
 
 ```text
-@.cursor/plans/2026-08-26-cloud-env-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-26-cloud-env-bootstrap.plan.md
 
 Implement slice cloud-env-bootstrap only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -252,7 +252,7 @@ Verification: sh scripts/check.sh; skills no longer defer environment.json to fi
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-26-cloud-env-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-26-cloud-env-bootstrap.plan.md
 
 Execute only plan-closure.
 
@@ -266,3 +266,21 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: confirm all prerequisite implementation PRs are merged and slice todos are completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 26 Aug 2026
+
+**PRs:**
+
+- [Plan review (#7)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/7) — plan artifact committed
+- [Implementation (#8)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/8) — portable Cloud Node scripts, skill/README updates, runtime install test (`plugin.json` 1.4.0)
+
+**Deferred work:**
+
+- Consumer-repo follow-ons (e.g. `portfolio`, `resumes` Node pin and `environment.json` wiring using the new primitive)
+- Product-specific `environment.json` extras (dev terminals, ports — codenames-style layering after bootstrap)
+- Team Rules updates (no claim that Default On writes `environment.json` or installs Node)
+- No `templates/environment.json` under the plugin (intentionally out of scope)
