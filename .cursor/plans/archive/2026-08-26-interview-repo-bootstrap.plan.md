@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -311,7 +311,7 @@ Use a **fresh Agent-mode chat** per slice.
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-26-interview-repo-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -327,7 +327,7 @@ Verification: plan satisfies planning-methodology envelope; no implementation ch
 ### interview-repo-bootstrap
 
 ```text
-@.cursor/plans/2026-08-26-interview-repo-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md
 
 Implement slice interview-repo-bootstrap only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -343,7 +343,7 @@ Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm 
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-26-interview-repo-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-26-interview-repo-bootstrap.plan.md
 
 Execute only plan-closure.
 
@@ -357,3 +357,20 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: prerequisite implementation PR merged; slice todo completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 26 Aug 2026
+
+**PRs:**
+
+- [Plan review (#10)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/10) — plan artifact committed
+- [Implementation (#11)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/11) — interview repo bootstrap skill, script, templates, and runtime tests (`plugin.json` 1.5.0)
+
+**Deferred work:**
+
+- Updates to private `interview-technical-builds.md` (optional follow-up noted in plan)
+- `.nvmrc` / Node pin scripts for interview preset (intentionally out of scope)
+- Lint-staged, Prettier, ESLint, and product CI jobs beyond minimal test + typecheck
