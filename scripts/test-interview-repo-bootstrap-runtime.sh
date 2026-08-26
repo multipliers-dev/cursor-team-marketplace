@@ -80,42 +80,27 @@ case "$out" in
     ;;
 esac
 
-# Literal substitution keeps JSON valid for names with sed-special characters.
+# Literal substitution via the real bootstrap script (test-only stop before git/npm/gh).
 SUBST="$WORKDIR/subst-check"
-mkdir -p "$SUBST/.cursor"
-cp "$ROOT/plugins/team-harness/templates/interview-repo/README.md" "$SUBST/"
-cp "$ROOT/plugins/team-harness/templates/interview-repo/package.json" "$SUBST/"
-cp "$ROOT/plugins/team-harness/templates/interview-repo/.cursor/environment.json" "$SUBST/.cursor/"
-node - "$SUBST" 'my.repo_name-test' <<'NODE'
+mkdir -p "$SUBST"
+REPO_NAME='my.repo_name-test'
+INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE=1 sh "$BOOTSTRAP" --name "$REPO_NAME" --dir "$SUBST"
+node - "$SUBST" "$REPO_NAME" <<'NODE'
 const fs = require('fs');
 const path = require('path');
 
 const targetDir = process.argv[2];
 const repo = process.argv[3];
-const placeholder = '__REPO_NAME__';
-
-function replaceLiteral(filePath) {
-  const full = path.join(targetDir, filePath);
-  const text = fs.readFileSync(full, 'utf8');
-  fs.writeFileSync(full, text.split(placeholder).join(repo));
-}
-
-function replaceJsonName(filePath) {
-  const full = path.join(targetDir, filePath);
-  const data = JSON.parse(fs.readFileSync(full, 'utf8'));
-  data.name = repo;
-  fs.writeFileSync(full, `${JSON.stringify(data, null, 2)}\n`);
-}
-
-replaceLiteral('README.md');
-replaceJsonName('package.json');
-replaceJsonName('.cursor/environment.json');
 
 const pkg = JSON.parse(fs.readFileSync(path.join(targetDir, 'package.json'), 'utf8'));
 const env = JSON.parse(fs.readFileSync(path.join(targetDir, '.cursor/environment.json'), 'utf8'));
 const readme = fs.readFileSync(path.join(targetDir, 'README.md'), 'utf8');
+
 if (pkg.name !== repo || env.name !== repo || readme !== `# ${repo}\n`) {
-  throw new Error('literal substitution mismatch');
+  throw new Error('bootstrap substitution mismatch');
+}
+if (readme.includes('__REPO_NAME__') || JSON.stringify(pkg).includes('__REPO_NAME__')) {
+  throw new Error('placeholder was not replaced');
 }
 NODE
 

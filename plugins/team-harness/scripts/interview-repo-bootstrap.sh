@@ -100,16 +100,22 @@ validate_repo_name() {
 
 check_tooling() {
   require_cmd sh
-  require_cmd git
   require_cmd node
-  require_cmd npm
-  if [ "$DRY_RUN" -eq 0 ]; then
-    require_cmd gh
+  # Test-only seam (scripts/test-interview-repo-bootstrap-runtime.sh): substitution
+  # check stops before git/npm/gh — only node is required for name replacement.
+  if [ "${INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
+    require_cmd git
+    require_cmd npm
+    if [ "$DRY_RUN" -eq 0 ]; then
+      require_cmd gh
+    fi
   fi
   [ -d "$TEMPLATE_DIR" ] || die "missing template directory: $TEMPLATE_DIR"
-  for script in prepare-git-hooks.sh ensure-hooks.sh session-ensure-git-hooks.sh; do
-    [ -f "$PLUGIN_ROOT/scripts/$script" ] || die "missing hook primitive: $PLUGIN_ROOT/scripts/$script"
-  done
+  if [ "${INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
+    for script in prepare-git-hooks.sh ensure-hooks.sh session-ensure-git-hooks.sh; do
+      [ -f "$PLUGIN_ROOT/scripts/$script" ] || die "missing hook primitive: $PLUGIN_ROOT/scripts/$script"
+    done
+  fi
 }
 
 guard_not_inside_parent_worktree() {
@@ -290,6 +296,11 @@ main() {
 
   copy_template_tree
   substitute_repo_name "$REPO_NAME"
+  # Test-only seam (scripts/test-interview-repo-bootstrap-runtime.sh): copy templates
+  # and substitute repo name, then exit before git init / npm / hooks / gh.
+  if [ "${INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" = "1" ]; then
+    exit 0
+  fi
   copy_hook_primitives
 
   (
