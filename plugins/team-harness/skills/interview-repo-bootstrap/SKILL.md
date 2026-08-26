@@ -2,8 +2,8 @@
 name: interview-repo-bootstrap
 description: >-
   Bootstrap an actually-empty directory into a pre-wired technical interview
-  repo (TypeScript + Vitest + minimal AGENTS.md + Husky pre-commit + minimal
-  GitHub Actions CI + GitHub remote). Universal execution, verification, and
+  repo (TypeScript + tsx run/dev + Vitest + minimal AGENTS.md + Husky pre-commit +
+  minimal GitHub Actions CI + GitHub remote). Universal execution, verification, and
   enforcement only — no product decisions. Use when starting a timed technical
   interview from an empty folder.
 ---
@@ -19,6 +19,8 @@ Timed technical interviews need a clean-slate GitHub repo with execution, verifi
 ```
 AGENTS.md              instruct
       ↓
+tsx (start/dev)        execute
+      ↓
 Vitest + TypeScript    verify
       ↓
 pre-commit             enforce locally
@@ -32,7 +34,7 @@ Git + GitHub           persist/share
 
 | Yes (include) | No (exclude) |
 | --- | --- |
-| Vitest, typechecking, `AGENTS.md` | React, Savepoints, database |
+| Vitest, typechecking, `npm start` / `npm run dev` (tsx), `AGENTS.md` | React, Savepoints, database |
 | Cloud-hooks primitive (Husky trio + minimal `environment.json`) | PR templates, Bugbot, plans |
 | Reliable pre-commit (`test` + `typecheck`) | ESLint, Prettier, lint-staged, deploy |
 | Minimal `.cursor/environment.json` | Node-from-`.nvmrc` scripts, `afterFileEdit`, dev terminals/ports |

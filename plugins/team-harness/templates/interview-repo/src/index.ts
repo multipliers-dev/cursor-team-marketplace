@@ -1,1 +1,1 @@
-export {};
+console.log("ready");

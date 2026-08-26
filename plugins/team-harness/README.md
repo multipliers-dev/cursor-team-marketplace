@@ -8,7 +8,7 @@ Cursor plugin: portable **planning methodology**, **new-repo bootstrap**, **inte
 | ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
 | `planning-methodology`    | `/planning-methodology`    | Full staged-plan / merge-safe procedure (canonical copy)                      |
 | `new-repo-bootstrap`      | `/new-repo-bootstrap`      | 5-minute checklist: inherited team layer vs in-repo adds (optional thin GitHub PR template) |
-| `interview-repo-bootstrap`| `/interview-repo-bootstrap`| One-shot empty-directory → pre-wired interview repo (TypeScript + Vitest + hooks + CI + GitHub) |
+| `interview-repo-bootstrap`| `/interview-repo-bootstrap`| One-shot empty-directory → pre-wired interview repo (tsx run/dev + Vitest + hooks + CI + GitHub) |
 | `cloud-hooks-bootstrap`   | `/cloud-hooks-bootstrap`   | One-time Husky Cloud wiring + `environment.json` lifecycle using scripts in `scripts/` |
 
 ## Scripts (portable primitive)

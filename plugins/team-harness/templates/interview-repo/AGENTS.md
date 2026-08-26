@@ -6,6 +6,8 @@ Technical interview repo — universal execution and verification only. Architec
 
 | Command | Purpose |
 | --- | --- |
+| `npm run dev` | Run TypeScript with reload (`tsx watch src/index.ts`) |
+| `npm start` | Run TypeScript once (`tsx src/index.ts`) |
 | `npm test` | Vitest (`--passWithNoTests` — green with zero tests) |
 | `npm run typecheck` | TypeScript `tsc --noEmit` |
 
