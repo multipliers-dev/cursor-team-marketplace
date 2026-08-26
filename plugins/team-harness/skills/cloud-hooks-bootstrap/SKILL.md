@@ -42,6 +42,7 @@ flowchart LR
 - Porting Cloud-safe prepare/ensure from this plugin into `resumes`, `portfolio`, or a new repo
 - Explaining why marketplace Default On did not fix Cloud commits by itself
 - Cloud Agents are expected and the repo needs committed `environment.json` (not deferred to first Cloud use)
+- Wiring an **existing** repo manually — for timed interviews from an empty directory, use `/interview-repo-bootstrap` instead (ships the same Husky trio + minimal lifecycle in one shot)
 
 ## What the plugin ships
 
@@ -118,3 +119,5 @@ When asked to wire Cloud hooks into a repo:
 4. Choose the install command from this repo’s lockfile/CI; write it into wrapper config (`CLOUD_AGENT_INSTALL_CMD` or args) at wire time.
 5. Open an Open-PR-only change for that repo and state clearly that Default On was not sufficient by itself.
 6. Remind the human to trigger/promote a new environment Build after merge.
+
+For timed technical interviews from an **actually empty** directory, use `/interview-repo-bootstrap` — it copies this skill's layer-2 wiring plus minimal layer-3 `environment.json` automatically and stops. Do not chain both skills.

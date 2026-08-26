@@ -1,0 +1,5 @@
+{
+  "name": "__REPO_NAME__",
+  "install": "npm install",
+  "start": "sh scripts/ensure-hooks.sh"
+}

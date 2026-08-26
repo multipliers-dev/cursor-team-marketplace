@@ -1,12 +1,13 @@
 # cursor-team-marketplace
 
-Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships three capabilities with different portability semantics.
+Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships four capabilities with different portability semantics.
 
 | Component | After install | Meaning |
 | --- | --- | --- |
 | **Planning methodology skill** | Skill available in Agent chats | Single canonical planning procedure for every repo |
 | **New-repo bootstrap skill** | `/new-repo-bootstrap` | 5-minute checklist: inherited team layer vs in-repo adds |
-| **Cloud-hooks primitive** | Scripts + bootstrap skill available | **Not** automatic Cloud-safety — each Husky repo still needs one-time `prepare` / wiring; when Cloud Agents are expected, also commit `environment.json` lifecycle (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major) |
+| **Interview repo bootstrap** | `/interview-repo-bootstrap` + `interview-repo-bootstrap.sh` | One-shot empty-directory → pre-wired interview repo (execution/verification/enforcement only) |
+| **Cloud-hooks primitive** | Scripts + bootstrap skill available | **Not** automatic Cloud-safety — each Husky repo still needs one-time `prepare` / wiring; when Cloud Agents are expected, also commit `environment.json` lifecycle (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major). The interview preset ships this wiring automatically; use `/cloud-hooks-bootstrap` for existing repos. |
 
 ## Import + Default On
 
@@ -31,8 +32,10 @@ ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor
     ├── .cursor-plugin/plugin.json
     ├── skills/planning-methodology/
     ├── skills/new-repo-bootstrap/
+    ├── skills/interview-repo-bootstrap/
     ├── skills/cloud-hooks-bootstrap/
-    └── scripts/   # prepare-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh, cloud-agent-*.sh
+    ├── templates/interview-repo/
+    └── scripts/   # interview-repo-bootstrap.sh, prepare-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh, cloud-agent-*.sh
 ```
 
 ## Checks

@@ -93,6 +93,30 @@ for plugin in plugins:
             die(f"{skill_md}: missing description")
         print(f"ok skill {expected}")
 
+    interview_script = plugin_dir / "scripts" / "interview-repo-bootstrap.sh"
+    if not interview_script.is_file():
+        die(f"missing script: {interview_script}")
+    print(f"ok script {interview_script.relative_to(ROOT)}")
+
+    template_dir = plugin_dir / "templates" / "interview-repo"
+    required_templates = [
+        ".gitignore",
+        "AGENTS.md",
+        "README.md",
+        "package.json",
+        "tsconfig.json",
+        "src/index.ts",
+        ".husky/pre-commit",
+        ".cursor/hooks.json",
+        ".cursor/environment.json",
+        ".github/workflows/ci.yml",
+    ]
+    for rel in required_templates:
+        path = template_dir / rel
+        if not path.is_file():
+            die(f"missing template: {path}")
+    print(f"ok templates interview-repo ({len(required_templates)} files)")
+
 print("ok marketplace plugin")
 PY
 
