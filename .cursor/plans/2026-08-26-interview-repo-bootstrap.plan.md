@@ -206,13 +206,32 @@ guard empty directory          (actually empty — any entry → refuse)
   → git add .
   → git commit -m "Initial commit"   (inline user.name/email; capture output; assert sentinel)
   → abort if sentinel missing
-  → gh repo create --push
+  → gh repo create <name> --source=. --remote=origin --push (--private|--public)
   → print URLs (+ optional gh run watch)
 ```
+
+**`gh repo create` (non-interactive, from existing local repo):**
+
+Bare `gh repo create --push` is insufficient — fresh VMs and non-interactive shells need an explicit source, visibility, and name. Implement:
+
+```sh
+gh repo create "$REPO_NAME" \
+  --source=. \
+  --remote=origin \
+  --push \
+  --private   # or --public when --public CLI flag is set
+```
+
+- `--source=.` — create the remote from the already-initialized local repo (required; without it `gh` treats the invocation as “new empty remote” / interactive).
+- Exactly one of `--private` / `--public` / `--internal` — required for non-interactive create.
+- `<name>` — use `--name` when provided; otherwise basename of the target directory (not interactive prompts).
+- `--remote=origin` — attach the new remote explicitly (avoid relying on interactive remote naming).
+- `--push` — push the initial commit after remote creation.
 
 **CLI:** `interview-repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]`
 
 - Default: in-place (`$PWD`); `--dir` for create-elsewhere.
+- Visibility default: **`--private`**; `--public` opts into a public repo.
 - Guards: not inside parent worktree; **directory must be actually empty** (any entry → list paths and refuse); no existing `.git/` before `git init`.
 - `--dry-run`: check tooling exists; no `gh auth`; no writes.
 
@@ -252,6 +271,7 @@ guard empty directory          (actually empty — any entry → refuse)
 - [ ] `--dry-run` works without gh auth
 - [ ] Empty-directory guard: any file (including `.DS_Store`) → refuse with listed paths
 - [ ] Live smoke: direct pre-commit + non-interactive `git commit -m` with inline user identity; output contains `[interview-bootstrap] pre-commit verify`; abort if sentinel missing
+- [ ] `gh repo create` uses `--source=.`, `--remote=origin`, `--push`, and exactly one of `--private`/`--public` (default private; `--public` opts in); never bare `--push` alone
 - [ ] Optional CI green on first push
 - [ ] No sample tests; no product harness; no duplicate hook logic
 - [ ] Skill frontmatter `name` matches directory name
@@ -317,7 +337,7 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 
 Deliverables: templates/interview-repo/ (including .gitignore, package.json prepare, hooks.json sessionStart, minimal environment.json); bootstrap script with explicit hook-primitive allowlist copy (prepare-git-hooks, ensure-hooks, session-ensure-git-hooks → .cursor/hooks/ensure-git-hooks.sh — not wholesale scripts/); skill, docs, check.sh updates, plugin 1.5.0. Mark interview-repo-bootstrap completed in plan frontmatter in this PR.
 
-Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; direct pre-commit sentinel; non-interactive git commit with -m and inline user.name/email; commit output must contain `[interview-bootstrap] pre-commit verify`); assert interview repo has hook trio + environment.json and does not contain cloud-agent-* scripts; optional gh run watch on first CI push.
+Verification: ./scripts/check.sh; dry-run; live hook smoke (git init before npm install; direct pre-commit sentinel; non-interactive git commit with -m and inline user.name/email; commit output must contain `[interview-bootstrap] pre-commit verify`); assert interview repo has hook trio + environment.json and does not contain cloud-agent-* scripts; gh create uses `--source=. --remote=origin --push` plus `--private`/`--public`; optional gh run watch on first CI push.
 ```
 
 ### plan-closure
