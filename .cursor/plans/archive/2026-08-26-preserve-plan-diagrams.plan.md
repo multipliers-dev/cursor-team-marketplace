@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-preserve-plan-diagrams.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -104,11 +104,11 @@ Do **not** duplicate this into in-repo `planning-standards.md` copies (resumes /
 
 **Acceptance:**
 
-- [ ] SKILL.md has a Native plan conversion item: wrap-and-slice, preserve mermaid/tables/checklists, no `~/.cursor/plans/` pointer substitute
-- [ ] reference.md documents the four-layer mermaid → prose anti-pattern
-- [ ] `_template.plan.md` comments that converters should paste source diagrams into the executing slice
-- [ ] `plugin.json` is `1.3.0`
-- [ ] `sh scripts/check.sh` passes
+- [x] SKILL.md has a Native plan conversion item: wrap-and-slice, preserve mermaid/tables/checklists, no `~/.cursor/plans/` pointer substitute
+- [x] reference.md documents the four-layer mermaid → prose anti-pattern
+- [x] `_template.plan.md` comments that converters should paste source diagrams into the executing slice
+- [x] `plugin.json` is `1.3.0`
+- [x] `sh scripts/check.sh` passes
 
 **Out of scope:** restoring mermaid/tables in `resumes/.cursor/plans/2026-08-26-relevance-aipe-interview-retrospective.plan.md`; Team Rules; CreatePlan UI table-vs-mermaid constraints.
 
@@ -162,7 +162,7 @@ Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exa
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-26-preserve-plan-diagrams.plan.md
+@.cursor/plans/archive/2026-08-26-preserve-plan-diagrams.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -178,7 +178,7 @@ Verification: plan satisfies /planning-methodology; source mermaid and conversio
 ### preserve-plan-diagrams
 
 ```text
-@.cursor/plans/2026-08-26-preserve-plan-diagrams.plan.md
+@.cursor/plans/archive/2026-08-26-preserve-plan-diagrams.plan.md
 
 Implement slice preserve-plan-diagrams only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -194,7 +194,7 @@ Verification: sh scripts/check.sh; skill explicitly requires source mermaid/impl
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-26-preserve-plan-diagrams.plan.md
+@.cursor/plans/archive/2026-08-26-preserve-plan-diagrams.plan.md
 
 Execute only plan-closure.
 
@@ -208,3 +208,20 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: confirm all prerequisite implementation PRs are merged and slice todos are completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 26 Aug 2026
+
+**PRs:**
+
+- [Plan review (#4)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/4) — plan artifact committed
+- [Implementation (#5)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/5) — Native plan conversion rule in planning-methodology skill (`plugin.json` 1.3.0)
+
+**Deferred work:**
+
+- Restoring mermaid/tables in `resumes/.cursor/plans/2026-08-26-relevance-aipe-interview-retrospective.plan.md`
+- Team Rules updates
+- CreatePlan UI table-vs-mermaid constraints
