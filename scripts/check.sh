@@ -100,3 +100,5 @@ for script in plugins/team-harness/scripts/*.sh; do
   sh -n "$script"
   echo "ok script $script"
 done
+
+sh scripts/test-cloud-agent-install-runtime.sh
