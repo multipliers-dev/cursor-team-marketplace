@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 # Portable Cloud Agent install (team-harness marketplace primitive).
-# When .nvmrc pins a newer Node major than PATH, install latest v${major}.x into
-# /usr/local, persist session PATH, then run the declared dependency command.
+# When .nvmrc pins a newer Node major than PATH, extract the full official Node
+# distribution prefix (bin + lib/node_modules + symlinks) into /usr/local, persist
+# session PATH, then run the declared dependency command.
 #
 # Contract: require CLOUD_AGENT_INSTALL_CMD or accept the command as arguments.
 # Fail clearly if absent. Do not infer npm/pnpm/workspace layout.
@@ -16,7 +17,6 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 
 MARKER="team-harness-cloud-node-path"
 PROFILE_SNIPPET="/etc/profile.d/${MARKER}.sh"
-PROFILE_LINE='case ":${PATH}:" in *:/usr/local/bin:*) ;; *) export PATH="/usr/local/bin:${PATH}" ;; esac'
 
 read_nvmrc_major() {
   if [ ! -f .nvmrc ]; then
@@ -48,9 +48,9 @@ latest_node_version_for_major() {
   _major=$1
   _version=$(
     curl -fsSL https://nodejs.org/dist/index.json |
-      grep -o "\"version\": \"v${_major}\.[0-9]*\.[0-9]*\"" |
+      grep -oE "\"version\": ?\"v${_major}\.[0-9]+\.[0-9]+\"" |
       head -1 |
-      sed 's/.*"\(v[^"]*\)".*/\1/'
+      sed -E 's/.*"(v[^"]+)".*/\1/'
   )
   if [ -z "$_version" ]; then
     echo "error: no Node release found for major ${_major}" >&2
@@ -73,32 +73,37 @@ node_platform() {
 
 install_node_major() {
   _major=$1
+  _prefix=${CLOUD_AGENT_NODE_PREFIX:-/usr/local}
   _version=$(latest_node_version_for_major "$_major")
   _platform=$(node_platform)
   _dir="node-${_version}-${_platform}"
   _tarball="${_dir}.tar.xz"
   _url="https://nodejs.org/dist/${_version}/${_tarball}"
   _tmpdir=$(mktemp -d)
+  _extracted="${_tmpdir}/${_dir}"
 
-  echo "[${MARKER}] Installing Node ${_version} into /usr/local (major pin ${_major})"
+  echo "[${MARKER}] Installing Node ${_version} into ${_prefix} (major pin ${_major})"
   curl -fsSL "$_url" | tar -xJ -C "$_tmpdir"
-  install -d /usr/local/bin
-  install -m 755 "$_tmpdir/${_dir}/bin/node" /usr/local/bin/node
-  if [ -f "$_tmpdir/${_dir}/bin/npm" ]; then
-    install -m 755 "$_tmpdir/${_dir}/bin/npm" /usr/local/bin/npm
+  if [ ! -d "$_extracted" ]; then
+    echo "error: expected extracted Node directory ${_extracted}" >&2
+    rm -rf "$_tmpdir"
+    exit 1
   fi
-  if [ -f "$_tmpdir/${_dir}/bin/npx" ]; then
-    install -m 755 "$_tmpdir/${_dir}/bin/npx" /usr/local/bin/npx
-  fi
+  install -d "$_prefix"
+  # Merge the full distribution tree (bin symlinks + lib/node_modules/npm, etc.).
+  cp -a "$_extracted/." "$_prefix/"
   rm -rf "$_tmpdir"
 }
 
 persist_session_path() {
+  _prefix=${CLOUD_AGENT_NODE_PREFIX:-/usr/local}
+  _profile_line="case \":\${PATH}:\" in *:${_prefix}/bin:*) ;; *) export PATH=\"${_prefix}/bin:\${PATH}\" ;; esac"
+
   if [ -w /etc/profile.d ] 2>/dev/null; then
-    printf '%s\n' "# ${MARKER}" "$PROFILE_LINE" >"$PROFILE_SNIPPET"
+    printf '%s\n' "# ${MARKER}" "$_profile_line" >"$PROFILE_SNIPPET"
     chmod 644 "$PROFILE_SNIPPET" 2>/dev/null || true
   elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-    printf '%s\n' "# ${MARKER}" "$PROFILE_LINE" | sudo tee "$PROFILE_SNIPPET" >/dev/null
+    printf '%s\n' "# ${MARKER}" "$_profile_line" | sudo tee "$PROFILE_SNIPPET" >/dev/null
     sudo chmod 644 "$PROFILE_SNIPPET" 2>/dev/null || true
   fi
 
@@ -108,7 +113,7 @@ persist_session_path() {
     fi
     {
       printf '\n# %s\n' "$MARKER"
-      printf '%s\n' "$PROFILE_LINE"
+      printf '%s\n' "$_profile_line"
     } >>"$_rc"
   done
 }

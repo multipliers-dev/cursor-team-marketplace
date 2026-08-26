@@ -53,7 +53,7 @@ Relative to the `team-harness` plugin root:
 | `scripts/ensure-hooks.sh` | Point Cloud `agent-hooks` dispatcher at `~/.cursor/husky-bridge`, which resolves the current repo’s `.husky/*` at hook time |
 | `scripts/session-ensure-git-hooks.sh` | `sessionStart` rechain when `agent-hooks` appears after late `npm prepare` |
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent); safe to source repeatedly |
-| `scripts/cloud-agent-install.sh` | If PATH Node major ≠ `.nvmrc` major, install latest `v${major}.x` into `/usr/local`; persist session PATH; run declared dependency command |
+| `scripts/cloud-agent-install.sh` | If PATH Node major ≠ `.nvmrc` major, extract the full official Node distribution prefix into `/usr/local`; persist session PATH; run declared dependency command |
 | `scripts/cloud-agent-start.sh` | Session PATH + Node probe log + `sh scripts/ensure-hooks.sh` |
 
 ## One-time wiring checklist (per Husky repo)
