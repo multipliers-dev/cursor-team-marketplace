@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: cloud-env-bootstrap
     content: "PR: portable cloud-agent Node PATH scripts + cloud-hooks/new-repo skills treat environment.json + Node pin as Cloud lifecycle; skill/agent declares install command at wire time; start PATH+ensure-hooks; bump plugin.json; no environment.json template"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-cloud-env-bootstrap.plan.md"
     status: pending
