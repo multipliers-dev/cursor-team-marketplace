@@ -22,7 +22,7 @@ For **personal / individual Cursor use**: clone or checkout this repo, then syml
 git clone https://github.com/multipliers-dev/cursor-team-marketplace.git
 # or use an existing checkout — substitute your absolute path below
 ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor/plugins/local/team-harness
-# Reload Cursor window, then invoke /planning-methodology or /new-repo-bootstrap (e.g. in ai-learning)
+# Reload Cursor window, then invoke /planning-methodology or /new-repo-bootstrap in any repo after reload
 ```
 
 ## Team / Enterprise
@@ -50,6 +50,7 @@ This org’s only Team Rule today is **Team engineering invariants** (Required, 
 ```text
 .
 ├── .cursor-plugin/marketplace.json
+├── docs/team-engineering-invariants.md
 └── plugins/team-harness/
     ├── .cursor-plugin/plugin.json
     ├── skills/planning-methodology/
