@@ -2,10 +2,6 @@
 
 Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships four capabilities with different portability semantics.
 
-## License
-
-MIT — see [LICENSE](LICENSE).
-
 | Component | After install | Meaning |
 | --- | --- | --- |
 | **Planning methodology skill** | Skill available in Agent chats | Single canonical planning procedure for every repo |
@@ -57,3 +53,7 @@ sh scripts/check.sh
 - No claim that Default On makes Husky Cloud-safe without repo wiring or writes `environment.json` / installs Node
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
 - No org-level `.github` repo or team-wide GitHub PR convention system (thin in-repo template via `/new-repo-bootstrap` when useful)
+
+## License
+
+MIT — see [LICENSE](LICENSE).
