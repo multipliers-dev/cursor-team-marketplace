@@ -50,7 +50,7 @@ Relative to the `team-harness` plugin root:
 
 | Path | Role |
 | --- | --- |
-| `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; self-heal missing/non-executable `.husky/_` shims; order is install/repair → verify → ensure-hooks (ensure-hooks last) |
+| `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; self-heal missing/non-executable `.husky/_` shims; order is install/repair → verify → ensure-hooks (ensure-hooks last, always runs even when verify fails; prepare still exits non-zero on bad shims) |
 | `scripts/verify-git-hooks.sh` | Fail fast when any repo-defined Git hook under `.husky/<hook>` lacks an executable `.husky/_/<hook>` shim; helpers like `common.sh` are ignored |
 | `scripts/ensure-hooks.sh` | Point Cloud `agent-hooks` dispatcher at `~/.cursor/husky-bridge`, which resolves the current repo’s `.husky/*` at hook time |
 | `scripts/session-ensure-git-hooks.sh` | `sessionStart` rechain when `agent-hooks` appears after late `npm prepare` |

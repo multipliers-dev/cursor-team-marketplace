@@ -85,11 +85,15 @@ if should_install_husky && needs_husky_shim_repair; then
   install_husky
 fi
 
+verify_status=0
 if [ "$HUSKY_INSTALLED" = "1" ]; then
-  sh "$SCRIPT_DIR/verify-git-hooks.sh"
+  sh "$SCRIPT_DIR/verify-git-hooks.sh" || verify_status=$?
 fi
 
 # Final reconciliation: restore Cursor Cloud agent-hooks core.hooksPath after Husky.
-# Must run last so a late Husky repair cannot clobber the restored path.
+# Always runs after verify — even when verify fails — so a bad shim state cannot skip
+# agent-hooks reconciliation. Must run last so a late Husky repair cannot clobber the path.
 # On Cloud, agent-hooks may appear later — see session-ensure-git-hooks.sh (sessionStart).
 sh "$SCRIPT_DIR/ensure-hooks.sh"
+
+exit "$verify_status"
