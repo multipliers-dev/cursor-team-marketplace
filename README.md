@@ -21,36 +21,6 @@ Installing `team-harness` does **not** install Cursor rules. Rules are a separat
 
 Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
 
-## Layout
-
-```text
-.
-├── .cursor-plugin/marketplace.json
-├── docs/engineering-invariants.md
-└── plugins/team-harness/
-    ├── .cursor-plugin/plugin.json
-    ├── skills/planning-methodology/
-    ├── skills/new-repo-bootstrap/
-    ├── skills/interview-repo-bootstrap/
-    ├── skills/cloud-hooks-bootstrap/
-    ├── templates/interview-repo/
-    └── scripts/   # interview-repo-bootstrap.sh, prepare-git-hooks.sh, verify-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh, cloud-agent-*.sh
-```
-
-## Checks
-
-The `Protect main` ruleset requires a GitHub check named **`test`**. Locally:
-
-```bash
-sh scripts/check.sh
-```
-
-## Explicit non-goals
-
-- This package does not install Cursor rules — see [Engineering invariants](#engineering-invariants) and [docs/engineering-invariants.md](docs/engineering-invariants.md)
-- No product checklists (API/board/client-state, resumes research, portfolio routes)
-- No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
