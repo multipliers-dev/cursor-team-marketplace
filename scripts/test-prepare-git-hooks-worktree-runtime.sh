@@ -1,14 +1,12 @@
 #!/usr/bin/env sh
 # Runtime smoke: fresh-worktree-shaped Husky state must run pre-commit on commit.
-# Reproduces core.hooksPath=.husky/_ with .husky/_ missing; prepare must repair shims
-# and a throwaway commit must execute the hook (marker + sentinel), not merely create shims.
-# Invoked from scripts/check.sh.
+# Port of codenames scripts/cloud-agent-hooks.test.ts "fresh worktree hooks smoke"
+# (shell runner; no vitest). Invoked from scripts/check.sh.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 PREPARE="$ROOT/plugins/team-harness/scripts/prepare-git-hooks.sh"
 VERIFY="$ROOT/plugins/team-harness/scripts/verify-git-hooks.sh"
-SENTINEL='[worktree-hooks-test] pre-commit executed'
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -22,6 +20,8 @@ require_cmd npm
 require_cmd node
 
 WORKDIR=$(mktemp -d)
+MAIN="$WORKDIR/main"
+WT="$WORKDIR/wt"
 MARKER="$WORKDIR/.hook-ran"
 AGENT_HOOKS_BACKUP=""
 cleanup() {
@@ -40,14 +40,16 @@ if [ -d "$AGENT_HOOKS_BACKUP" ]; then
 fi
 unset CURSOR_AGENT_SOCKET
 
-cd "$WORKDIR"
+mkdir -p "$MAIN"
+cd "$MAIN"
 git init -b main
 git config user.email "worktree-hooks-test@localhost"
 git config user.name "Worktree Hooks Test"
 
-node - "$PREPARE" <<'NODE'
+node - "$PREPARE" "$VERIFY" <<'NODE'
 const fs = require('fs');
 const prepare = process.argv[2];
+const verify = process.argv[3];
 fs.writeFileSync(
   'package.json',
   `${JSON.stringify(
@@ -56,6 +58,7 @@ fs.writeFileSync(
       private: true,
       scripts: {
         prepare: `sh ${prepare}`,
+        'verify:git-hooks': `sh ${verify}`,
       },
       devDependencies: {
         husky: '^9.1.7',
@@ -67,16 +70,14 @@ fs.writeFileSync(
 );
 NODE
 
-# Avoid CI skip paths during install/prepare; keep husky CLI on PATH.
 unset CI VERCEL GITHUB_ACTIONS HUSKY
 
 npm install --silent
-export PATH="$WORKDIR/node_modules/.bin:$PATH"
+export PATH="$MAIN/node_modules/.bin:$PATH"
 
-cat > .husky/pre-commit <<EOF
+cat > .husky/pre-commit <<'EOF'
 #!/usr/bin/env sh
-echo "$SENTINEL"
-: > "$MARKER"
+exit 0
 EOF
 chmod +x .husky/pre-commit
 
@@ -86,7 +87,12 @@ printf 'init\n' > README.md
 git add .
 git commit -m "init"
 
-# Fresh-worktree-shaped broken state: hooksPath set, shim dir absent.
+COMMIT=$(git rev-parse HEAD)
+git worktree add --detach "$WT" "$COMMIT"
+
+cd "$WT"
+export PATH="$MAIN/node_modules/.bin:$PATH"
+
 rm -rf .husky/_
 git config core.hooksPath .husky/_
 
@@ -97,33 +103,26 @@ fi
 
 sh "$PREPARE"
 
-if [ ! -f .husky/_/pre-commit ]; then
-  echo "error: prepare did not create .husky/_/pre-commit shim" >&2
+if [ ! -x .husky/_/pre-commit ]; then
+  echo "error: prepare did not create executable .husky/_/pre-commit shim" >&2
   exit 1
 fi
 
 sh "$VERIFY"
 
+cat > .husky/pre-commit <<EOF
+#!/usr/bin/env sh
+touch "$MARKER"
+EOF
+chmod +x .husky/pre-commit
+
 rm -f "$MARKER"
-commit_out=$(git commit --allow-empty -m "worktree hook probe" 2>&1) || {
-  printf '%s\n' "$commit_out" >&2
-  echo "error: throwaway commit failed after prepare repair" >&2
-  exit 1
-}
+git add .husky/pre-commit
+git commit -m "worktree hook probe"
 
 if [ ! -f "$MARKER" ]; then
   echo "error: pre-commit hook did not execute (marker file missing)" >&2
-  printf '%s\n' "$commit_out" >&2
   exit 1
 fi
-
-case "$commit_out" in
-  *"$SENTINEL"*) ;;
-  *)
-    echo "error: commit output missing sentinel — hook bypassed or miswired" >&2
-    printf '%s\n' "$commit_out" >&2
-    exit 1
-    ;;
-esac
 
 echo "ok prepare-git-hooks worktree runtime (verify fail/repair, hook executed on commit)"
