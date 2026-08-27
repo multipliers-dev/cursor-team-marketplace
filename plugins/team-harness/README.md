@@ -19,7 +19,7 @@ Copy into a target repo (or invoke paths from this plugin after install) during 
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `scripts/interview-repo-bootstrap.sh` | Bootstrap an empty directory into a pre-wired interview repo (template + hook allowlist + GitHub remote)   |
 | `scripts/prepare-git-hooks.sh`        | Cloud-aware `prepare`: install/repair Husky shims, verify, then ensure-hooks last (Cloud agent-hooks path restored after Husky) |
-| `scripts/verify-git-hooks.sh`         | Fail when any defined `.husky/<hook>` lacks an executable `.husky/_/<hook>` shim |
+| `scripts/verify-git-hooks.sh`         | Fail when any repo-defined Git hook under `.husky/<hook>` lacks an executable `.husky/_/<hook>` shim; helpers like `common.sh` are ignored |
 | `scripts/ensure-hooks.sh`             | Bridge Cloud `agent-hooks` dispatcher → `~/.cursor/husky-bridge` → current repo `.husky/*`                 |
 | `scripts/session-ensure-git-hooks.sh` | `sessionStart` rechain when `agent-hooks` appears after late prepare                                       |
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent)                                                            |

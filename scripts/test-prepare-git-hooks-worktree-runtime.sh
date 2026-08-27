@@ -87,7 +87,17 @@ exit 0
 EOF
 chmod +x .husky/pre-push
 
+cat > .husky/common.sh <<'EOF'
+# Husky documented helper — not a Git hook; no .husky/_/common.sh shim expected.
+exit 0
+EOF
+
 sh "$PREPARE"
+
+if [ -e .husky/_/common.sh ]; then
+  echo "error: prepare should not create a shim for common.sh helper" >&2
+  exit 1
+fi
 
 printf 'init\n' > README.md
 git add .
@@ -115,6 +125,11 @@ if [ ! -x .husky/_/pre-commit ] || [ ! -x .husky/_/pre-push ]; then
 fi
 
 sh "$VERIFY"
+
+if [ -e .husky/_/common.sh ]; then
+  echo "error: worktree prepare should not create a shim for common.sh helper" >&2
+  exit 1
+fi
 
 cat > .husky/pre-commit <<EOF
 #!/usr/bin/env sh
@@ -162,4 +177,4 @@ if sh "$VERIFY" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "ok prepare-git-hooks worktree runtime (verify fail/repair, hook executed on commit, generalized verify)"
+echo "ok prepare-git-hooks worktree runtime (verify fail/repair, hook executed on commit, common.sh ignored, generalized verify)"
