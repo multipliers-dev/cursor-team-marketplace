@@ -9,25 +9,24 @@ Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev
 | **Interview repo bootstrap** | `/interview-repo-bootstrap` + `interview-repo-bootstrap.sh` | One-shot empty-directory → pre-wired interview repo (tsx run/dev + verify + enforce; no product decisions) |
 | **Cloud-hooks primitive** | Scripts + bootstrap skill available | **Not** automatic Cloud-safety — each Husky repo still needs one-time `prepare` / wiring; when Cloud Agents are expected, also commit `environment.json` lifecycle (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major). The interview preset ships this wiring automatically; use `/cloud-hooks-bootstrap` for existing repos. |
 
-## Import + Default On
+## Install
 
-1. Dashboard → **Plugins** → Team Marketplaces
-2. Import this repository: `https://github.com/multipliers-dev/cursor-team-marketplace`
-3. Set plugin **`team-harness`** to **Default On**
-4. Do **not** treat Default On as zero-wiring Cloud-safety for new Husky repos — when Cloud Agents are expected, wiring includes `environment.json` and optional Node-from-`.nvmrc` scripts (see `/cloud-hooks-bootstrap`)
+Not a listing on the public Cursor Marketplace.
 
-## Local smoke (before / without marketplace)
+Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository** → paste `https://github.com/multipliers-dev/cursor-team-marketplace`.
 
-```bash
-ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor/plugins/local/team-harness
-# Reload Cursor window, then invoke /planning-methodology or /new-repo-bootstrap (e.g. in ai-learning)
-```
+## Engineering invariants
+
+Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
+
+Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
 
 ## Layout
 
 ```text
 .
 ├── .cursor-plugin/marketplace.json
+├── docs/engineering-invariants.md
 └── plugins/team-harness/
     ├── .cursor-plugin/plugin.json
     ├── skills/planning-methodology/
@@ -48,11 +47,9 @@ sh scripts/check.sh
 
 ## Explicit non-goals
 
-- No Team Rules in this package (Rules pointer lands separately in Cursor Team Rules)
+- This package does not install Cursor rules — see [Engineering invariants](#engineering-invariants) and [docs/engineering-invariants.md](docs/engineering-invariants.md)
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
-- No claim that Default On makes Husky Cloud-safe without repo wiring or writes `environment.json` / installs Node
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
-- No org-level `.github` repo or team-wide GitHub PR convention system (thin in-repo template via `/new-repo-bootstrap` when useful)
 
 ## License
 
