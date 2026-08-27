@@ -20,14 +20,14 @@ Not a listing on the public Cursor Marketplace.
 
 Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
 
-Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md).
+Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
 
 ## Layout
 
 ```text
 .
 ├── .cursor-plugin/marketplace.json
-├── docs/team-engineering-invariants.md
+├── docs/engineering-invariants.md
 └── plugins/team-harness/
     ├── .cursor-plugin/plugin.json
     ├── skills/planning-methodology/
@@ -48,7 +48,7 @@ sh scripts/check.sh
 
 ## Explicit non-goals
 
-- This package does not install Cursor rules — see [Engineering invariants](#engineering-invariants) and [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md)
+- This package does not install Cursor rules — see [Engineering invariants](#engineering-invariants) and [docs/engineering-invariants.md](docs/engineering-invariants.md)
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
 

@@ -1,4 +1,4 @@
-# Team engineering invariants
+# Engineering invariants
 
 ## Preferences
 
