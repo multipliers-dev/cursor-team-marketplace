@@ -34,6 +34,17 @@ For **Teams / Enterprise org admins** — not personal plans, not the public Cur
 3. Set plugin **`team-harness`** to **Default On**
 4. Do **not** treat Default On as zero-wiring Cloud-safety for new Husky repos — when Cloud Agents are expected, wiring includes `environment.json` and optional Node-from-`.nvmrc` scripts (see `/cloud-hooks-bootstrap`)
 
+## Team engineering invariants (Team Rules)
+
+**Team Rules are a separate Cursor surface from this marketplace plugin** — installing `team-harness` does not install rules.
+
+This org’s only Team Rule today is **Team engineering invariants** (Required, global). The rule already says: use **planning-methodology** when the skill is installed (User or Team marketplace); if the skill is missing, follow PR execution only; do not assume Team Default On until that path works; Cloud-hooks are a primitive, not automatic Cloud-safety.
+
+| Path | How to get the invariants |
+| --- | --- |
+| **Team / Enterprise** | Set in Dashboard → **Team Rules** (not imported from this repo) |
+| **Individual / personal** | Paste [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md) into Cursor **User Rules** — same invariants; not org-admin, not Default On |
+
 ## Layout
 
 ```text
@@ -59,7 +70,7 @@ sh scripts/check.sh
 
 ## Explicit non-goals
 
-- No Team Rules in this package (Rules pointer lands separately in Cursor Team Rules)
+- This package does not install Team Rules — see [Team engineering invariants (Team Rules)](#team-engineering-invariants-team-rules) and [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md) for the canonical text and how to apply it
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
 - No claim that Default On makes Husky Cloud-safe without repo wiring or writes `environment.json` / installs Node
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
