@@ -24,7 +24,7 @@ ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor
 
 Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
 
-Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md). User Rules have no Name/Required UI; the list row is a markdown preview. That is expected. The rule still applies in Agent chat.
+Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md).
 
 ## Layout
 
@@ -55,7 +55,6 @@ sh scripts/check.sh
 - This package does not install Cursor rules — see [Team engineering invariants](#team-engineering-invariants) and [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md)
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
-- No org-level `.github` repo or team-wide GitHub PR convention system (thin in-repo template via `/new-repo-bootstrap` when useful)
 
 ## License
 
