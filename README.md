@@ -13,8 +13,7 @@ Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev
 
 Not a listing on the public Cursor Marketplace.
 
-1. Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository** → paste `https://github.com/multipliers-dev/cursor-team-marketplace`
-2. If you already have a checkout: **+ Add** → **From Local Repository** and select `plugins/team-harness` (the folder that contains `.cursor-plugin/plugin.json`).
+Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository** → paste `https://github.com/multipliers-dev/cursor-team-marketplace`.
 
 ## Engineering invariants
 
