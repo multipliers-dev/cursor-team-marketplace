@@ -108,7 +108,7 @@ Wire the install script’s dependency command at bootstrap time — for example
 
 - Do not claim a brand-new Husky repo is Cloud-safe after marketplace / plugin install alone
 - Do not overwrite product-specific hook contents from this skill
-- Do not add Team Rules here (separate Part B)
+- Do not add Cursor rules here; invariants live in User Rules / `docs/engineering-invariants.md`
 - Do not add `templates/environment.json` or any copyable JSON template under the plugin
 - Do not parse `engines.node` semver ranges inside portable scripts
 - Do not infer package manager / workspace layout inside `cloud-agent-install.sh`

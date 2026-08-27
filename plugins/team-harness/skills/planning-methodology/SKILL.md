@@ -4,12 +4,12 @@ description: >-
   Portable staged-plan and merge-safe PR methodology (lightweight vs staged,
   execution authority, topology, frontmatter, agent prompts, plan closure).
   Use when creating or executing .cursor/plans, slicing work into PRs, writing
-  agent prompts, or when Team Rules point at the team planning methodology skill.
+  agent prompts, or when User Rules point at this planning methodology skill.
 ---
 
-# Planning methodology (team canonical)
+# Planning methodology (canonical)
 
-Single canonical **procedure** for merge-safe, staged planning. Team Rules (when published) hold short always-on **invariants** only — do not paste this methodology into Rules.
+Single canonical **procedure** for merge-safe, staged planning. User Rules hold short always-on **invariants** (the `docs/engineering-invariants.md` paste) — do not paste this full methodology into User Rules.
 
 Repo domain checklists (API contracts, client-state matrices, route/domain examples, product skill verification runbooks, and similar) stay **in-repo**. This skill is the shared procedure only.
 
@@ -132,6 +132,6 @@ Call out: execution authority, PR target `main`, which todo was marked completed
 
 | Layer      | Contents                                                                                                      |
 | ---------- | ------------------------------------------------------------------------------------------------------------- |
-| Team Rules | Short invariants + pointer to this skill — not a second copy of this procedure                                |
+| User Rules | Short invariants + pointer to this skill — not a second copy of this procedure                                |
 | This skill | Full portable methodology, including canonical agent-prompt **layout** (heading + fence + labeled lines)      |
 | Repo       | Domain supplements and wording specialization only — do not change prompt-layout structure                    |

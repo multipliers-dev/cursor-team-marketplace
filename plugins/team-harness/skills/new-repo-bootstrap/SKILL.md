@@ -1,7 +1,7 @@
 ---
 name: new-repo-bootstrap
 description: >-
-  5-minute checklist for a new GitHub repo: what Team Rules, marketplace
+  5-minute checklist for a new GitHub repo: what User Rules, marketplace
   skills, and inherited MCP connectors already provide vs what to add in-repo (thin AGENTS.md,
   optional GitHub PR template, domain rules, Husky Cloud wiring, Cloud env,
   manual Bugbot). Use when creating a new repository, bootstrapping a
@@ -11,25 +11,25 @@ description: >-
 
 # New-repo bootstrap (5 minutes)
 
-Do **not** copy a full product harness from another app repo. The team layer already follows Agent chats. Add only what this product needs.
+Do **not** copy a full product harness from another app repo. User Rules and the plugin skills already follow Agent chats. Add only what this product needs.
 
 ## Already inherited (no file copy)
 
 | Layer | What you get | Caveat |
 | --- | --- | --- |
-| **Team Rules** | Short always-on invariants (authority, topology, stop-after-open, do-not-defer, tools/comms) | Enforced in every Agent chat |
-| **Planning methodology** | `/planning-methodology` — full staged-plan procedure | Available via marketplace install; team-wide default enablement depends on Cursor product settings — not a packaging failure |
+| **User Rules** | Short always-on invariants from `docs/engineering-invariants.md` (authority, topology, stop-after-open, do-not-defer, tools/comms) | Paste via Customize → Rules → User; not org-enforced |
+| **Planning methodology** | `/planning-methodology` — full staged-plan procedure | Available via marketplace install when the plugin is installed |
 | **Inherited MCP connectors** | MCP servers already on this Cursor account (when configured) | Do not duplicate in-repo MCP configs for connectors you already have — authenticate them instead; prefer `gh` for GitHub writes; do not invent a second GitHub integration; GitHub App covers Cloud/Bugbot |
 | **Cloud-hooks scripts** | Canonical Husky bridge + Cloud Node scripts + `/cloud-hooks-bootstrap` | **Not** automatic Cloud-safety — Husky repos still need one-time `prepare` / wiring; Cloud Agents also need committed `environment.json` lifecycle |
 
-User Rules / `~/.cursor` follow this machine only. They are weaker for Cloud Agents and new machines.
+User Rules are account-scoped (Customize → Rules → User). They follow Agent chats on this account but are weaker for Cloud Agents and new machines unless you replicate the same paste.
 
 ## Still add (in-repo, only what applies)
 
 1. **GitHub App** — grant the new repo access if the App is not “All repositories”.
-2. **Thin `AGENTS.md`** — package scripts, layout, Node version, non-obvious notes. Not a second copy of Team Rules or planning methodology.
-3. **Optional thin GitHub PR template** — `.github/pull_request_template.md` when the repo will open GitHub PRs and does not already have a template. Human / GitHub New-PR skeleton only (Summary, execution-authority checkboxes, test plan, rollback). Not a second copy of Team Rules or `/planning-methodology`. Domain sections stay in-repo. See [Thin GitHub PR template](#thin-github-pr-template).
-4. **Domain rules / planning supplements** — only if this domain is special (API contracts, facts-vs-prose, route checklists). Do not promote product checklists to the team layer.
+2. **Thin `AGENTS.md`** — package scripts, layout, Node version, non-obvious notes. Not a second copy of User Rules or planning methodology.
+3. **Optional thin GitHub PR template** — `.github/pull_request_template.md` when the repo will open GitHub PRs and does not already have a template. Human / GitHub New-PR skeleton only (Summary, execution-authority checkboxes, test plan, rollback). Not a second copy of User Rules or `/planning-methodology`. Domain sections stay in-repo. See [Thin GitHub PR template](#thin-github-pr-template).
+4. **Domain rules / planning supplements** — only if this domain is special (API contracts, facts-vs-prose, route checklists). Do not promote product checklists into `docs/engineering-invariants.md` or User Rules.
 5. **Husky** — if the repo uses Husky, one-time wire Cloud-aware `prepare` + ensure-hooks via `/cloud-hooks-bootstrap`. Marketplace / plugin install alone is not enough.
 6. **Cloud Agent env** — if Cloud Agents are expected, establish `.cursor/environment.json` (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major than the Cloud base image) **during bootstrap**, alongside `/cloud-hooks-bootstrap` Husky wiring — not deferred to first Cloud use. See `/cloud-hooks-bootstrap` for the recipe. If only `package.json` `engines.node` suggests a newer major, decide whether to add a `.nvmrc` pin first. Skip only when Cloud Agents are **not** expected (same spirit as an intentional no-harness / planning-only proof repo).
 7. **Bugbot** — keep **manual invoke only**. Do not enable automatic runs on every PR. Add `.cursor/BUGBOT.md` only if this repo needs an on-demand review guide.
@@ -43,7 +43,7 @@ Intentional no-harness / planning-only proof repos stay unharnessed. Do not add 
 
 | Layer | Role |
 | --- | --- |
-| Team Rules | Always-on agent invariants |
+| User Rules | Always-on agent invariants (`docs/engineering-invariants.md` paste) |
 | `/planning-methodology` | Canonical agent procedure (what to call out when opening from a plan) |
 | `.github/pull_request_template.md` | Human / GitHub UI skeleton |
 | Repo-local additions | Domain-specific sections (visual regression, facts/generation, product verification) |
@@ -93,11 +93,11 @@ Revert if:
 ## Explicit non-goals
 
 - Do not cargo-cult product skills, `.agents/`, renovate/analytics workflows, or domain merge-safe extras
-- Do not paste full planning methodology into Team Rules or a new in-repo rule
+- Do not paste full planning methodology into User Rules or a new in-repo rule
 - Do not enable automatic Bugbot on PRs
 - Do not treat marketplace Cloud-hooks as zero-wiring Cloud-safety
 - Do not invent marketplace skills that are not already proven across repos
-- Do not create an org-level `.github` repo or a team-wide GitHub PR convention system
+- Do not create an org-level `.github` repo or an org-wide GitHub PR convention system
 - Do not paste `/planning-methodology` procedure into the GitHub PR template
 
 ## Agent behavior

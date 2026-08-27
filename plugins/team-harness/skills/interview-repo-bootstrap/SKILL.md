@@ -125,5 +125,5 @@ When asked to bootstrap an interview repo:
 
 | Skill | When |
 | --- | --- |
-| `/new-repo-bootstrap` | Production greenfield repos — inherited team layer vs in-repo adds |
+| `/new-repo-bootstrap` | Production greenfield repos — inherited User Rules / marketplace skills vs in-repo adds |
 | `/cloud-hooks-bootstrap` | Manual Cloud Husky wiring into an **existing** repo (not the interview one-shot preset) |
