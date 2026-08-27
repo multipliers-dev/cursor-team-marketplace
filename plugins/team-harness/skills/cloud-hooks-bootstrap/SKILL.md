@@ -50,8 +50,8 @@ Relative to the `team-harness` plugin root:
 
 | Path | Role |
 | --- | --- |
-| `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; repair missing `.husky/_` shims after `git worktree add` |
-| `scripts/verify-git-hooks.sh` | Fail fast when `core.hooksPath=.husky/_` but generated shims are missing (silent hook skip) |
+| `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; self-heal missing/non-executable `.husky/_` shims; order is install/repair → verify → ensure-hooks (ensure-hooks last) |
+| `scripts/verify-git-hooks.sh` | Fail fast when any user-defined `.husky/<hook>` lacks an executable `.husky/_/<hook>` shim (silent skip in fresh worktrees) |
 | `scripts/ensure-hooks.sh` | Point Cloud `agent-hooks` dispatcher at `~/.cursor/husky-bridge`, which resolves the current repo’s `.husky/*` at hook time |
 | `scripts/session-ensure-git-hooks.sh` | `sessionStart` rechain when `agent-hooks` appears after late `npm prepare` |
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent); safe to source repeatedly |
@@ -76,8 +76,8 @@ When **Cloud Agents are expected**, complete all applicable steps during bootstr
    - If `engines.node` implies a newer major but no `.nvmrc` exists, decide whether to add a `.nvmrc` pin as part of bootstrap before wiring Cloud lifecycle.
 6. Optional Prettier `afterFileEdit` stays product/repo-specific — not required by this primitive.
 7. Verify on Cloud: Build runs `install` → deps + `prepare`; start runs ensure-hooks; a commit triggers the bridge (`[ensure-hooks]` messages) and runs the repo’s Husky hooks.
-8. **After `git worktree add`:** run `npm run prepare` (or `npm run verify:git-hooks` after prepare) in the new worktree before committing — worktrees inherit `core.hooksPath=.husky/_` but not the generated `.husky/_` shims until prepare runs there.
-9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh` and add `verify-git-hooks.sh` (plus optional `verify:git-hooks` script) — older marketplace copies lack the worktree shim repair.
+8. **After `git worktree add`:** run `npm run prepare` (or `npm run verify:git-hooks` after prepare) in the new worktree before committing — worktrees inherit `core.hooksPath=.husky/_` but not executable `.husky/_` shims until prepare runs there.
+9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh` and add `verify-git-hooks.sh` (plus optional `verify:git-hooks` script) — older marketplace copies lack worktree shim self-healing and generalized verify.
 10. **After merge:** trigger and promote a **new environment Build** so Cloud stops reusing the old snapshot. The plugin cannot automate Build promotion.
 
 ## Conceptual `environment.json` shapes

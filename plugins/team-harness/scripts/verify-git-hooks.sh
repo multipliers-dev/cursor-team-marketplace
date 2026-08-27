@@ -9,14 +9,22 @@ fi
 
 cd "$REPO_ROOT"
 
-if [ ! -f ".husky/pre-commit" ]; then
-  exit 0
-fi
+[ -d .husky ] || exit 0
 
-if [ -x ".husky/_/pre-commit" ]; then
-  exit 0
-fi
+missing=0
+for hook_script in .husky/*; do
+  [ -f "$hook_script" ] || continue
+  hook_name=$(basename "$hook_script")
+  case "$hook_name" in
+    _ | husky.sh | .gitignore | README*) continue ;;
+  esac
+  if [ ! -x ".husky/_/$hook_name" ]; then
+    echo "error: Husky hook shim missing or not executable in this worktree (.husky/_/$hook_name)." >&2
+    missing=1
+  fi
+done
 
-echo "error: Husky hook shim missing in this worktree (.husky/_/pre-commit)." >&2
-echo "Run: npm run prepare" >&2
-exit 1
+if [ "$missing" -ne 0 ]; then
+  echo "Run: npm run prepare" >&2
+  exit 1
+fi

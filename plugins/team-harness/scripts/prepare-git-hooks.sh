@@ -37,6 +37,25 @@ install_husky() {
   fi
 }
 
+# User-defined hook scripts live as regular files directly under .husky/.
+# Ignore Husky internals (_/, husky.sh, .gitignore, README*).
+needs_husky_shim_repair() {
+  [ -d .husky ] || return 1
+  for hook_script in .husky/*; do
+    [ -f "$hook_script" ] || continue
+    hook_name=$(basename "$hook_script")
+    case "$hook_name" in
+      _ | husky.sh | .gitignore | README*) continue ;;
+    esac
+    if [ ! -x ".husky/_/$hook_name" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
+
 if should_install_husky; then
   install_husky
 elif [ "$HUSKY" = "0" ]; then
@@ -45,16 +64,17 @@ else
   skip_husky "CI"
 fi
 
-# Best-effort at install time. On Cloud, agent-hooks may appear later — see
-# session-ensure-git-hooks.sh (sessionStart) after one-time repo wiring.
-sh "$(dirname "$0")/ensure-hooks.sh"
-
-# Fresh git worktrees inherit core.hooksPath but not .husky/_ until husky runs here.
-if [ "$HUSKY_INSTALLED" = "0" ] && should_install_husky && [ -f ".husky/pre-commit" ] && [ ! -x ".husky/_/pre-commit" ]; then
-  echo "Husky shim missing in this worktree; re-running husky" >&2
+# Fresh git worktrees inherit core.hooksPath but not executable .husky/_ shims until husky runs here.
+if should_install_husky && needs_husky_shim_repair; then
+  echo "Husky shim missing or not executable in this worktree; re-running husky" >&2
   install_husky
 fi
 
 if [ "$HUSKY_INSTALLED" = "1" ]; then
-  sh "$(dirname "$0")/verify-git-hooks.sh"
+  sh "$SCRIPT_DIR/verify-git-hooks.sh"
 fi
+
+# Final reconciliation: restore Cursor Cloud agent-hooks core.hooksPath after Husky.
+# Must run last so a late Husky repair cannot clobber the restored path.
+# On Cloud, agent-hooks may appear later — see session-ensure-git-hooks.sh (sessionStart).
+sh "$SCRIPT_DIR/ensure-hooks.sh"

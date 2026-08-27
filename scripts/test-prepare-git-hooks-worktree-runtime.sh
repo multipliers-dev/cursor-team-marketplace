@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Runtime smoke: fresh-worktree-shaped Husky state must run pre-commit on commit.
-# Port of codenames scripts/cloud-agent-hooks.test.ts "fresh worktree hooks smoke"
-# (shell runner; no vitest). Invoked from scripts/check.sh.
+# Proven acceptance from codenames #546, implemented as marketplace shell smoke (no vitest).
+# Invoked from scripts/check.sh.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -81,6 +81,12 @@ exit 0
 EOF
 chmod +x .husky/pre-commit
 
+cat > .husky/pre-push <<'EOF'
+#!/usr/bin/env sh
+exit 0
+EOF
+chmod +x .husky/pre-push
+
 sh "$PREPARE"
 
 printf 'init\n' > README.md
@@ -103,8 +109,8 @@ fi
 
 sh "$PREPARE"
 
-if [ ! -x .husky/_/pre-commit ]; then
-  echo "error: prepare did not create executable .husky/_/pre-commit shim" >&2
+if [ ! -x .husky/_/pre-commit ] || [ ! -x .husky/_/pre-push ]; then
+  echo "error: prepare did not create executable shims for defined hooks" >&2
   exit 1
 fi
 
@@ -125,4 +131,35 @@ if [ ! -f "$MARKER" ]; then
   exit 1
 fi
 
-echo "ok prepare-git-hooks worktree runtime (verify fail/repair, hook executed on commit)"
+# Supporting: verify ignores hooks the repo does not define.
+VERIFY_ONLY="$WORKDIR/verify-only"
+mkdir -p "$VERIFY_ONLY/.husky"
+cd "$VERIFY_ONLY"
+git init -b main >/dev/null
+git config user.email "worktree-hooks-test@localhost"
+git config user.name "Worktree Hooks Test"
+cp -R "$MAIN/node_modules" "$VERIFY_ONLY/node_modules"
+cp "$MAIN/package.json" "$VERIFY_ONLY/package.json"
+
+cat > .husky/pre-push <<'EOF'
+#!/usr/bin/env sh
+exit 0
+EOF
+chmod +x .husky/pre-push
+
+export PATH="$VERIFY_ONLY/node_modules/.bin:$PATH"
+sh "$PREPARE"
+
+if [ ! -x .husky/_/pre-push ]; then
+  echo "error: prepare did not create executable pre-push shim" >&2
+  exit 1
+fi
+
+# Non-executable shim must fail verify even when the file exists.
+chmod -x .husky/_/pre-push
+if sh "$VERIFY" >/dev/null 2>&1; then
+  echo "error: verify-git-hooks.sh should fail when shim exists but is not executable" >&2
+  exit 1
+fi
+
+echo "ok prepare-git-hooks worktree runtime (verify fail/repair, hook executed on commit, generalized verify)"
