@@ -108,7 +108,7 @@ Bootstrap aborts if `git commit` succeeds but commit output lacks that sentinel 
 - No `.nvmrc` / `engines`; no interview provenance in README beyond the title
 - No `cloud-agent-*` scripts (Cloud VM Node is sufficient for the interview preset)
 - No lint-staged, formatting, or build in hooks/CI
-- No copying full harness from codenames/resumes/portfolio
+- No copying a full product harness from another app repo
 - No chaining into `/new-repo-bootstrap` or `/cloud-hooks-bootstrap`
 
 ## Agent behavior

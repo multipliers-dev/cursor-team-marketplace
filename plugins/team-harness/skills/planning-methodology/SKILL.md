@@ -11,7 +11,7 @@ description: >-
 
 Single canonical **procedure** for merge-safe, staged planning. Team Rules (when published) hold short always-on **invariants** only — do not paste this methodology into Rules.
 
-Repo domain checklists (API/board/client-state, resumes research/generation, portfolio routes, product skills) stay **in-repo**. This skill is the shared procedure only.
+Repo domain checklists (API contracts, client-state matrices, route/domain examples, product skill verification runbooks, and similar) stay **in-repo**. This skill is the shared procedure only.
 
 ## When to use
 

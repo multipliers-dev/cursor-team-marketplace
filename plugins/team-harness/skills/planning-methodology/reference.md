@@ -97,4 +97,4 @@ Closure verifies the implementation PRs are actually **merged** (all repos), not
 
 ## What does not belong here
 
-Product-specific checklists stay in-repo (examples): ephemeral client-state matrices, API deployment-compatibility matrices, board/card mobile verification, resumes application-research stage, portfolio route/domain examples, product skill verification runbooks.
+Product-specific checklists stay in-repo (examples): ephemeral client-state matrices, API deployment-compatibility matrices, board/card mobile verification, route/domain examples, product skill verification runbooks.

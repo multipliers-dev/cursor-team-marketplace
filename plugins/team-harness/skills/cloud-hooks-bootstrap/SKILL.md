@@ -5,20 +5,20 @@ description: >-
   team-harness portable scripts (prepare-git-hooks, ensure-hooks bridge,
   sessionStart rechain, optional Node-from-.nvmrc Cloud install/start). Use when
   porting Cloud git-hook safety into a repo, fixing CI=true skipping Husky on
-  Cursor Cloud, or when Default On alone is not enough for Cloud commits.
+  Cursor Cloud, or when marketplace / plugin install alone is not enough for Cloud commits.
 ---
 
 # Cloud-hooks bootstrap (portable primitive)
 
-**Default On ≠ zero-wiring Cloud-safety.** Installing this plugin distributes the canonical scripts and this recipe. Repositories that use Husky still need a **one-time local wiring** step — and, when Cloud Agents are expected, a committed **`.cursor/environment.json`** lifecycle so Build/install/start actually runs that wiring.
+**Marketplace / plugin install ≠ zero-wiring Cloud-safety.** Installing this plugin distributes the canonical scripts and this recipe. Repositories that use Husky still need a **one-time local wiring** step — and, when Cloud Agents are expected, a committed **`.cursor/environment.json`** lifecycle so Build/install/start actually runs that wiring.
 
-Proven source: `codenames-ai-guesser` Cloud husky bridge + Node-from-`.nvmrc` Build/session PATH; generalized here for new repos.
+Proven pattern: an existing Cloud Husky bridge + Node-from-`.nvmrc` Build/session PATH recipe; generalized here for new repos.
 
 ## Three-layer model
 
 | Layer | What it does | Where it lives |
 | --- | --- | --- |
-| 1. Plugin install | Distributes capability (Husky scripts + Cloud Node scripts + recipes) | Marketplace Default On |
+| 1. Plugin install | Distributes capability (Husky scripts + Cloud Node scripts + recipes) | Marketplace / plugin install |
 | 2. Repo bootstrap | Wires `prepare`, `ensure-hooks`, `sessionStart` | One-time in-repo copy |
 | 3. Cloud lifecycle | Guarantees Cloud **runs** wiring (`install` → Node pin + deps + `prepare`; `start` → session PATH + ensure-hooks rechain) | Committed `.cursor/environment.json` + copied Cloud Node scripts when needed |
 
@@ -39,8 +39,8 @@ flowchart LR
 ## When to use
 
 - A Husky repo silently skips hooks on Cursor Cloud because `CI=true`
-- Porting Cloud-safe prepare/ensure from this plugin into `resumes`, `portfolio`, or a new repo
-- Explaining why marketplace Default On did not fix Cloud commits by itself
+- Porting Cloud-safe prepare/ensure from this plugin into an existing or new repo
+- Explaining why marketplace / plugin install alone did not fix Cloud commits by itself
 - Cloud Agents are expected and the repo needs committed `environment.json` (not deferred to first Cloud use)
 - Wiring an **existing** repo manually — for timed interviews from an empty directory, use `/interview-repo-bootstrap` instead (ships the same Husky trio + minimal lifecycle in one shot)
 
@@ -106,7 +106,7 @@ Wire the install script’s dependency command at bootstrap time — for example
 
 ## Explicit non-goals
 
-- Do not claim a brand-new Husky repo is Cloud-safe after Default On alone
+- Do not claim a brand-new Husky repo is Cloud-safe after marketplace / plugin install alone
 - Do not overwrite product-specific hook contents from this skill
 - Do not add Team Rules here (separate Part B)
 - Do not add `templates/environment.json` or any copyable JSON template under the plugin
@@ -121,7 +121,7 @@ When asked to wire Cloud hooks into a repo:
 2. Update `prepare` + `sessionStart`.
 3. If Cloud Agents are in scope, commit `environment.json` in the **same** bootstrap PR — do not defer to first Cloud use.
 4. Choose the install command from this repo’s lockfile/CI; write it into wrapper config (`CLOUD_AGENT_INSTALL_CMD` or args) at wire time.
-5. Open an Open-PR-only change for that repo and state clearly that Default On was not sufficient by itself.
+5. Open an Open-PR-only change for that repo and state clearly that marketplace / plugin install alone was not sufficient by itself.
 6. Remind the human to trigger/promote a new environment Build after merge.
 
 For timed technical interviews from an **actually empty** directory, use `/interview-repo-bootstrap` — it copies this skill's layer-2 wiring plus minimal layer-3 `environment.json` automatically and stops. Do not chain both skills.
