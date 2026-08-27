@@ -11,16 +11,12 @@ Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev
 
 ## Install
 
-Clone or checkout this repo, then symlink the plugin locally — not a published Cursor Marketplace listing:
+Not a listing on the public Cursor Marketplace.
 
-```bash
-git clone https://github.com/multipliers-dev/cursor-team-marketplace.git
-# or use an existing checkout — substitute your absolute path below
-ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor/plugins/local/team-harness
-# Reload Cursor window, then invoke /planning-methodology or /new-repo-bootstrap in any repo after reload
-```
+1. Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository** → paste `https://github.com/multipliers-dev/cursor-team-marketplace`
+2. If you already have a checkout: **+ Add** → **From Local Repository** and select `plugins/team-harness` (the folder that contains `.cursor-plugin/plugin.json`).
 
-## Team engineering invariants
+## Engineering invariants
 
 Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
 
@@ -52,7 +48,7 @@ sh scripts/check.sh
 
 ## Explicit non-goals
 
-- This package does not install Cursor rules — see [Team engineering invariants](#team-engineering-invariants) and [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md)
+- This package does not install Cursor rules — see [Engineering invariants](#engineering-invariants) and [docs/team-engineering-invariants.md](docs/team-engineering-invariants.md)
 - No product checklists (API/board/client-state, resumes research, portfolio routes)
 - No product harness copy-paste recipe (use `/new-repo-bootstrap` instead)
 
