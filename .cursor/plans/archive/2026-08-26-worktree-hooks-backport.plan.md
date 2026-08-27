@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-worktree-hooks-backport.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -184,7 +184,7 @@ Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exa
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-26-worktree-hooks-backport.plan.md
+@.cursor/plans/archive/2026-08-26-worktree-hooks-backport.plan.md
 
 Execute only plan-review. Do not start worktree-hooks-backport or plan-closure.
 
@@ -200,7 +200,7 @@ Verification: plan satisfies planning-methodology (authority table, topology, pl
 ### worktree-hooks-backport
 
 ```text
-@.cursor/plans/2026-08-26-worktree-hooks-backport.plan.md
+@.cursor/plans/archive/2026-08-26-worktree-hooks-backport.plan.md
 
 Implement slice worktree-hooks-backport only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -216,7 +216,7 @@ Verification: check.sh green including worktree commit+execution smoke; no ensur
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-26-worktree-hooks-backport.plan.md
+@.cursor/plans/archive/2026-08-26-worktree-hooks-backport.plan.md
 
 Execute only plan-closure.
 
@@ -230,3 +230,29 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: confirm the prerequisite implementation PR is merged and slice todos are completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 27 Aug 2026
+
+**PRs:**
+
+- [Plan review (#13)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/13) — plan artifact committed
+- [Implementation (#14)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/14) — marketplace prepare/verify primitive, interview allowlist/docs, worktree commit+execution smoke (`plugin.json` 1.6.0; merge `d6c193d`)
+
+**What shipped:**
+
+- Marketplace prepare/verify primitive — install/repair → verify → ensure-hooks last
+- Explicit shim repair not gated on `HUSKY_INSTALLED=0`
+- `-x` executability on hook scripts
+- Generalized verify across defined hooks
+- Shell worktree commit+execution smoke in `scripts/check.sh`
+- Proven failure mode from codenames [#546](https://github.com/multipliers-dev/codenames-ai-guesser/pull/546) (`53f6aa0`), with intentional marketplace divergences (not a verbatim port)
+
+**Deferred work:**
+
+- Do not retrofit `portfolio` / `resumes` (optional follow-up when those repos next touch hooks)
+- Do not change `ensure-hooks.sh` / sessionStart for this fix
+- Optional later backport of marketplace improvements to codenames
