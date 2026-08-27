@@ -51,11 +51,12 @@ Git + GitHub           persist/share
 | `templates/interview-repo/` | Interview preset files only (`.gitignore`, `AGENTS.md`, `package.json`, Husky, CI, minimal Cloud lifecycle) |
 | `scripts/interview-repo-bootstrap.sh` | Copies preset + hook allowlist; runs hook smoke; creates GitHub remote |
 
-**Hook primitive allowlist** (only these three from plugin `scripts/`):
+**Hook primitive allowlist** (only these four from plugin `scripts/`):
 
 | Plugin source | Interview repo destination |
 | --- | --- |
 | `scripts/prepare-git-hooks.sh` | `scripts/prepare-git-hooks.sh` |
+| `scripts/verify-git-hooks.sh` | `scripts/verify-git-hooks.sh` |
 | `scripts/ensure-hooks.sh` | `scripts/ensure-hooks.sh` |
 | `scripts/session-ensure-git-hooks.sh` | `.cursor/hooks/ensure-git-hooks.sh` |
 

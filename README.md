@@ -35,7 +35,7 @@ ln -sfn /absolute/path/to/cursor-team-marketplace/plugins/team-harness ~/.cursor
     ├── skills/interview-repo-bootstrap/
     ├── skills/cloud-hooks-bootstrap/
     ├── templates/interview-repo/
-    └── scripts/   # interview-repo-bootstrap.sh, prepare-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh, cloud-agent-*.sh
+    └── scripts/   # interview-repo-bootstrap.sh, prepare-git-hooks.sh, verify-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh, cloud-agent-*.sh
 ```
 
 ## Checks

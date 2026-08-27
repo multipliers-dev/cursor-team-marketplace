@@ -18,7 +18,8 @@ Copy into a target repo (or invoke paths from this plugin after install) during 
 | Script                                | Purpose                                                                                                    |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `scripts/interview-repo-bootstrap.sh` | Bootstrap an empty directory into a pre-wired interview repo (template + hook allowlist + GitHub remote)   |
-| `scripts/prepare-git-hooks.sh`        | Cloud-aware `prepare`: install Husky on Cursor Cloud even when `CI=true`; skip Vercel / GHA / non-Cloud CI |
+| `scripts/prepare-git-hooks.sh`        | Cloud-aware `prepare`: install Husky on Cursor Cloud even when `CI=true`; skip Vercel / GHA / non-Cloud CI; repair missing `.husky/_` shims after worktree add |
+| `scripts/verify-git-hooks.sh`         | Fail when `core.hooksPath=.husky/_` but generated shims are missing (silent hook skip) |
 | `scripts/ensure-hooks.sh`             | Bridge Cloud `agent-hooks` dispatcher → `~/.cursor/husky-bridge` → current repo `.husky/*`                 |
 | `scripts/session-ensure-git-hooks.sh` | `sessionStart` rechain when `agent-hooks` appears after late prepare                                       |
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent)                                                            |

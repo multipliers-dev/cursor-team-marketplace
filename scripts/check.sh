@@ -127,3 +127,4 @@ done
 
 sh scripts/test-cloud-agent-install-runtime.sh
 sh scripts/test-interview-repo-bootstrap-runtime.sh
+sh scripts/test-prepare-git-hooks-worktree-runtime.sh

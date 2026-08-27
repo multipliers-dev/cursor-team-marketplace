@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: worktree-hooks-backport
     content: "PR: port prepare + verify-git-hooks, interview allowlist/docs, plugin 1.6.0, required worktree commit smoke (hook executed)"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-26-worktree-hooks-backport.plan.md"
     status: pending

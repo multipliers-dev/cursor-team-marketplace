@@ -8,7 +8,8 @@
     "start": "tsx src/index.ts",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "prepare": "sh scripts/prepare-git-hooks.sh"
+    "prepare": "sh scripts/prepare-git-hooks.sh",
+    "verify:git-hooks": "sh scripts/verify-git-hooks.sh"
   },
   "devDependencies": {
     "husky": "^9.1.7",
