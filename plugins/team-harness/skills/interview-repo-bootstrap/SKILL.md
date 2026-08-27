@@ -109,6 +109,7 @@ Bootstrap aborts if `git commit` succeeds but commit output lacks that sentinel 
 - No `cloud-agent-*` scripts (Cloud VM Node is sufficient for the interview preset)
 - No lint-staged, formatting, or build in hooks/CI
 - No copying a full product harness from another app repo
+- No cloning cursor-team-marketplace or any other repo to obtain plugin files
 - No chaining into `/new-repo-bootstrap` or `/cloud-hooks-bootstrap`
 
 ## Agent behavior
@@ -116,10 +117,10 @@ Bootstrap aborts if `git commit` succeeds but commit output lacks that sentinel 
 When asked to bootstrap an interview repo:
 
 1. Confirm the target directory is **actually empty** (or use `--dir` to an empty path).
-2. Run `plugins/team-harness/scripts/interview-repo-bootstrap.sh` from the marketplace checkout (or installed plugin path).
+2. Locate the installed **team-harness** plugin on disk (Customize → Plugins, or Cursor’s local plugins directory). Run `scripts/interview-repo-bootstrap.sh` from that plugin root. If the packaged script cannot be found, **stop** and tell the user the plugin is not installed — do not clone cursor-team-marketplace or any other repo to recover.
 3. Use `--dry-run` first when validating tooling on a fresh VM.
 4. **Stop** after bootstrap succeeds — do not invoke `/new-repo-bootstrap` or `/cloud-hooks-bootstrap`.
-5. For production/team harness on a non-interview repo, use `/new-repo-bootstrap` instead.
+5. For production harness on a non-interview repo, use `/new-repo-bootstrap` instead.
 
 ## Related skills
 

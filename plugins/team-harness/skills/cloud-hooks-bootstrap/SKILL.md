@@ -62,7 +62,7 @@ Relative to the `team-harness` plugin root:
 
 When **Cloud Agents are expected**, complete all applicable steps during bootstrap — not on first Cloud use.
 
-1. Copy (or vendor) the Husky scripts into the repo — typical layout:
+1. Copy (or vendor) the Husky scripts from the installed **team-harness** plugin into the repo — typical layout:
    - `scripts/prepare-git-hooks.sh`
    - `scripts/verify-git-hooks.sh`
    - `scripts/ensure-hooks.sh`
@@ -77,7 +77,7 @@ When **Cloud Agents are expected**, complete all applicable steps during bootstr
 6. Optional Prettier `afterFileEdit` stays product/repo-specific — not required by this primitive.
 7. Verify on Cloud: Build runs `install` → deps + `prepare`; start runs ensure-hooks; a commit triggers the bridge (`[ensure-hooks]` messages) and runs the repo’s Husky hooks.
 8. **After `git worktree add`:** run `npm run prepare` (or `npm run verify:git-hooks` after prepare) in the new worktree before committing — worktrees inherit `core.hooksPath=.husky/_` but not executable `.husky/_` shims until prepare runs there.
-9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh` and add `verify-git-hooks.sh` (plus optional `verify:git-hooks` script) — older marketplace copies lack worktree shim self-healing and generalized verify.
+9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh` and add `verify-git-hooks.sh` (plus optional `verify:git-hooks` script) from the installed plugin — older in-repo copies may lack worktree shim self-healing and generalized verify.
 10. **After merge:** trigger and promote a **new environment Build** so Cloud stops reusing the old snapshot. The plugin cannot automate Build promotion.
 
 ## Conceptual `environment.json` shapes
@@ -108,7 +108,9 @@ Wire the install script’s dependency command at bootstrap time — for example
 
 - Do not claim a brand-new Husky repo is Cloud-safe after marketplace / plugin install alone
 - Do not overwrite product-specific hook contents from this skill
-- Do not add Cursor rules here; invariants live in User Rules / `docs/engineering-invariants.md`
+- Do not add Cursor rules here; invariants live in User Rules (`docs/engineering-invariants.md` from the installed plugin)
+- Do not clone cursor-team-marketplace or any other repo to obtain packaged scripts
+- Do not copy from a `plugins/team-harness/...` path relative to the target repo — scripts live only in the installed plugin
 - Do not add `templates/environment.json` or any copyable JSON template under the plugin
 - Do not parse `engines.node` semver ranges inside portable scripts
 - Do not infer package manager / workspace layout inside `cloud-agent-install.sh`
@@ -117,7 +119,7 @@ Wire the install script’s dependency command at bootstrap time — for example
 
 When asked to wire Cloud hooks into a repo:
 
-1. Copy from this plugin’s `scripts/` (Husky trio + Cloud Node trio when `.nvmrc` requires a newer major).
+1. Locate the installed **team-harness** plugin on disk (Customize → Plugins, or Cursor’s local plugins directory). Copy from that plugin’s `scripts/` (Husky trio + Cloud Node trio when `.nvmrc` requires a newer major). If packaged scripts cannot be found, **stop** and tell the user the plugin is not installed — do not clone cursor-team-marketplace or read another repo.
 2. Update `prepare` + `sessionStart`.
 3. If Cloud Agents are in scope, commit `environment.json` in the **same** bootstrap PR — do not defer to first Cloud use.
 4. Choose the install command from this repo’s lockfile/CI; write it into wrapper config (`CLOUD_AGENT_INSTALL_CMD` or args) at wire time.

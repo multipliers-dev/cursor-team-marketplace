@@ -7,13 +7,13 @@ Cursor plugin: portable **planning methodology**, **new-repo bootstrap**, **inte
 | Skill                     | Invoke                     | Role                                                                          |
 | ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
 | `planning-methodology`    | `/planning-methodology`    | Full staged-plan / merge-safe procedure (canonical copy)                      |
-| `new-repo-bootstrap`      | `/new-repo-bootstrap`      | 5-minute checklist: inherited team layer vs in-repo adds (optional thin GitHub PR template) |
+| `new-repo-bootstrap`      | `/new-repo-bootstrap`      | 5-minute checklist: User Rules / marketplace skills vs in-repo adds (optional thin GitHub PR template) |
 | `interview-repo-bootstrap`| `/interview-repo-bootstrap`| One-shot empty-directory → pre-wired interview repo (tsx run/dev + Vitest + hooks + CI + GitHub) |
 | `cloud-hooks-bootstrap`   | `/cloud-hooks-bootstrap`   | One-time Husky Cloud wiring + `environment.json` lifecycle using scripts in `scripts/` |
 
 ## Scripts (portable primitive)
 
-Copy into a target repo (or invoke paths from this plugin after install) during one-time bootstrap — or run `interview-repo-bootstrap.sh` to copy the interview preset plus the hook allowlist automatically:
+Copy into a target repo during one-time bootstrap — locate scripts in the installed **team-harness** plugin (see `/cloud-hooks-bootstrap` and `/interview-repo-bootstrap`; stop if the plugin files are not on disk). Or run `interview-repo-bootstrap.sh` to copy the interview preset plus the hook allowlist automatically:
 
 | Script                                | Purpose                                                                                                    |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -26,4 +26,4 @@ Copy into a target repo (or invoke paths from this plugin after install) during 
 | `scripts/cloud-agent-install.sh`      | Node-from-`.nvmrc` major → full prefix under `/usr/local`; persist PATH; run declared dependency command |
 | `scripts/cloud-agent-start.sh`        | Session PATH + Node probe log + `ensure-hooks.sh`                                                          |
 
-**Default On does not wire `package.json` `prepare`, `.husky/` contents, or `.cursor/environment.json`.** When Cloud Agents are expected, wiring includes committed `environment.json` lifecycle and, when `.nvmrc` pins a newer major, Node-from-`.nvmrc` Build/session PATH — not only `prepare`. See `/cloud-hooks-bootstrap`.
+**Plugin install alone does not wire `package.json` `prepare`, `.husky/` contents, or `.cursor/environment.json`.** When Cloud Agents are expected, wiring includes committed `environment.json` lifecycle and, when `.nvmrc` pins a newer major, Node-from-`.nvmrc` Build/session PATH — not only `prepare`. See `/cloud-hooks-bootstrap`.

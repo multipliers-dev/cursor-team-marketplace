@@ -9,7 +9,7 @@ description: >-
 
 # Planning methodology (canonical)
 
-Single canonical **procedure** for merge-safe, staged planning. User Rules hold short always-on **invariants** (the `docs/engineering-invariants.md` paste) — do not paste this full methodology into User Rules.
+Single canonical **procedure** for merge-safe, staged planning. User Rules hold short always-on **invariants** (the `docs/engineering-invariants.md` paste from the installed **team-harness** plugin) — do not paste this full methodology into User Rules.
 
 Repo domain checklists (API contracts, client-state matrices, route/domain examples, product skill verification runbooks, and similar) stay **in-repo**. This skill is the shared procedure only.
 
