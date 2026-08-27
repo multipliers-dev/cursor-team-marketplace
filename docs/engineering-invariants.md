@@ -28,13 +28,11 @@
 
 ## Planning skill (when available)
 
-- When creating or executing staged plans, use the team marketplace **planning-methodology** skill **if it is installed** (User or Team marketplace).
+- When creating or executing staged plans, use the **planning-methodology** skill **if it is installed**.
 
-- Do not restate lightweight-vs-staged, frontmatter, agent-prompt construction, or closure procedure in Team Rules.
+- Do not restate lightweight-vs-staged, frontmatter, agent-prompt construction, or closure procedure in this rule.
 
 - If the skill is not available on this device/account, follow these PR execution invariants only; do not invent a second full methodology here.
-
-- Do not assume Team Default On distribution until that Cursor path works.
 
 ## Cloud hooks
 
