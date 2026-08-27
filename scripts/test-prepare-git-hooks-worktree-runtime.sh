@@ -146,6 +146,55 @@ if [ ! -f "$MARKER" ]; then
   exit 1
 fi
 
+# Broken shim: verify fails but ensure-hooks still runs; prepare exits non-zero.
+BROKEN="$WORKDIR/broken-shim"
+ENSURE_MARKER="$WORKDIR/.ensure-ran"
+TEST_SCRIPTS="$WORKDIR/test-scripts"
+FAKE_BIN="$WORKDIR/fake-bin"
+mkdir -p "$BROKEN" "$TEST_SCRIPTS" "$FAKE_BIN"
+
+cat > "$FAKE_BIN/husky" <<'EOF'
+#!/usr/bin/env sh
+exit 0
+EOF
+chmod +x "$FAKE_BIN/husky"
+
+cp "$PREPARE" "$VERIFY" "$TEST_SCRIPTS/"
+cat > "$TEST_SCRIPTS/ensure-hooks.sh" <<EOF
+#!/usr/bin/env sh
+touch "$ENSURE_MARKER"
+EOF
+chmod +x "$TEST_SCRIPTS/ensure-hooks.sh"
+TEST_PREPARE="$TEST_SCRIPTS/prepare-git-hooks.sh"
+
+cd "$BROKEN"
+git init -b main >/dev/null
+git config user.email "worktree-hooks-test@localhost"
+git config user.name "Worktree Hooks Test"
+cp "$MAIN/package.json" "$BROKEN/package.json"
+cp -R "$MAIN/node_modules" "$BROKEN/node_modules"
+mkdir -p .husky
+cat > .husky/pre-commit <<'EOF'
+#!/usr/bin/env sh
+exit 0
+EOF
+chmod +x .husky/pre-commit
+git config core.hooksPath .husky/_
+
+unset CI VERCEL GITHUB_ACTIONS HUSKY
+export PATH="$FAKE_BIN:$BROKEN/node_modules/.bin:$PATH"
+
+rm -f "$ENSURE_MARKER"
+if sh "$TEST_PREPARE"; then
+  echo "error: prepare should exit non-zero when verify fails on broken shims" >&2
+  exit 1
+fi
+
+if [ ! -f "$ENSURE_MARKER" ]; then
+  echo "error: ensure-hooks should run even when verify fails (marker missing)" >&2
+  exit 1
+fi
+
 # Supporting: verify ignores hooks the repo does not define.
 VERIFY_ONLY="$WORKDIR/verify-only"
 mkdir -p "$VERIFY_ONLY/.husky"
@@ -177,4 +226,4 @@ if sh "$VERIFY" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "ok prepare-git-hooks worktree runtime (verify fail/repair, hook executed on commit, common.sh ignored, generalized verify)"
+echo "ok prepare-git-hooks worktree runtime (verify fail still runs ensure-hooks, verify fail/repair, hook executed on commit, common.sh ignored, generalized verify)"
