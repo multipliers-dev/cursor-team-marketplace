@@ -2,6 +2,10 @@
 
 Public Team Marketplace for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships four capabilities with different portability semantics.
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
 | Component | After install | Meaning |
 | --- | --- | --- |
 | **Planning methodology skill** | Skill available in Agent chats | Single canonical planning procedure for every repo |
