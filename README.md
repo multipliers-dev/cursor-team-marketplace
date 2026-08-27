@@ -15,6 +15,12 @@ Not a listing on the public Cursor Marketplace.
 
 Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository** → paste `https://github.com/multipliers-dev/cursor-team-marketplace`.
 
+## Engineering invariants
+
+Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
+
+Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
