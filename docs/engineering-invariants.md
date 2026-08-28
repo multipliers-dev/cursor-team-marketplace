@@ -26,6 +26,14 @@
 
 - Do not defer correctness, lifecycle/reset wiring, persistence boundaries, contract validation, or regression tests for behavior this PR already exposes.
 
+- After pushing to a branch with an open PR, if the PR’s title, summary, execution authority, shipped scope, or verification no longer matches the branch, refresh the metadata with `gh pr edit` **before stopping**. Do not wait to be asked.
+
+- Rebuild from the current PR `base...HEAD` diff, using `gh pr view` to resolve the base branch, plus the repo PR template when present. Review discussion stays in comments.
+
+- Preserve still-valid human-authored notes and links; refresh only stale sections unless the whole body is structurally obsolete.
+
+- Skip bot-owned PRs (Renovate and similar). Skip when title and body still match the branch.
+
 ## Planning skill (when available)
 
 - When creating or executing staged plans, use the **planning-methodology** skill **if it is installed**.

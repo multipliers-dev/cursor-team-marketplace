@@ -121,7 +121,33 @@ After the last implementation PR merges, docs-only closure PR:
 
 ## PR description (when opening from a plan)
 
-Call out: execution authority, PR target `main`, which todo was marked completed (if any), what ships in **this** PR only, verification run, anything intentionally deferred.
+When **opening** a PR from a plan slice, call out:
+
+- Execution authority (Plan-only PR / Open PR only / Merge granted)
+- PR target (default `main`)
+- Which slice todo was marked completed (if any)
+- What ships in **this** PR only
+- Verification run
+- Anything intentionally deferred
+
+### Keep PR metadata current after follow-up pushes
+
+After a later push to a branch that already has an open PR, refresh metadata when it no longer matches the branch — do not wait to be asked.
+
+1. Run `gh pr view` for title, body, and **base branch** (the actual PR base, not a hardcoded `origin/main`).
+2. Diff `base...HEAD` against the current branch state.
+3. If title, summary, execution authority, shipped scope, or verification no longer matches the branch, refresh with `gh pr edit` **before stopping**.
+4. Rebuild from the current PR `base...HEAD` diff plus the repo PR template when present. Review discussion stays in comments.
+
+**Title:** update only when the headline is wrong.
+
+**Body:** refresh drifted sections; do not leave an open-time Summary, authority checkbox, todo status, or Test plan that no longer matches the branch.
+
+**Preserve** still-valid human-authored notes and links; do not regenerate the body wholesale unless it is structurally obsolete.
+
+**Exclude** bot-owned PRs (Renovate and similar). **Skip** when title and body still match the branch.
+
+Planning topology still defaults to targeting `main`; the keep-current diff uses the **actual PR base** from `gh pr view`.
 
 ## Progressive disclosure
 
