@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-28-unify-repo-bootstrap.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -209,7 +209,7 @@ Use a **fresh Agent-mode chat** per slice.
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-28-unify-repo-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-28-unify-repo-bootstrap.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -225,7 +225,7 @@ Verification: plan satisfies planning-methodology envelope; no implementation ch
 ### repo-bootstrap
 
 ```text
-@.cursor/plans/2026-08-28-unify-repo-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-28-unify-repo-bootstrap.plan.md
 
 Implement slice repo-bootstrap only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -241,7 +241,7 @@ Verification: ./scripts/check.sh; stale-reference guard passes (no live refs to 
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-28-unify-repo-bootstrap.plan.md
+@.cursor/plans/archive/2026-08-28-unify-repo-bootstrap.plan.md
 
 Execute only plan-closure.
 
@@ -253,5 +253,32 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 
 Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans/archive/2026-08-28-unify-repo-bootstrap.plan.md, mark plan-closure completed, update agent prompt references to archived path.
 
-Verification: prerequisite implementation PR merged; slice todo completed before archiving.
+Verification: confirm the prerequisite implementation PR is merged and slice todos are completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 28 Aug 2026
+
+**PRs:**
+
+- [Plan review (#24)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/24) — plan artifact committed
+- [Implementation (#25)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/25) — single `/repo-bootstrap` skill from interview baseline; stale-reference guard; fail-closed `rg` + CI ripgrep; plugin 1.7.0
+
+**What shipped:**
+
+- Single `/repo-bootstrap` skill from the interview baseline
+- `/new-repo-bootstrap` and `/interview-repo-bootstrap` deleted (no aliases)
+- Script, template, and test renamed to `repo-bootstrap`
+- Stale-reference guard with archive-only exclusion
+- Fail-closed if `rg` is missing
+- CI installs ripgrep
+- Plugin 1.7.0
+
+**Deferred work:**
+
+- Non-empty/existing repos remain out of scope
+- `/cloud-hooks-bootstrap` only for hook/cloud wiring
+- No new capabilities (no extra `.nvmrc` pin, PR template, Bugbot, lint-staged)
