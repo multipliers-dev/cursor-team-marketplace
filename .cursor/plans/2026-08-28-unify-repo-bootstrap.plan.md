@@ -166,10 +166,10 @@ Add an explicit check in [`scripts/check.sh`](../../scripts/check.sh) (or a smal
 
 Suggested implementation: `rg` over the repo with `--glob '!**/.cursor/plans/archive/**'` for each pattern; fail if any match outside the allowlist.
 
-Manual spot-check after implementation:
+Manual verification after implementation:
 
-1. `--dry-run` in empty temp dir — no writes.
-2. Full bootstrap in empty temp dir (optional, needs `gh` auth) — commit output contains `[repo-bootstrap] pre-commit verify`.
+1. `--dry-run` in empty temp dir — no writes (required).
+2. **Full bootstrap smoke** in empty temp dir — **required when CI/credentials permit** (`npm`, `gh` auth). Dry-run and `sh -n` alone will not catch failures in `npm install`, hook execution, initial commit, or `gh repo create`. Assert commit output contains `[repo-bootstrap] pre-commit verify`. If credentials are unavailable locally, run the same smoke in CI or document why it was skipped.
 
 ### Breaking change note
 
@@ -235,7 +235,7 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 
 Deliverables: rename skill/script/template/test to repo-bootstrap; delete new-repo-bootstrap skill; update cross-refs; add stale-reference guard in check.sh; bump plugin.json and marketplace.json to 1.7.0. Mark repo-bootstrap completed in plan frontmatter in this PR.
 
-Verification: ./scripts/check.sh; stale-reference guard passes (no live refs to old invoke paths outside archived plans); dry-run in empty temp dir writes nothing; optional full bootstrap produces commit output containing `[repo-bootstrap] pre-commit verify`.
+Verification: ./scripts/check.sh; stale-reference guard passes (no live refs to old invoke paths outside archived plans); dry-run in empty temp dir writes nothing; full bootstrap smoke in empty temp dir when CI/credentials permit (commit output must contain `[repo-bootstrap] pre-commit verify` — required because this slice is primarily a rename of a concrete runtime flow).
 ```
 
 ### plan-closure
