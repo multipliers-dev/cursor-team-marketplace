@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-28-keep-pr-metadata-current.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -174,7 +174,7 @@ Use a **fresh Agent-mode chat** per slice.
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-28-keep-pr-metadata-current.plan.md
+@.cursor/plans/archive/2026-08-28-keep-pr-metadata-current.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -190,7 +190,7 @@ Verification: plan satisfies planning-methodology envelope; source mermaid and k
 ### keep-pr-metadata
 
 ```text
-@.cursor/plans/2026-08-28-keep-pr-metadata-current.plan.md
+@.cursor/plans/archive/2026-08-28-keep-pr-metadata-current.plan.md
 
 Implement slice keep-pr-metadata only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -206,7 +206,7 @@ Verification: ./scripts/check.sh; skill layout invariants unchanged; implementat
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-28-keep-pr-metadata-current.plan.md
+@.cursor/plans/archive/2026-08-28-keep-pr-metadata-current.plan.md
 
 Execute only plan-closure.
 
@@ -220,3 +220,28 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: prerequisite implementation PR merged; slice todo completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 28 Aug 2026
+
+**PRs:**
+
+- [Plan review (#27)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/27) — plan artifact committed
+- [Implementation (#28)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/28) — keep-current invariants + planning-methodology procedure; plugin/marketplace 1.8.0
+
+**What shipped:**
+
+- Keep-current bullets in [`docs/engineering-invariants.md`](../../docs/engineering-invariants.md)
+- Planning-methodology keep-current procedure after follow-up pushes
+- Plugin/marketplace 1.8.0
+
+**Deferred work:**
+
+- No GitHub Action rewriter
+- No Cursor hooks
+- No `/refresh-pr` skill
+- No consumer-repo `AGENTS.md` copies
+- User Rules re-paste is an operator step after merge
