@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: repo-bootstrap
     content: "PR: rename skill/script/template/test to repo-bootstrap; delete new-repo-bootstrap; update cross-refs + stale-reference guard in check.sh; plugin 1.7.0"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-28-unify-repo-bootstrap.plan.md"
     status: pending

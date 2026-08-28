@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
-# Bootstrap an actually-empty directory into a pre-wired interview repo
+# Bootstrap an actually-empty directory into a pre-wired repo
 # (TypeScript + Vitest + AGENTS.md + Husky + minimal CI + GitHub remote).
-# Copies templates/interview-repo/ plus an explicit hook-primitive allowlist only.
+# Copies templates/repo/ plus an explicit hook-primitive allowlist only.
 set -eu
 
 PLUGIN_ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
-TEMPLATE_DIR="$PLUGIN_ROOT/templates/interview-repo"
-SENTINEL='[interview-bootstrap] pre-commit verify'
+TEMPLATE_DIR="$PLUGIN_ROOT/templates/repo"
+SENTINEL='[repo-bootstrap] pre-commit verify'
 
 REPO_NAME=""
 TARGET_DIR=""
@@ -15,9 +15,9 @@ DRY_RUN=0
 
 usage() {
   cat <<'EOF'
-Usage: interview-repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]
+Usage: repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]
 
-Bootstrap an empty directory into a pre-wired technical interview repo.
+Bootstrap an empty directory into a pre-wired greenfield repo.
 
 Options:
   --name NAME   GitHub repo name (default: basename of target directory)
@@ -101,9 +101,9 @@ validate_repo_name() {
 check_tooling() {
   require_cmd sh
   require_cmd node
-  # Test-only seam (scripts/test-interview-repo-bootstrap-runtime.sh): substitution
+  # Test-only seam (scripts/test-repo-bootstrap-runtime.sh): substitution
   # check stops before git/npm/gh — only node is required for name replacement.
-  if [ "${INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
+  if [ "${REPO_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
     require_cmd git
     require_cmd npm
     if [ "$DRY_RUN" -eq 0 ]; then
@@ -111,7 +111,7 @@ check_tooling() {
     fi
   fi
   [ -d "$TEMPLATE_DIR" ] || die "missing template directory: $TEMPLATE_DIR"
-  if [ "${INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
+  if [ "${REPO_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
     for script in prepare-git-hooks.sh verify-git-hooks.sh ensure-hooks.sh session-ensure-git-hooks.sh; do
       [ -f "$PLUGIN_ROOT/scripts/$script" ] || die "missing hook primitive: $PLUGIN_ROOT/scripts/$script"
     done
@@ -228,7 +228,7 @@ run_git_commit_smoke() {
   (
     cd "$TARGET_DIR"
     git add .
-    commit_out=$(git -c user.name="Interview Bootstrap" -c user.email="bootstrap@localhost" \
+    commit_out=$(git -c user.name="Repo Bootstrap" -c user.email="bootstrap@localhost" \
       commit -m "Initial commit" 2>&1) || die "initial git commit failed"
     printf '%s\n' "$commit_out"
     echo "$commit_out" | grep -Fq "$SENTINEL" || die "git commit output missing sentinel — hook bypassed or miswired"
@@ -294,13 +294,13 @@ main() {
     exit 0
   fi
 
-  log "Bootstrapping interview repo in $TARGET_DIR (name: $REPO_NAME)..."
+  log "Bootstrapping repo in $TARGET_DIR (name: $REPO_NAME)..."
 
   copy_template_tree
   substitute_repo_name "$REPO_NAME"
-  # Test-only seam (scripts/test-interview-repo-bootstrap-runtime.sh): copy templates
+  # Test-only seam (scripts/test-repo-bootstrap-runtime.sh): copy templates
   # and substitute repo name, then exit before git init / npm / hooks / gh.
-  if [ "${INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" = "1" ]; then
+  if [ "${REPO_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" = "1" ]; then
     exit 0
   fi
   copy_hook_primitives
@@ -317,7 +317,7 @@ main() {
   create_github_remote
   print_repo_urls
 
-  log "Interview repo bootstrap complete."
+  log "Repo bootstrap complete."
 }
 
 main "$@"
