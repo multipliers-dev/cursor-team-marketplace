@@ -130,16 +130,19 @@ sh scripts/test-repo-bootstrap-runtime.sh
 sh scripts/test-prepare-git-hooks-worktree-runtime.sh
 
 # Stale-reference guard: live docs/code must not contain old invoke paths or names.
-# Plan artifacts and this script's pattern list are excluded from the scan.
+# Archived plans only are excluded; live plans are scanned except the unification
+# plan below (plan-closure moves it to archive/ — do not generalize this exception).
 _stale_ref_check() {
   pattern=$1
-  if rg -l \
-    --glob '!.cursor/plans/**' \
+  if rg -l --hidden \
+    --glob '!.cursor/plans/archive/**' \
+    --glob '!.cursor/plans/2026-08-28-unify-repo-bootstrap.plan.md' \
     --glob '!scripts/check.sh' \
     "$pattern" . >/dev/null 2>&1; then
     echo "error: stale reference to retired name/path: $pattern" >&2
-    rg -n \
-      --glob '!.cursor/plans/**' \
+    rg -n --hidden \
+      --glob '!.cursor/plans/archive/**' \
+      --glob '!.cursor/plans/2026-08-28-unify-repo-bootstrap.plan.md' \
       --glob '!scripts/check.sh' \
       "$pattern" . >&2 || true
     exit 1
