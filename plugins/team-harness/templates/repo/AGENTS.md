@@ -1,6 +1,6 @@
 # Agent instructions
 
-Technical interview repo — universal execution and verification only. Architecture and product choices are yours to make for the task at hand.
+Greenfield repo — universal execution and verification only. Architecture and product choices are yours to make for the task at hand.
 
 ## Commands
 
@@ -14,5 +14,5 @@ Technical interview repo — universal execution and verification only. Architec
 ## Discipline
 
 - Pre-commit runs `npm test` and `npm run typecheck`; do not bypass hooks.
-- Keep changes focused; do not add product scaffolding (frameworks, databases, deploy pipelines) unless the interview task requires it.
+- Keep changes focused; do not add product scaffolding (frameworks, databases, deploy pipelines) unless the task requires it.
 - Commit in small, logical steps with clear messages.

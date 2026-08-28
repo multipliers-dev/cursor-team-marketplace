@@ -42,7 +42,7 @@ flowchart LR
 - Porting Cloud-safe prepare/ensure from this plugin into an existing or new repo
 - Explaining why marketplace / plugin install alone did not fix Cloud commits by itself
 - Cloud Agents are expected and the repo needs committed `environment.json` (not deferred to first Cloud use)
-- Wiring an **existing** repo manually — for timed interviews from an empty directory, use `/interview-repo-bootstrap` instead (ships the same Husky trio + minimal lifecycle in one shot)
+- Wiring an **existing** repo manually — for empty directories, use `/repo-bootstrap` instead (ships the same Husky trio + minimal lifecycle in one shot). This skill is for hook/cloud wiring into existing repos only — not a generic non-empty migration path.
 
 ## What the plugin ships
 
@@ -126,4 +126,4 @@ When asked to wire Cloud hooks into a repo:
 5. Open an Open-PR-only change for that repo and state clearly that marketplace / plugin install alone was not sufficient by itself.
 6. Remind the human to trigger/promote a new environment Build after merge.
 
-For timed technical interviews from an **actually empty** directory, use `/interview-repo-bootstrap` — it copies this skill's layer-2 wiring plus minimal layer-3 `environment.json` automatically and stops. Do not chain both skills.
+For bootstrapping an **actually empty** directory into a pre-wired repo, use `/repo-bootstrap` — it copies this skill's layer-2 wiring plus minimal layer-3 `environment.json` automatically and stops. Do not chain both skills.

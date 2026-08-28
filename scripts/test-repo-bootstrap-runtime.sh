@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
-# Runtime smoke test for interview-repo-bootstrap.sh guards and dry-run.
+# Runtime smoke test for repo-bootstrap.sh guards and dry-run.
 # Hermetic: no npm install, gh repo create, or live hook smoke. Invoked from scripts/check.sh.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
-BOOTSTRAP="$ROOT/plugins/team-harness/scripts/interview-repo-bootstrap.sh"
+BOOTSTRAP="$ROOT/plugins/team-harness/scripts/repo-bootstrap.sh"
 
 WORKDIR=$(mktemp -d)
 cleanup() {
@@ -84,7 +84,7 @@ esac
 SUBST="$WORKDIR/subst-check"
 mkdir -p "$SUBST"
 REPO_NAME='my.repo_name-test'
-INTERVIEW_BOOTSTRAP_STOP_AFTER_SUBSTITUTE=1 sh "$BOOTSTRAP" --name "$REPO_NAME" --dir "$SUBST"
+REPO_BOOTSTRAP_STOP_AFTER_SUBSTITUTE=1 sh "$BOOTSTRAP" --name "$REPO_NAME" --dir "$SUBST"
 node - "$SUBST" "$REPO_NAME" <<'NODE'
 const fs = require('fs');
 const path = require('path');
@@ -145,4 +145,4 @@ case "$out" in
     ;;
 esac
 
-echo "ok interview-repo-bootstrap runtime (dry-run, invalid repo names, literal substitution, non-empty guard, file target)"
+echo "ok repo-bootstrap runtime (dry-run, invalid repo names, literal substitution, non-empty guard, file target)"

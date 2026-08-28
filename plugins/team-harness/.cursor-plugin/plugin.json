@@ -1,10 +1,10 @@
 {
   "name": "team-harness",
-  "description": "Team harness: portable planning methodology, new-repo bootstrap, interview repo bootstrap, and Cloud-hooks primitive (install ≠ zero-wiring Cloud-safety).",
-  "version": "1.6.2",
+  "description": "Team harness: portable planning methodology, repo bootstrap, and Cloud-hooks primitive (install ≠ zero-wiring Cloud-safety).",
+  "version": "1.7.0",
   "author": {
     "name": "Michael Truong",
     "email": "michael@multipliers.dev"
   },
-  "keywords": ["planning", "merge-safe", "husky", "cloud-hooks", "staged-plans", "new-repo", "interview-repo", "bootstrap"]
+  "keywords": ["planning", "merge-safe", "husky", "cloud-hooks", "staged-plans", "repo-bootstrap", "bootstrap"]
 }

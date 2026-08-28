@@ -93,12 +93,12 @@ for plugin in plugins:
             die(f"{skill_md}: missing description")
         print(f"ok skill {expected}")
 
-    interview_script = plugin_dir / "scripts" / "interview-repo-bootstrap.sh"
-    if not interview_script.is_file():
-        die(f"missing script: {interview_script}")
-    print(f"ok script {interview_script.relative_to(ROOT)}")
+    repo_bootstrap_script = plugin_dir / "scripts" / "repo-bootstrap.sh"
+    if not repo_bootstrap_script.is_file():
+        die(f"missing script: {repo_bootstrap_script}")
+    print(f"ok script {repo_bootstrap_script.relative_to(ROOT)}")
 
-    template_dir = plugin_dir / "templates" / "interview-repo"
+    template_dir = plugin_dir / "templates" / "repo"
     required_templates = [
         ".gitignore",
         "AGENTS.md",
@@ -115,7 +115,7 @@ for plugin in plugins:
         path = template_dir / rel
         if not path.is_file():
             die(f"missing template: {path}")
-    print(f"ok templates interview-repo ({len(required_templates)} files)")
+    print(f"ok templates repo ({len(required_templates)} files)")
 
 print("ok marketplace plugin")
 PY
@@ -126,5 +126,32 @@ for script in plugins/team-harness/scripts/*.sh; do
 done
 
 sh scripts/test-cloud-agent-install-runtime.sh
-sh scripts/test-interview-repo-bootstrap-runtime.sh
+sh scripts/test-repo-bootstrap-runtime.sh
 sh scripts/test-prepare-git-hooks-worktree-runtime.sh
+
+# Stale-reference guard: live docs/code must not contain old invoke paths or names.
+# Plan artifacts and this script's pattern list are excluded from the scan.
+_stale_ref_check() {
+  pattern=$1
+  if rg -l \
+    --glob '!.cursor/plans/**' \
+    --glob '!scripts/check.sh' \
+    "$pattern" . >/dev/null 2>&1; then
+    echo "error: stale reference to retired name/path: $pattern" >&2
+    rg -n \
+      --glob '!.cursor/plans/**' \
+      --glob '!scripts/check.sh' \
+      "$pattern" . >&2 || true
+    exit 1
+  fi
+}
+
+_stale_ref_check '/new-repo-bootstrap'
+_stale_ref_check '/interview-repo-bootstrap'
+_stale_ref_check 'interview-repo-bootstrap.sh'
+_stale_ref_check 'templates/interview-repo/'
+_stale_ref_check 'skills/new-repo-bootstrap/'
+_stale_ref_check 'skills/interview-repo-bootstrap/'
+_stale_ref_check 'name: new-repo-bootstrap'
+_stale_ref_check 'name: interview-repo-bootstrap'
+echo "ok stale-reference guard"

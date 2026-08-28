@@ -5,15 +5,15 @@
     "email": "michael@multipliers.dev"
   },
   "metadata": {
-    "description": "Portable planning methodology, new-repo bootstrap, and Cloud-hooks primitive. Skills install with the plugin; Cloud-hooks still need one-time repo wiring.",
-    "version": "1.6.2",
+    "description": "Portable planning methodology, repo bootstrap, and Cloud-hooks primitive. Skills install with the plugin; Cloud-hooks still need one-time repo wiring.",
+    "version": "1.7.0",
     "pluginRoot": "plugins"
   },
   "plugins": [
     {
       "name": "team-harness",
       "source": "team-harness",
-      "description": "Planning methodology, new-repo bootstrap checklist, and Cloud-hooks installer/bridge + bootstrap recipe"
+      "description": "Planning methodology, repo bootstrap, and Cloud-hooks installer/bridge + bootstrap recipe"
     }
   ]
 }
