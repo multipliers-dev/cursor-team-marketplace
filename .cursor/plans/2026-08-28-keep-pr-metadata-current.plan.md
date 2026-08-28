@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: keep-pr-metadata
     content: Add keep-current bullets to engineering-invariants.md; expand planning-methodology PR description section; bump plugin/marketplace version from main
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-28-keep-pr-metadata-current.plan.md"
     status: pending

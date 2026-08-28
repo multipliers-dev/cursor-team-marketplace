@@ -1,7 +1,7 @@
 {
   "name": "team-harness",
   "description": "Team harness: portable planning methodology, repo bootstrap, and Cloud-hooks primitive (install ≠ zero-wiring Cloud-safety).",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "author": {
     "name": "Michael Truong",
     "email": "michael@multipliers.dev"
