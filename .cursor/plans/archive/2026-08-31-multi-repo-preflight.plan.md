@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-31-multi-repo-preflight.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -250,7 +250,7 @@ Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exa
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-31-multi-repo-preflight.plan.md
+@.cursor/plans/archive/2026-08-31-multi-repo-preflight.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -266,7 +266,7 @@ Verification: plan satisfies planning-methodology envelope; source mermaid, exac
 ### multi-repo-preflight
 
 ```text
-@.cursor/plans/2026-08-31-multi-repo-preflight.plan.md
+@.cursor/plans/archive/2026-08-31-multi-repo-preflight.plan.md
 
 Implement slice multi-repo-preflight only. Prerequisite: plan-review merged. Do not start plan-closure. Do not archive the plan.
 
@@ -282,7 +282,7 @@ Verification: sh scripts/check.sh; quote the new invariant; show same-repo four-
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-31-multi-repo-preflight.plan.md
+@.cursor/plans/archive/2026-08-31-multi-repo-preflight.plan.md
 
 Execute only plan-closure.
 
@@ -296,3 +296,27 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: confirm all prerequisite implementation PRs are merged and slice todos are completed before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 31 Aug 2026
+
+**PRs:**
+
+- [Plan review (#35)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/35) — plan artifact committed
+- [Implementation (#36)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/36) — multi-repo environment preflight in planning-methodology skill; template/reference extraction variant; plugin/marketplace 1.9.0
+
+**What shipped:**
+
+- `## Multi-repo environment preflight` in planning-methodology `SKILL.md` (distinct from topology and plan-status completion recording)
+- Three-part checkout verification, hard-stop, and Cloud Agents guidance tied to explicit **Required repositories** lists
+- Item 7 `Repositories:` labeled line for multi-repo execution slices; item 10 for slice-body required-repo lists
+- Extraction variant in `_template.plan.md` and `reference.md`
+- Plugin/marketplace **1.9.0**
+
+**Deferred work:**
+
+- Consumer-repo `planning-standards.md` / `_template.plan.md` copies (intentionally out of scope)
+- `docs/engineering-invariants.md` expansion (procedure lives in the skill)
