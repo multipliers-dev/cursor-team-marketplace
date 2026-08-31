@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: owner-flag
     content: Add --owner/--org on a marketplace feature branch; cover the four verification behaviors; open PR targeting main (do not merge, do not checkout main afterward)
-    status: pending
+    status: completed
   - id: bootstrap-repo
     content: From that same checked-out feature branch/worktree only, dry-run then bootstrap renovate-workflow as public multipliers-dev/renovate-workflow; do not wait for merge or switch back to main
     status: pending

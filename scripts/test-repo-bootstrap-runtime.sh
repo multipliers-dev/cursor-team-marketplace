@@ -50,6 +50,49 @@ assert_invalid_repo_name() {
   assert_dir_unchanged "$dir"
 }
 
+assert_invalid_owner() {
+  owner=$1
+  dir=$2
+  if out=$(sh "$BOOTSTRAP" --owner "$owner" --name renovate-workflow --dir "$dir" 2>&1); then
+    echo "error: expected invalid owner to fail: $owner" >&2
+    exit 1
+  fi
+  case "$out" in
+    *"invalid GitHub owner"*) ;;
+    *)
+      echo "error: invalid owner output missing clear error for $owner:" >&2
+      printf '%s\n' "$out" >&2
+      exit 1
+      ;;
+  esac
+  assert_dir_unchanged "$dir"
+}
+
+assert_dry_run_create_target() {
+  out=$1
+  expected=$2
+  case "$out" in
+    *"[dry-run] create target: $expected"*) ;;
+    *)
+      echo "error: expected dry-run create target $expected:" >&2
+      printf '%s\n' "$out" >&2
+      exit 1
+      ;;
+  esac
+  case "$out" in
+    *"gh repo create \"$expected\""*) ;;
+    *)
+      echo "error: expected dry-run gh repo create \"$expected\":" >&2
+      printf '%s\n' "$out" >&2
+      exit 1
+      ;;
+  esac
+}
+
+extract_create_target() {
+  printf '%s\n' "$1" | sed -n 's/^\[dry-run\] create target: //p' | head -n 1
+}
+
 # Default dry-run (current directory).
 sh "$BOOTSTRAP" --dry-run
 
@@ -145,4 +188,50 @@ case "$out" in
     ;;
 esac
 
-echo "ok repo-bootstrap runtime (dry-run, invalid repo names, literal substitution, non-empty guard, file target)"
+# --owner constructs owner/name; --org is a true alias for the same create target.
+OWNER_DIR="$WORKDIR/owner-flag"
+mkdir -p "$OWNER_DIR"
+owner_out=$(sh "$BOOTSTRAP" --dry-run --owner multipliers-dev --name renovate-workflow --dir "$OWNER_DIR")
+org_out=$(sh "$BOOTSTRAP" --dry-run --org multipliers-dev --name renovate-workflow --dir "$OWNER_DIR")
+assert_dry_run_create_target "$owner_out" "multipliers-dev/renovate-workflow"
+assert_dry_run_create_target "$org_out" "multipliers-dev/renovate-workflow"
+owner_target=$(extract_create_target "$owner_out")
+org_target=$(extract_create_target "$org_out")
+if [ "$owner_target" != "$org_target" ]; then
+  echo "error: --org create target ($org_target) must equal --owner ($owner_target)" >&2
+  exit 1
+fi
+if [ "$owner_target" != "multipliers-dev/renovate-workflow" ]; then
+  echo "error: expected create target multipliers-dev/renovate-workflow, got $owner_target" >&2
+  exit 1
+fi
+assert_dry_run_no_writes "$OWNER_DIR"
+
+# Invalid owner fails before writes.
+assert_invalid_owner 'org/name' "$OWNER_DIR"
+assert_invalid_owner 'bad&owner' "$OWNER_DIR"
+if out=$(sh "$BOOTSTRAP" --dry-run --owner 'org/name' --name renovate-workflow --dir "$OWNER_DIR" 2>&1); then
+  echo "error: expected dry-run with invalid owner to fail" >&2
+  exit 1
+fi
+case "$out" in
+  *"invalid GitHub owner"*) ;;
+  *)
+    echo "error: dry-run invalid owner output missing clear error:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+    ;;
+esac
+
+# Omitted owner keeps authenticated-user create (no owner prefix).
+omit_out=$(sh "$BOOTSTRAP" --dry-run --name renovate-workflow --dir "$OWNER_DIR")
+assert_dry_run_create_target "$omit_out" "renovate-workflow"
+case "$omit_out" in
+  *"/renovate-workflow"*)
+    echo "error: omitted owner must not prefix create target:" >&2
+    printf '%s\n' "$omit_out" >&2
+    exit 1
+    ;;
+esac
+
+echo "ok repo-bootstrap runtime (dry-run, invalid repo names, owner/org create target, invalid owner, omitted owner, literal substitution, non-empty guard, file target)"
