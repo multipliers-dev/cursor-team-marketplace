@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-31-bootstrap-renovate-workflow.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -204,7 +204,7 @@ Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exa
 ### plan-review
 
 ```text
-@.cursor/plans/2026-08-31-bootstrap-renovate-workflow.plan.md
+@.cursor/plans/archive/2026-08-31-bootstrap-renovate-workflow.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -220,7 +220,7 @@ Verification: plan satisfies planning-methodology envelope; source mermaid, owne
 ### owner-flag
 
 ```text
-@.cursor/plans/2026-08-31-bootstrap-renovate-workflow.plan.md
+@.cursor/plans/archive/2026-08-31-bootstrap-renovate-workflow.plan.md
 
 Implement slice owner-flag only. Prerequisite: plan-review merged. Do not start bootstrap-repo or plan-closure. Do not archive the plan.
 
@@ -236,7 +236,7 @@ Verification: ./scripts/check.sh (or the check that already runs test-repo-boots
 ### bootstrap-repo
 
 ```text
-@.cursor/plans/2026-08-31-bootstrap-renovate-workflow.plan.md
+@.cursor/plans/archive/2026-08-31-bootstrap-renovate-workflow.plan.md
 
 Execute only bootstrap-repo. Prerequisite: owner-flag PR is open (not merged). Do not start plan-closure. Do not archive the plan. Do not implement owner-flag.
 
@@ -252,7 +252,7 @@ Verification: dry-run shows create target multipliers-dev/renovate-workflow; hoo
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-08-31-bootstrap-renovate-workflow.plan.md
+@.cursor/plans/archive/2026-08-31-bootstrap-renovate-workflow.plan.md
 
 Execute only plan-closure.
 
@@ -266,3 +266,28 @@ Deliverables: verify slice todos, add # Shipped note with PR links and the new r
 
 Verification: confirm owner-flag and bootstrap-repo plan-status PRs are merged and the GitHub repo exists before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 31 Aug 2026
+
+**PRs:**
+
+- [Plan review (#30)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/30) — plan artifact committed
+- [owner-flag (#31)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/31) — `--owner` / `--org` destination namespace on `repo-bootstrap.sh`; four runtime verification behaviors
+- [bootstrap-repo plan-status (#32)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/32) — marked `bootstrap-repo` completed after one-shot org bootstrap
+
+**Bootstrapped repo:** [https://github.com/multipliers-dev/renovate-workflow](https://github.com/multipliers-dev/renovate-workflow) (public `multipliers-dev/renovate-workflow`)
+
+**What shipped:**
+
+- Org-aware `repo-bootstrap.sh` (`--owner` / `--org` alias; bare `--name`; backward-compatible omitted owner)
+- Public greenfield preset repo at `multipliers-dev/renovate-workflow` (tsx + Vitest + Husky + minimal CI + hook allowlist)
+- Intentional unmerged-checkout bootstrap path documented in plan (bootstrap used feature-branch script before `owner-flag` merged)
+
+**Deferred work:**
+
+- Published team-harness does not expose org bootstrapping until the marketplace plugin is republished after `owner-flag` merge
+- Renovate/product scaffolding in `renovate-workflow` is out of scope for this plan
