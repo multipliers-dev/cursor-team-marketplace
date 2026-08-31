@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: multi-repo-preflight
     content: Add Multi-repo environment preflight to planning-methodology SKILL.md, demonstrate it in _template.plan.md and reference.md, bump plugin/marketplace version from main
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-08-31-multi-repo-preflight.plan.md"
     status: pending

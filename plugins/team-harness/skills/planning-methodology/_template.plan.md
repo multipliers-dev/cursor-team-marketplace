@@ -40,6 +40,10 @@ Multi-slice plans stack execution order, not Git branches. Integration branch is
 
 **After opening the PR:** GitHub PR base is `main`; diff excludes prior-slice work except through merged `main`.
 
+## Multi-repo environment (when a slice needs another checkout)
+
+When a slice reads, modifies, validates against, migrates from, or migrates to another repository, list **Required repositories** (owner/name + role) in the slice body and add a `Repositories:` labeled line to that slice’s agent prompt. Topology (branch/base) ≠ environment (which checkouts must be present). Plan-status (where completion is recorded) ≠ environment. See the skill’s **Multi-repo environment preflight** section.
+
 ---
 
 ## Slice 1 — First merge-safe slice
@@ -186,4 +190,36 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 Deliverables: mark <slice-id> completed in plan frontmatter (plan-status only).
 
 Verification: frontmatter marks <slice-id> completed and links the implementation PR(s).
+```
+
+If that cross-repo implementation slice also needs a source or validation checkout (not just plan-status linkage via `gh`), add a `Repositories:` line to its prompt — do not replace the plan-status completion rule.
+
+#### Multi-repo extraction variant
+
+When a slice must extract or migrate behavior from a source repository into a target repository, use this variant (not a second `###` heading matching a default todo id). Slice body example:
+
+```markdown
+Required repositories:
+- multipliers-dev/source-repo — behavioral/source authority, read-only
+- multipliers-dev/target-repo — implementation target, read/write
+```
+
+Preflight before any edits: prove both are real checkouts, remotes match owner/name, the named authoritative source path opens, and the target checkout is the write repo — then copy/generalize from source. Missing or identity-mismatched source repo → stop; never clean-room rebuild from docs.
+
+When the plan file lives in `<target-repo>`, use same-repo completion recording (mark the todo in the implementation PR). When it lives in `<plan-repo>` ≠ `<target-repo>`, use cross-repo completion (do not edit the plan from the target repo; record via plan-status PR).
+
+```text
+@<plan-repo>/.cursor/plans/<slug>.plan.md
+
+Implement slice <slice-id> only, in <target-repo>. Do not start other slices.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from that repo’s latest origin/main; branch represents only this slice; PR base must be main.
+
+Repositories: multipliers-dev/source-repo (behavioral/source authority, read-only), multipliers-dev/target-repo (implementation target, read/write); verify all are present/readable before implementation; hard-stop if not.
+
+Deliverables: extract/generalize from source into target. If the plan lives in <target-repo>, mark <slice-id> completed in plan frontmatter in this PR; otherwise do not edit the plan file — it lives in <plan-repo> — and do not mark the todo completed here (record via plan-status PR in <plan-repo>).
+
+Verification: preflight proved both checkouts; implementation copied from source paths, not reconstructed from plan/docs; completion recording matches item 5 (same-repo mark in this PR, or cross-repo plan untouched).
 ```
