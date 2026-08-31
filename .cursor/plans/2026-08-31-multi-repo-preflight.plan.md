@@ -276,7 +276,7 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 
 Deliverables: add ## Multi-repo environment preflight to planning-methodology SKILL.md immediately after topology (exact invariant, three-part preflight, hard-stop, Cloud Agents sentence tied to Required repositories); extend item 7 with Repositories labeled line for multi-repo slices only; demonstrate extraction example in _template.plan.md and reference.md; leave same-repo prompts and plan-status/closure semantics unchanged; bump plugin.json and marketplace.json from whatever is on main. Mark multi-repo-preflight completed in plan frontmatter in this PR.
 
-Verification: sh scripts/check.sh; quote the new invariant; show same-repo four-line vs multi-repo five-line prompt; confirm ### slice-1 / ### slice-2 / ### plan-closure unlabeled-line set unchanged; confirm item 5, plan-status variant, and closure item 1 unchanged.
+Verification: sh scripts/check.sh; quote the new invariant; show same-repo four-line vs multi-repo five-line prompt; confirm ### slice-1 / ### slice-2 / ### plan-closure labeled-line set unchanged; confirm item 5, plan-status variant, and closure item 1 unchanged.
 ```
 
 ### plan-closure
