@@ -206,6 +206,8 @@ Required repositories:
 
 Preflight before any edits: prove both are real checkouts, remotes match owner/name, the named authoritative source path opens, and the target checkout is the write repo — then copy/generalize from source. Missing or identity-mismatched source repo → stop; never clean-room rebuild from docs.
 
+When the plan file lives in `<target-repo>`, use same-repo completion recording (mark the todo in the implementation PR). When it lives in `<plan-repo>` ≠ `<target-repo>`, use cross-repo completion (do not edit the plan from the target repo; record via plan-status PR).
+
 ```text
 @<plan-repo>/.cursor/plans/<slug>.plan.md
 
@@ -217,7 +219,7 @@ Topology: start from that repo’s latest origin/main; branch represents only th
 
 Repositories: multipliers-dev/source-repo (behavioral/source authority, read-only), multipliers-dev/target-repo (implementation target, read/write); verify all are present/readable before implementation; hard-stop if not.
 
-Deliverables: extract/generalize from source into target. Do not edit the plan unless this is the plan-owning repo and the slice says so.
+Deliverables: extract/generalize from source into target. If the plan lives in <target-repo>, mark <slice-id> completed in plan frontmatter in this PR; otherwise do not edit the plan file — it lives in <plan-repo> — and do not mark the todo completed here (record via plan-status PR in <plan-repo>).
 
-Verification: preflight proved both checkouts; implementation copied from source paths, not reconstructed from plan/docs.
+Verification: preflight proved both checkouts; implementation copied from source paths, not reconstructed from plan/docs; completion recording matches item 5 (same-repo mark in this PR, or cross-repo plan untouched).
 ```

@@ -112,9 +112,9 @@ Topology: start from that repo’s latest origin/main; branch represents only th
 
 Repositories: multipliers-dev/source-repo (behavioral/source authority, read-only), multipliers-dev/target-repo (implementation target, read/write); verify all are present/readable before implementation; hard-stop if not.
 
-Deliverables: extract/generalize from source into target.
+Deliverables: extract/generalize from source into target. If the plan lives in <target-repo>, mark <slice-id> completed in plan frontmatter in this PR; otherwise do not edit the plan file — it lives in <plan-repo> — and do not mark the todo completed here (record via plan-status PR in <plan-repo>).
 
-Verification: preflight proved both checkouts; implementation copied from source paths, not reconstructed from plan/docs.
+Verification: preflight proved both checkouts; implementation copied from source paths, not reconstructed from plan/docs; completion recording matches item 5 (same-repo mark in this PR, or cross-repo plan untouched).
 ```
 ````
 
