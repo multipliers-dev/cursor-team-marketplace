@@ -9,19 +9,23 @@ TEMPLATE_DIR="$PLUGIN_ROOT/templates/repo"
 SENTINEL='[repo-bootstrap] pre-commit verify'
 
 REPO_NAME=""
+REPO_OWNER=""
+CREATE_TARGET=""
 TARGET_DIR=""
 PUBLIC=0
 DRY_RUN=0
 
 usage() {
   cat <<'EOF'
-Usage: repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]
+Usage: repo-bootstrap.sh [--name NAME] [--dir DIR] [--owner OWNER] [--org OWNER] [--public] [--dry-run]
 
 Bootstrap an empty directory into a pre-wired greenfield repo.
 
 Options:
-  --name NAME   GitHub repo name (default: basename of target directory)
+  --name NAME   GitHub repo name, no owner prefix (default: basename of target directory)
   --dir DIR     Target directory (default: current working directory)
+  --owner OWNER Destination GitHub owner/org (default: authenticated user)
+  --org OWNER   Alias for --owner
   --public      Create a public GitHub repo (default: private)
   --dry-run     Validate tooling only; no writes or gh auth
 EOF
@@ -46,6 +50,15 @@ parse_args() {
       --name)
         [ $# -ge 2 ] || die "--name requires a value"
         REPO_NAME=$2
+        shift 2
+        ;;
+      --owner | --org)
+        flag=$1
+        [ $# -ge 2 ] || die "$flag requires a value"
+        if [ -n "$REPO_OWNER" ] && [ "$REPO_OWNER" != "$2" ]; then
+          die "--owner and --org must name the same destination"
+        fi
+        REPO_OWNER=$2
         shift 2
         ;;
       --dir)
@@ -91,10 +104,27 @@ resolve_paths() {
   fi
 }
 
+validate_github_name() {
+  value=$1
+  kind=$2
+  if ! printf '%s' "$value" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+    die "invalid GitHub $kind: $value (must match ^[A-Za-z0-9._-]+\$)"
+  fi
+}
+
 validate_repo_name() {
-  repo=$1
-  if ! printf '%s' "$repo" | grep -Eq '^[A-Za-z0-9._-]+$'; then
-    die "invalid GitHub repo name: $repo (must match ^[A-Za-z0-9._-]+\$)"
+  validate_github_name "$1" "repo name"
+}
+
+validate_owner() {
+  validate_github_name "$1" "owner"
+}
+
+resolve_create_target() {
+  if [ -n "$REPO_OWNER" ]; then
+    CREATE_TARGET="$REPO_OWNER/$REPO_NAME"
+  else
+    CREATE_TARGET="$REPO_NAME"
   fi
 }
 
@@ -245,7 +275,7 @@ create_github_remote() {
   (
     cd "$TARGET_DIR"
     # shellcheck disable=SC2086
-    gh repo create "$REPO_NAME" \
+    gh repo create "$CREATE_TARGET" \
       --source=. \
       --remote=origin \
       --push \
@@ -267,15 +297,22 @@ dry_run_summary() {
   if [ "$PUBLIC" -eq 1 ]; then
     visibility=public
   fi
+  if [ -n "$REPO_OWNER" ]; then
+    owner_label=$REPO_OWNER
+  else
+    owner_label='(authenticated user)'
+  fi
   log "[dry-run] target directory: $TARGET_DIR"
+  log "[dry-run] owner: $owner_label"
   log "[dry-run] repo name: $REPO_NAME"
+  log "[dry-run] create target: $CREATE_TARGET"
   log "[dry-run] visibility: $visibility"
   log "[dry-run] would copy template from: $TEMPLATE_DIR"
   log "[dry-run] would copy hook primitives: prepare-git-hooks.sh, verify-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh"
   log "[dry-run] would run: git init -b main"
   log "[dry-run] would run: npm install"
   log "[dry-run] would run hook smoke and git commit with sentinel assertion"
-  log "[dry-run] would run: gh repo create \"$REPO_NAME\" --source=. --remote=origin --push --$visibility"
+  log "[dry-run] would run: gh repo create \"$CREATE_TARGET\" --source=. --remote=origin --push --$visibility"
   log "[dry-run] ok — tooling present; no writes performed"
 }
 
@@ -283,6 +320,10 @@ main() {
   parse_args "$@"
   resolve_paths
   validate_repo_name "$REPO_NAME"
+  if [ -n "$REPO_OWNER" ]; then
+    validate_owner "$REPO_OWNER"
+  fi
+  resolve_create_target
   check_tooling
   if [ "$DRY_RUN" -eq 0 ]; then
     guard_not_inside_parent_worktree

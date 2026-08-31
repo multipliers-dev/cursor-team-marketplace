@@ -78,13 +78,15 @@ guard empty directory          (any entry → refuse and list paths)
   → direct hook smoke            (sh .husky/pre-commit + sentinel)
   → git add .
   → git commit -m "Initial commit"   (inline user.name/email; assert sentinel in output)
-  → gh repo create <name> --source=. --remote=origin --push (--private|--public)
+  → gh repo create <create-target> --source=. --remote=origin --push (--private|--public)
 ```
 
-**CLI:** `repo-bootstrap.sh [--name NAME] [--dir DIR] [--public] [--dry-run]`
+**CLI:** `repo-bootstrap.sh [--name NAME] [--dir DIR] [--owner OWNER | --org OWNER] [--public] [--dry-run]`
 
 - Default target: current directory (`$PWD`)
 - Default visibility: **private**; `--public` opts in
+- `--name` is a bare repo name (no `org/repo`); slashes are rejected
+- `--owner` / `--org` (true alias) set the destination namespace. Omitted → authenticated user: `gh repo create "$REPO_NAME"` with no owner prefix. When set, create target is `owner/name`
 - `--dry-run`: verify tooling; no writes; no `gh auth` required
 
 ## Empty-directory guard
