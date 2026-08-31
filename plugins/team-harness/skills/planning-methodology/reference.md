@@ -32,10 +32,15 @@ plan recommends authority → human accepts by pasting the slice prompt → agen
 - Use **Manual verification gate** for evidence-only slices before closure
 - Recommend authority **per slice**; topology default is branch-from and PR-target `main`
 - When converting a native Cursor plan, wrap-and-slice: add the envelope, preserve mermaid/diagrams and implementation-critical tables/checklists in the executing slice or a Design/Context section — do not compress them into prose
+- Multi-repo slices: list **Required repositories** (owner/name + role) in the slice body; add `Repositories:` to the agent prompt; hard-stop if any checkout is missing or identity-mismatched — do not reconstruct from plan/docs/target repo
 
 ### Anti-pattern: diagram → prose
 
 Replacing a mermaid flowchart (e.g. a four-layer capability model) with a one-line summary like "four capability layers (day-job vs interview-format vs …)" loses structure agents need at execution time. A summary may accompany a diagram; it must not replace it.
+
+### Anti-pattern: missing source checkout → reconstruct
+
+When a multi-repo slice lists a source repository as read-only authority, launching against only the target repo and reconstructing behavior from the plan, documentation, or target-repo guesses violates the environment preflight. Stop and use a multi-repo Cloud Agent environment with every **Required repositories** checkout present.
 
 ## Example prompts
 
@@ -90,6 +95,26 @@ Topology: start from latest origin/main; branch represents only this slice; PR b
 Deliverables: mark <slice-id> completed in plan frontmatter (plan-status only).
 
 Verification: frontmatter marks <slice-id> completed and links the implementation PR(s).
+```
+````
+
+Multi-repo extraction slice (source read-only, target read/write — five labeled prompt lines):
+
+````markdown
+```text
+@<plan-repo>/.cursor/plans/<slug>.plan.md
+
+Implement slice <slice-id> only, in <target-repo>. Do not start other slices.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: start from that repo’s latest origin/main; branch represents only this slice; PR base must be main.
+
+Repositories: multipliers-dev/source-repo (behavioral/source authority, read-only), multipliers-dev/target-repo (implementation target, read/write); verify all are present/readable before implementation; hard-stop if not.
+
+Deliverables: extract/generalize from source into target.
+
+Verification: preflight proved both checkouts; implementation copied from source paths, not reconstructed from plan/docs.
 ```
 ````
 

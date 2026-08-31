@@ -2,9 +2,11 @@
 name: planning-methodology
 description: >-
   Portable staged-plan and merge-safe PR methodology (lightweight vs staged,
-  execution authority, topology, frontmatter, agent prompts, plan closure).
+  execution authority, topology, multi-repo environment preflight, frontmatter,
+  agent prompts, plan closure).
   Use when creating or executing .cursor/plans, slicing work into PRs, writing
-  agent prompts, or when User Rules point at this planning methodology skill.
+  agent prompts, verifying required repository checkouts, or when User Rules
+  point at this planning methodology skill.
 ---
 
 # Planning methodology (canonical)
@@ -18,7 +20,8 @@ Repo domain checklists (API contracts, client-state matrices, route/domain examp
 - Creating or revising `.cursor/plans/*.plan.md`
 - Choosing lightweight direct PR vs staged multi-PR plan
 - Writing copy/paste agent prompts for slices
-- Executing a plan slice (authority, topology, stop conditions)
+- Executing a plan slice (authority, topology, multi-repo preflight, stop conditions)
+- Verifying required repository checkouts before multi-repo slice execution
 - Closing / archiving a staged plan
 
 ## Lightweight vs staged
@@ -72,6 +75,28 @@ Do not infer PR target or topology from the current branch, a prior slice branch
 
 On mismatch: stop; do not continue on that PR.
 
+## Multi-repo environment preflight
+
+Distinct from repository topology: topology answers which branch/base each PR uses; this preflight answers which repositories must be available to execute the slice. Distinct from cross-repo completion recording (item 5): plan-status answers where the todo is marked completed, not which checkouts the agent must have.
+
+During plan authoring, every slice that reads, modifies, validates against, migrates from, or migrates to another repository must explicitly list its required repositories and each repository's role, for example:
+
+Required repositories:
+- multipliers-dev/source-repo — behavioral/source authority, read-only
+- multipliers-dev/target-repo — implementation target, read/write
+
+Every agent prompt for such a slice must include a multi-repo preflight **before any edits**. For each required repository, prove all three:
+
+- confirm it exists as a real git checkout in the active environment (GitHub App / job-token access alone is not a checkout)
+- confirm `git remote` / repository identity matches the expected owner/name
+- perform the minimum capability check for its declared role:
+  - read-only source or validation repo: open one named authoritative source path
+  - write target: confirm the actual target checkout; later normal branch creation is enough — do not make a throwaway mutation
+
+Hard-stop: if any required repository is missing, inaccessible, identity-mismatched, or not part of the active Cloud Agent environment, STOP before modifying files. Do not reconstruct, approximate, infer, or substitute source behavior from the plan, documentation, cached context, public mirrors, memory, or the target repository.
+
+Cloud Agents: when a slice's required repositories include more than one repository, use a multi-repo Cloud Agent environment containing every required repository. GitHub App access to those repositories is not sufficient evidence that the current job token or environment contains them.
+
 ## Merge-safe PRs (generic)
 
 Each PR must be merge-safe on its own. Do not defer known gaps the current PR already exposes:
@@ -97,9 +122,10 @@ For multi-PR plans under `.cursor/plans/`:
    - **Same-repo slice** (plan file and implementation are in the same repo): mark **its** todo `completed` in frontmatter in the **same** PR as the code.
    - **Cross-repo slice** (authoritative plan lives in a different repo than the implementation): do **not** duplicate or edit the plan from the implementation repo. Land the implementation PR(s) in their own repo, then record completion via a dedicated **plan-status PR** in the plan-owning repo after the implementation PR(s) satisfy the slice’s completion condition.
 6. Do not archive inside implementation PRs unless the PR is the closure PR.
-7. Include **Agent prompts (copy/paste for Cursor)** — one prompt per agent-executable frontmatter todo (including `plan-closure`, Manual gates, and any cross-repo plan-status PR). Present each prompt as `### <todo-id>` (heading copied from the existing frontmatter `id`; do not rename ids to match prose) plus a fenced `text` block with labeled Authority / Topology / Deliverables / Verification lines. Do not use quoted one-line bullets. Every default frontmatter todo has exactly one corresponding `### <todo-id>` heading. Each prompt: `@` plan path, slice id, scope boundaries (`only` / `do not start …`), deliverables/stop, verbatim Agent instruction, prerequisites, topology reminders when opening a PR, and the completion-recording rule from item 5 — same-repo prompts say “mark `<slice>` completed in plan frontmatter in this PR”; cross-repo implementation prompts say “do not edit the plan; record completion via the plan-status PR in the plan-owning repo.” This skill owns those structural prompt-layout invariants; repo `_template.plan.md` copies may specialize wording (domain notes, examples) but must not change the layout structure.
+7. Include **Agent prompts (copy/paste for Cursor)** — one prompt per agent-executable frontmatter todo (including `plan-closure`, Manual gates, and any cross-repo plan-status PR). Present each prompt as `### <todo-id>` (heading copied from the existing frontmatter `id`; do not rename ids to match prose) plus a fenced `text` block with labeled Authority / Topology / Deliverables / Verification lines. When the slice is multi-repo (needs another repository checkout to execute), also include a labeled `Repositories:` line after `Topology:` and before `Deliverables:` — do not add it to same-repo or plan-status prompts. Do not use quoted one-line bullets. Every default frontmatter todo has exactly one corresponding `### <todo-id>` heading. Each prompt: `@` plan path, slice id, scope boundaries (`only` / `do not start …`), deliverables/stop, verbatim Agent instruction, prerequisites, topology reminders when opening a PR, and the completion-recording rule from item 5 — same-repo prompts say “mark `<slice>` completed in plan frontmatter in this PR”; cross-repo implementation prompts say “do not edit the plan; record completion via the plan-status PR in the plan-owning repo.” This skill owns those structural prompt-layout invariants; repo `_template.plan.md` copies may specialize wording (domain notes, examples) but must not change the layout structure.
 8. Include plan-level `## Recommended execution authority` table plus per-slice authority blocks.
 9. **Native plan conversion:** When redrafting a Cursor-native plan (`~/.cursor/plans/`) into a committed `.cursor/plans/*.plan.md`, **wrap and slice; do not strip.** Add the required envelope (frontmatter todos, authority table, topology, per-slice blocks, agent prompts, `plan-closure`). Preserve mermaid/markdown diagrams and tables/checklists that encode the work (phased strategies, verification lists, capability models). Put those artifacts in the slice that will execute them, or in a `## Design` / `## Context` section implementation slices must follow — not only as a compressed appendix. A one-line summary may accompany a diagram; it must not replace it. "Redraft / align with this methodology" means add the envelope; it does not mean delete design artifacts to match the boilerplate skeleton. A pointer to `~/.cursor/plans/` is not enough — those files are local and not reviewable in the PR. Plan-review / conversion verification must include: source diagrams and implementation-critical structure preserved.
+10. Slices that need another repository checkout must list **Required repositories** (owner/name + role) in the slice body.
 
 ## Active vs archived
 
