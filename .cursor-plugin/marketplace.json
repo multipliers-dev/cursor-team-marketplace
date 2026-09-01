@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Portable planning methodology, repo bootstrap, and Cloud-hooks primitive. Skills install with the plugin; Cloud-hooks still need one-time repo wiring.",
-    "version": "1.9.0",
+    "version": "1.9.1",
     "pluginRoot": "plugins"
   },
   "plugins": [

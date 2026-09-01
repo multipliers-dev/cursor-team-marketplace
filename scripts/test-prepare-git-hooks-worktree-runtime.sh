@@ -7,6 +7,7 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 PREPARE="$ROOT/plugins/team-harness/scripts/prepare-git-hooks.sh"
 VERIFY="$ROOT/plugins/team-harness/scripts/verify-git-hooks.sh"
+REPAIR="$ROOT/plugins/team-harness/scripts/husky-shim-repair.sh"
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -159,7 +160,7 @@ exit 0
 EOF
 chmod +x "$FAKE_BIN/husky"
 
-cp "$PREPARE" "$VERIFY" "$TEST_SCRIPTS/"
+cp "$PREPARE" "$VERIFY" "$REPAIR" "$TEST_SCRIPTS/"
 cat > "$TEST_SCRIPTS/ensure-hooks.sh" <<EOF
 #!/usr/bin/env sh
 touch "$ENSURE_MARKER"
