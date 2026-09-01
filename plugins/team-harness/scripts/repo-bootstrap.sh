@@ -142,7 +142,7 @@ check_tooling() {
   fi
   [ -d "$TEMPLATE_DIR" ] || die "missing template directory: $TEMPLATE_DIR"
   if [ "${REPO_BOOTSTRAP_STOP_AFTER_SUBSTITUTE:-}" != "1" ]; then
-    for script in prepare-git-hooks.sh verify-git-hooks.sh ensure-hooks.sh session-ensure-git-hooks.sh; do
+    for script in prepare-git-hooks.sh verify-git-hooks.sh ensure-hooks.sh husky-shim-repair.sh session-ensure-git-hooks.sh; do
       [ -f "$PLUGIN_ROOT/scripts/$script" ] || die "missing hook primitive: $PLUGIN_ROOT/scripts/$script"
     done
   fi
@@ -225,10 +225,12 @@ copy_hook_primitives() {
   cp "$PLUGIN_ROOT/scripts/prepare-git-hooks.sh" "$TARGET_DIR/scripts/prepare-git-hooks.sh"
   cp "$PLUGIN_ROOT/scripts/verify-git-hooks.sh" "$TARGET_DIR/scripts/verify-git-hooks.sh"
   cp "$PLUGIN_ROOT/scripts/ensure-hooks.sh" "$TARGET_DIR/scripts/ensure-hooks.sh"
+  cp "$PLUGIN_ROOT/scripts/husky-shim-repair.sh" "$TARGET_DIR/scripts/husky-shim-repair.sh"
   cp "$PLUGIN_ROOT/scripts/session-ensure-git-hooks.sh" "$TARGET_DIR/.cursor/hooks/ensure-git-hooks.sh"
   chmod +x "$TARGET_DIR/scripts/prepare-git-hooks.sh" \
     "$TARGET_DIR/scripts/verify-git-hooks.sh" \
     "$TARGET_DIR/scripts/ensure-hooks.sh" \
+    "$TARGET_DIR/scripts/husky-shim-repair.sh" \
     "$TARGET_DIR/.cursor/hooks/ensure-git-hooks.sh" \
     "$TARGET_DIR/.husky/pre-commit"
 }
@@ -308,7 +310,7 @@ dry_run_summary() {
   log "[dry-run] create target: $CREATE_TARGET"
   log "[dry-run] visibility: $visibility"
   log "[dry-run] would copy template from: $TEMPLATE_DIR"
-  log "[dry-run] would copy hook primitives: prepare-git-hooks.sh, verify-git-hooks.sh, ensure-hooks.sh, session-ensure-git-hooks.sh"
+  log "[dry-run] would copy hook primitives: prepare-git-hooks.sh, verify-git-hooks.sh, ensure-hooks.sh, husky-shim-repair.sh, session-ensure-git-hooks.sh"
   log "[dry-run] would run: git init -b main"
   log "[dry-run] would run: npm install"
   log "[dry-run] would run hook smoke and git commit with sentinel assertion"

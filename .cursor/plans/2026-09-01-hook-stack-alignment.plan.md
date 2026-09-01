@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: marketplace-portable-primitive
     content: "PR (cursor-team-marketplace): sessionStart runnable-hook verify/repair/warn, format-after-edit optional primitive, cloud-hooks skill + engineering-invariants, template polish, tests, plugin bump"
-    status: pending
+    status: completed
   - id: resumes-hook-retrofit
     content: "PR (resumes): vendor marketplace layer-1 scripts, layer-2b pre-commit (add format:check), optional layer-2a format.sh, AGENTS.md invariants — after marketplace slice merged"
     status: pending

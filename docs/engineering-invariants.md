@@ -47,3 +47,9 @@
 - Marketplace Cloud-hooks scripts are a portable primitive, not automatic Cloud-safety.
 
 - Husky repos still need one-time `prepare` / ensure-hooks wiring per repo.
+
+- **Configured `core.hooksPath` does not prove hooks are runnable.** A checkout can point at `.husky/_` while executable shims are missing (common after `git worktree add`). Run `npm run prepare` or `npm run verify:git-hooks` in each checkout before committing.
+
+- **Plugin / marketplace install ≠ repo wired.** Installing the team-harness plugin distributes scripts; each Husky repo still copies and wires them once.
+
+- **Layer 2a (`afterFileEdit` / format hook) is agent ergonomics only** — not a substitute for Husky, pre-commit checks, or CI.

@@ -53,12 +53,13 @@ Git + GitHub           persist/share
 | `templates/repo/` | Greenfield preset files only (`.gitignore`, `AGENTS.md`, `package.json`, Husky, CI, minimal Cloud lifecycle) |
 | `scripts/repo-bootstrap.sh` | Copies preset + hook allowlist; runs hook smoke; creates GitHub remote |
 
-**Hook primitive allowlist** (only these four from plugin `scripts/`):
+**Hook primitive allowlist** (only these five from plugin `scripts/`):
 
 | Plugin source | Repo destination |
 | --- | --- |
 | `scripts/prepare-git-hooks.sh` | `scripts/prepare-git-hooks.sh` |
 | `scripts/verify-git-hooks.sh` | `scripts/verify-git-hooks.sh` |
+| `scripts/husky-shim-repair.sh` | `scripts/husky-shim-repair.sh` |
 | `scripts/ensure-hooks.sh` | `scripts/ensure-hooks.sh` |
 | `scripts/session-ensure-git-hooks.sh` | `.cursor/hooks/ensure-git-hooks.sh` |
 

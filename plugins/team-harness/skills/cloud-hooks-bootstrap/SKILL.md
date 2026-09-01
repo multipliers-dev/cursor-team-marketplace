@@ -2,8 +2,9 @@
 name: cloud-hooks-bootstrap
 description: >-
   One-time Cloud-aware Husky wiring plus environment.json lifecycle using the
-  team-harness portable scripts (prepare-git-hooks, ensure-hooks bridge,
-  sessionStart rechain, optional Node-from-.nvmrc Cloud install/start). Use when
+  team-harness portable scripts (prepare-git-hooks, verify-git-hooks, ensure-hooks
+  bridge, husky-shim-repair, sessionStart verify/repair/warn, optional
+  format-after-edit Layer 2a, optional Node-from-.nvmrc Cloud install/start). Use when
   porting Cloud git-hook safety into a repo, fixing CI=true skipping Husky on
   Cursor Cloud, or when marketplace / plugin install alone is not enough for Cloud commits.
 ---
@@ -14,12 +15,32 @@ description: >-
 
 Proven pattern: an existing Cloud Husky bridge + Node-from-`.nvmrc` Build/session PATH recipe; generalized here for new repos.
 
-## Three-layer model
+## Four-layer enforcement model
+
+Do not blur hook infrastructure with formatting ergonomics or CI. Each layer answers a different question:
+
+| Layer | Question | Mechanism | This skill covers |
+| --- | --- | --- | --- |
+| **1 — Hook availability** | Are Git hooks wired and **runnable in this checkout**? | `prepare-git-hooks.sh`, `verify-git-hooks.sh`, `ensure-hooks.sh`, `husky-shim-repair.sh`, `session-ensure-git-hooks.sh` | **Yes — primary scope** |
+| **2a — Agent feedback** | Can agent edits stay formatted while working? | Optional `afterFileEdit` → copied `format.sh` from `format-after-edit.sh` | **Optional copy-only primitive** |
+| **2b — Commit correctness** | What must pass before a commit lands locally? | Product `.husky/pre-commit` recipe (lint-staged, lint, typecheck, format:check, …) | **Per-repo — not replaced by this skill** |
+| **3 — Authoritative enforcement** | What is the backstop when local/agent machinery fails? | CI (`format:check`, lint, typecheck, …) | **Per-repo CI — not replaced by this skill** |
+
+### Core invariant (Layer 1)
+
+> **An agent must not assume Git hooks are active merely because `core.hooksPath` is configured.**
+
+Configured path ≠ runnable shims. Verification must check **actual executable hook state** in the current checkout/worktree.
+
+- After `git worktree add`: run `npm run prepare` or `npm run verify:git-hooks` in the new worktree before committing.
+- **Plugin install ≠ repo wired.** Scripts must be copied and `prepare` / `sessionStart` wired once per repo.
+
+## Wiring model (how Layer 1 gets installed)
 
 | Layer | What it does | Where it lives |
 | --- | --- | --- |
 | 1. Plugin install | Distributes capability (Husky scripts + Cloud Node scripts + recipes) | Marketplace / plugin install |
-| 2. Repo bootstrap | Wires `prepare`, `ensure-hooks`, `sessionStart` | One-time in-repo copy |
+| 2. Repo bootstrap | Wires `prepare`, `ensure-hooks`, `sessionStart`, shared `husky-shim-repair.sh` | One-time in-repo copy |
 | 3. Cloud lifecycle | Guarantees Cloud **runs** wiring (`install` → Node pin + deps + `prepare`; `start` → session PATH + ensure-hooks rechain) | Committed `.cursor/environment.json` + copied Cloud Node scripts when needed |
 
 ```mermaid
@@ -50,10 +71,12 @@ Relative to the `team-harness` plugin root:
 
 | Path | Role |
 | --- | --- |
-| `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; self-heal missing/non-executable `.husky/_` shims; order is install/repair → verify → ensure-hooks (ensure-hooks last, always runs even when verify fails; prepare still exits non-zero on bad shims) |
+| `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; self-heal missing/non-executable `.husky/_` shims via shared `husky-shim-repair.sh`; order is install/repair → verify → ensure-hooks (ensure-hooks last, always runs even when verify fails; prepare still exits non-zero on bad shims) |
 | `scripts/verify-git-hooks.sh` | Fail fast when any repo-defined Git hook under `.husky/<hook>` lacks an executable `.husky/_/<hook>` shim; helpers like `common.sh` are ignored |
+| `scripts/husky-shim-repair.sh` | Shared shim detection + husky re-run — single repair definition for prepare and sessionStart |
 | `scripts/ensure-hooks.sh` | Point Cloud `agent-hooks` dispatcher at `~/.cursor/husky-bridge`, which resolves the current repo’s `.husky/*` at hook time |
-| `scripts/session-ensure-git-hooks.sh` | `sessionStart` rechain when `agent-hooks` appears after late `npm prepare` |
+| `scripts/session-ensure-git-hooks.sh` | `sessionStart`: rechain ensure-hooks; verify runnable shims in current checkout; attempt shared shim repair; emit `HOOKS NOT RUNNABLE` warning when still broken (fail-open) |
+| `scripts/format-after-edit.sh` | Optional Layer 2a: fail-open Prettier on agent-edited paths; copy to `.cursor/hooks/format.sh` + wire `afterFileEdit` — **agent ergonomics only**, not a Husky or pre-commit substitute |
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent); safe to source repeatedly |
 | `scripts/cloud-agent-install.sh` | If PATH Node major ≠ `.nvmrc` major, extract the full official Node distribution prefix into `/usr/local`; persist session PATH; run declared dependency command |
 | `scripts/cloud-agent-start.sh` | Session PATH + Node probe log + `sh scripts/ensure-hooks.sh` |
@@ -65,24 +88,65 @@ When **Cloud Agents are expected**, complete all applicable steps during bootstr
 1. Copy (or vendor) the Husky scripts from the installed **team-harness** plugin into the repo — typical layout:
    - `scripts/prepare-git-hooks.sh`
    - `scripts/verify-git-hooks.sh`
+   - `scripts/husky-shim-repair.sh`
    - `scripts/ensure-hooks.sh`
    - `.cursor/hooks/ensure-git-hooks.sh` ← from `session-ensure-git-hooks.sh`
 2. Point `package.json` `"prepare"` at the Cloud-aware prepare script (replace naive `husky` / `if CI skip` helpers). Optionally add `"verify:git-hooks": "sh scripts/verify-git-hooks.sh"` for manual checks.
-3. Ensure `.cursor/hooks.json` includes a `sessionStart` entry that runs `.cursor/hooks/ensure-git-hooks.sh` (fail-open).
-4. Keep **per-repo** `.husky/pre-commit` (and friends) contents — lint-staged recipes differ; the plugin does not replace them.
+3. Ensure `.cursor/hooks.json` includes a `sessionStart` entry that runs `.cursor/hooks/ensure-git-hooks.sh` with `timeout: 15` (fail-open).
+4. Keep **per-repo** `.husky/pre-commit` (and friends) contents — lint-staged recipes differ; the plugin does not replace them (**Layer 2b**).
 5. **Commit `.cursor/environment.json`** with lifecycle commands for this repo:
    - **Minimal** (Node already matches Cloud VM / no `.nvmrc` pin needed): `"install"` = this repo’s deterministic dependency command (must trigger `prepare`); `"start"` = `sh scripts/ensure-hooks.sh`.
    - **When `.nvmrc` pins a newer Node major** than typical Cloud VMs: also copy `cloud-agent-session-path.sh`, `cloud-agent-install.sh`, and `cloud-agent-start.sh`; set `"install"` / `"start"` to those wrappers; declare the install script’s dependency command from **this repo’s** CI/lockfile (wrapper script, env var, or args — not hardcoded inside the portable script).
    - If `engines.node` implies a newer major but no `.nvmrc` exists, decide whether to add a `.nvmrc` pin as part of bootstrap before wiring Cloud lifecycle.
-6. Optional Prettier `afterFileEdit` stays product/repo-specific — not required by this primitive.
+6. **Optional Layer 2a (agent ergonomics):** copy `format-after-edit.sh` → `.cursor/hooks/format.sh` and add `afterFileEdit` to `hooks.json` (e.g. 30s timeout). This is a **redundant formatting path for agent sessions** — it does **not** replace Husky, pre-commit lint/typecheck/format:check, or CI. Skip for test+typecheck-only repos (e.g. greenfield `/repo-bootstrap`).
 7. Verify on Cloud: Build runs `install` → deps + `prepare`; start runs ensure-hooks; a commit triggers the bridge (`[ensure-hooks]` messages) and runs the repo’s Husky hooks.
 8. **After `git worktree add`:** run `npm run prepare` (or `npm run verify:git-hooks` after prepare) in the new worktree before committing — worktrees inherit `core.hooksPath=.husky/_` but not executable `.husky/_` shims until prepare runs there.
-9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh` and add `verify-git-hooks.sh` (plus optional `verify:git-hooks` script) from the installed plugin — older in-repo copies may lack worktree shim self-healing and generalized verify.
+9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh`, `verify-git-hooks.sh`, and `husky-shim-repair.sh` (plus optional `verify:git-hooks` script) from the installed plugin — older in-repo copies may lack worktree shim self-healing, sessionStart verify/repair, or generalized verify.
 10. **After merge:** trigger and promote a **new environment Build** so Cloud stops reusing the old snapshot. The plugin cannot automate Build promotion.
 
 ## Conceptual `environment.json` shapes
 
-**Minimal (Node already matches VM / no `.nvmrc` pin needed):**
+**Optional Layer 2a (`afterFileEdit` + format hook):**
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "sh .cursor/hooks/ensure-git-hooks.sh",
+        "timeout": 15
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "sh .cursor/hooks/format.sh \"$CURSOR_FILE_PATH\"",
+        "timeout": 30
+      }
+    ]
+  }
+}
+```
+
+Copy `format-after-edit.sh` → `.cursor/hooks/format.sh`. Layer 2a is **agent ergonomics only** — not a substitute for Layer 2b pre-commit or Layer 3 CI.
+
+**Minimal `hooks.json` (Layer 1 only — no afterFileEdit):**
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "sh .cursor/hooks/ensure-git-hooks.sh",
+        "timeout": 15
+      }
+    ]
+  }
+}
+```
+
+**Minimal `environment.json` (Node already matches VM / no `.nvmrc` pin needed):**
 
 ```json
 {
