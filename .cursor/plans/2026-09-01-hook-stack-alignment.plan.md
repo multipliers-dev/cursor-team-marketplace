@@ -19,7 +19,7 @@ todos:
     status: pending
   - id: ai-learning-docs
     content: "Docs-only: document ai-learning as legacy outlier in cloud-hooks skill (no ai-learning code PR)"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR (cursor-team-marketplace): Shipped note, archive plan, mark plan-closure completed"
     status: pending

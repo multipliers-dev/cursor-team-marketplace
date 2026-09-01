@@ -179,6 +179,14 @@ Wire the install script’s dependency command at bootstrap time — for example
 - Do not parse `engines.node` semver ranges inside portable scripts
 - Do not infer package manager / workspace layout inside `cloud-agent-install.sh`
 
+## Known legacy outliers
+
+Repos that use Husky but are **not** wired to the portable Layer 1 stack. Do not retrofit these unless explicitly requested — document the gap and move on.
+
+| Repo | Gap |
+| --- | --- |
+| [mastermichaelt/ai-learning](https://github.com/mastermichaelt/ai-learning) | Plain `"prepare": "husky"` only — no vendored `prepare-git-hooks.sh` / `verify-git-hooks.sh` / `husky-shim-repair.sh`, no `sessionStart` runnable-hook verification, no Cloud-aware prepare. Layer 2b is lint-staged only. |
+
 ## Agent behavior
 
 When asked to wire Cloud hooks into a repo:
