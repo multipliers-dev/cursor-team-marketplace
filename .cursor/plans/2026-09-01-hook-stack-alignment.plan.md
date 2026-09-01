@@ -112,6 +112,7 @@ Codenames is the **reference product**; [plugins/team-harness/](plugins/team-har
 - **ai-learning:** document gap only; no retrofit PR.
 - **Each slice:** Open PR only; one repo per PR; branch from latest `origin/main`.
 - **Single repair definition (Layer 1):** `prepare-git-hooks.sh` and `session-ensure-git-hooks.sh` must share one helper for “hooks need repair” detection and shim repair when the logic is non-trivial — do not maintain two divergent copies of `needs_husky_shim_repair` / husky re-run behavior.
+- **Plan frontmatter lives in cursor-team-marketplace only:** consumer-repo PRs (resumes, portfolio, codenames) do **not** edit this plan. Mark their todos `completed` or `cancelled` in a marketplace PR (implementation slice when repo is marketplace; otherwise plan-closure after verifying merges).
 
 ## Recommended execution authority
 
@@ -170,7 +171,7 @@ Document the invariant in [`docs/engineering-invariants.md`](../../docs/engineer
 - **Tests** in [`scripts/check.sh`](../../scripts/check.sh):
   - Extend or add smoke: broken worktree shims → session script warns and/or repairs (assert stderr sentinel or post-repair verify pass).
   - Optional: format-after-edit in-repo vs outside-repo.
-- Bump [`plugin.json`](../../plugins/team-harness/plugin.json) patch version.
+- Bump [`plugins/team-harness/.cursor-plugin/plugin.json`](../../plugins/team-harness/.cursor-plugin/plugin.json) and [`.cursor-plugin/marketplace.json`](../../.cursor-plugin/marketplace.json) patch version (same convention as prior team-harness slices).
 
 **Out of scope:** Prettier in repo-bootstrap template; runtime coupling to marketplace from product repos; porting full codenames vitest suite.
 
@@ -238,11 +239,12 @@ Update [`AGENTS.md`](../../../resumes/AGENTS.md): four-layer model, **hooksPath 
 
 **Authority:** Open PR only
 
-**Optional / low-churn:** only if drift found while vendoring into resumes/portfolio.
+**Optional / low-churn:** only if drift found while vendoring into resumes/portfolio. **If no drift after consumer retrofits, skip this slice** — plan-closure marks `codenames-hygiene` `cancelled` with rationale (no drift; codenames already aligned).
 
 - Compare codenames vendored scripts with marketplace canonical (`prepare`, `verify`, `ensure`, session shim, `format.sh`).
 - **Comment/copy-only** updates if drift exists; re-vendor snapshot if marketplace gained Layer 1 session verify behavior.
 - **No runtime coupling** to marketplace (no shared imports, no workspace-path dependencies).
+- If executed: mark `codenames-hygiene` `completed` in a **marketplace plan-status PR** (or plan-closure if batched) — not from codenames repo alone unless that PR also updates this plan file.
 
 **Out of scope:** changing pre-commit recipe or Cloud lifecycle scripts unless required to match vendored Layer 1 behavior.
 
@@ -262,7 +264,9 @@ Update [`AGENTS.md`](../../../resumes/AGENTS.md): four-layer model, **hooksPath 
 
 **Authority:** Open PR only
 
-After implementation slices merged: `# Shipped` note, move to `archive/`, mark todos completed, update agent prompt paths.
+**Prerequisites:** required implementation slices merged; frontmatter reflects `completed` or `cancelled` for every implementation todo (`codenames-hygiene` may be `cancelled` when skipped for no drift).
+
+After verification: `# Shipped` note, move to `archive/`, mark remaining todos (`resumes-hook-retrofit`, `portfolio-hook-retrofit`, and any batched consumer todos not yet updated) `completed` or `cancelled`, mark `plan-closure` `completed`, update agent prompt paths.
 
 ---
 
@@ -281,12 +285,12 @@ flowchart LR
   planReview --> mkt
   mkt --> resumes
   mkt --> portfolio
-  mkt --> codenames
+  mkt -.->|"optional if drift"| codenames
   mkt --> aiDoc
   resumes --> closure
   portfolio --> closure
-  codenames --> closure
   aiDoc --> closure
+  codenames -.->|"or cancelled at closure"| closure
 ```
 
 Slices 2 and 3 parallel after marketplace slice merges.
@@ -346,7 +350,7 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: Layer 1 sessionStart verify/repair/warn in session-ensure-git-hooks.sh; shared husky-shim-repair helper (single repair definition with prepare-git-hooks.sh — no duplicated detection logic); optional format-after-edit.sh; cloud-hooks skill + engineering-invariants updates; template hooks.json timeout; tests in check.sh; plugin bump. Document that core.hooksPath ≠ runnable hooks. Mark marketplace-portable-primitive completed in frontmatter in this PR.
+Deliverables: Layer 1 sessionStart verify/repair/warn in session-ensure-git-hooks.sh; shared husky-shim-repair helper (single repair definition with prepare-git-hooks.sh — no duplicated detection logic); optional format-after-edit.sh; cloud-hooks skill + engineering-invariants updates; template hooks.json timeout; tests in check.sh; bump plugins/team-harness/.cursor-plugin/plugin.json and .cursor-plugin/marketplace.json. Document that core.hooksPath ≠ runnable hooks. Mark marketplace-portable-primitive completed in frontmatter in this PR.
 
 Verification: check.sh green including runnable-hook smoke; prepare and sessionStart call the same repair helper; no Prettier added to repo-bootstrap template; no runtime coupling pattern introduced.
 ```
@@ -362,7 +366,7 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main in resumes; branch represents only this slice; PR base must be main.
 
-Deliverables: vendor marketplace Layer 1 scripts; Layer 2b pre-commit adds format:check; optional Layer 2a format.sh copy; AGENTS.md four-layer invariants. Mark resumes-hook-retrofit completed in plan frontmatter in this PR (plan file change may be docs-only follow-up in marketplace closure PR if plan lives there only).
+Deliverables: vendor marketplace Layer 1 scripts; Layer 2b pre-commit adds format:check; optional Layer 2a format.sh copy; AGENTS.md four-layer invariants. Do not edit plan frontmatter from this PR (plan lives in cursor-team-marketplace only).
 
 Verification: verify:git-hooks + worktree smoke; npm run check green; afterFileEdit is documented as ergonomics not Husky substitute.
 ```
@@ -378,7 +382,7 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main in portfolio; branch represents only this slice; PR base must be main.
 
-Deliverables: vendor marketplace Layer 1; Layer 2a format.sh copy; keep existing Layer 2b pre-commit; AGENTS.md invariants. Mark portfolio-hook-retrofit completed in plan frontmatter.
+Deliverables: vendor marketplace Layer 1; Layer 2a format.sh copy; keep existing Layer 2b pre-commit; AGENTS.md invariants. Do not edit plan frontmatter from this PR (plan lives in cursor-team-marketplace only).
 
 Verification: verify:git-hooks + worktree smoke; npm run check green.
 ```
@@ -388,11 +392,11 @@ Verification: verify:git-hooks + worktree smoke; npm run check green.
 ```text
 @.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
 
-Implement slice codenames-hygiene only if drift exists after marketplace slice. Optional slice.
+Implement slice codenames-hygiene only if drift exists after marketplace slice and consumer retrofits. Optional slice — if skipped, plan-closure marks `codenames-hygiene` cancelled.
 
 Authority: Open PR only — implement and open the PR; do not merge.
 
-Deliverables: compare vendored scripts vs marketplace canonical; comment/copy-only or re-vendor snapshot. No runtime marketplace coupling. Mark codenames-hygiene completed in plan frontmatter if executed.
+Deliverables: compare vendored scripts vs marketplace canonical; comment/copy-only or re-vendor snapshot. No runtime marketplace coupling. If executed, update plan frontmatter from a marketplace PR (same PR if codenames changes are paired with plan-status, or defer to plan-closure).
 
 Verification: no new cross-repo imports; test:scripts green if touched.
 ```
@@ -420,9 +424,9 @@ Execute only plan-closure in cursor-team-marketplace.
 
 Authority: Open PR only — docs-only archive PR; do not merge.
 
-Prerequisites: implementation slices merged and marked completed in frontmatter.
+Prerequisites: required implementation slices merged; frontmatter shows `completed` or `cancelled` for each implementation todo (including `codenames-hygiene` cancelled when skipped).
 
-Deliverables: verify slice todos, add # Shipped note, move plan to archive/, mark plan-closure completed, update agent prompt references.
+Deliverables: verify merged PRs; mark consumer-repo todos completed if not already; mark skipped `codenames-hygiene` cancelled if applicable; add # Shipped note; move plan to archive/; mark plan-closure completed; update agent prompt references.
 
 Verification: confirm prerequisite PRs merged before archiving.
 ```
