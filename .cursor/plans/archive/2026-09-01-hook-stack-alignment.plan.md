@@ -10,19 +10,19 @@ todos:
     status: completed
   - id: resumes-hook-retrofit
     content: "PR (resumes): vendor marketplace layer-1 scripts, layer-2b pre-commit (add format:check), optional layer-2a format.sh, AGENTS.md invariants — after marketplace slice merged"
-    status: pending
+    status: completed
   - id: portfolio-hook-retrofit
     content: "PR (portfolio): vendor marketplace layer-1 scripts, layer-2a format.sh, AGENTS.md invariants — after marketplace slice merged"
-    status: pending
+    status: completed
   - id: codenames-hygiene
     content: "Optional PR (codenames-ai-guesser): compare vendored scripts vs marketplace canonical; comment/copy-only if drift — no runtime coupling"
-    status: pending
+    status: completed
   - id: ai-learning-docs
     content: "Docs-only: document ai-learning as legacy outlier in cloud-hooks skill (no ai-learning code PR)"
     status: completed
   - id: plan-closure
     content: "Docs-only PR (cursor-team-marketplace): Shipped note, archive plan, mark plan-closure completed"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -326,7 +326,7 @@ Slices 2 and 3 parallel after marketplace slice merges.
 ### plan-review
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Execute only plan-review. Do not start implementation slices.
 
@@ -342,7 +342,7 @@ Verification: plan satisfies repo planning standards; no hook script or consumer
 ### marketplace-portable-primitive
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Implement slice marketplace-portable-primitive only in cursor-team-marketplace. Prerequisite: plan-review merged. Do not start consumer retrofits or plan-closure.
 
@@ -358,7 +358,7 @@ Verification: check.sh green including runnable-hook smoke; prepare and sessionS
 ### resumes-hook-retrofit
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Implement slice resumes-hook-retrofit only. Prerequisite: marketplace-portable-primitive merged. Do not start portfolio, codenames, or plan-closure.
 
@@ -374,7 +374,7 @@ Verification: verify:git-hooks + worktree smoke; npm run check green; afterFileE
 ### portfolio-hook-retrofit
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Implement slice portfolio-hook-retrofit only. Prerequisite: marketplace-portable-primitive merged. Do not start plan-closure.
 
@@ -390,7 +390,7 @@ Verification: verify:git-hooks + worktree smoke; npm run check green.
 ### codenames-hygiene
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Implement slice codenames-hygiene only if drift exists after marketplace slice and consumer retrofits. Optional slice — if skipped, plan-closure marks `codenames-hygiene` cancelled.
 
@@ -404,7 +404,7 @@ Verification: no new cross-repo imports; test:scripts green if touched.
 ### ai-learning-docs
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Implement slice ai-learning-docs only (marketplace docs). No ai-learning code changes.
 
@@ -418,7 +418,7 @@ Verification: docs-only in marketplace PR.
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-09-01-hook-stack-alignment.plan.md
+@.cursor/plans/archive/2026-09-01-hook-stack-alignment.plan.md
 
 Execute only plan-closure in cursor-team-marketplace.
 
@@ -430,3 +430,34 @@ Deliverables: verify merged PRs; mark consumer-repo todos completed if not alrea
 
 Verification: confirm prerequisite PRs merged before archiving.
 ```
+
+---
+
+# Shipped
+
+**Date:** 1 Sep 2026
+
+**PRs:**
+
+- [Plan review (#38)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/38) — plan artifact committed
+- [Marketplace portable primitive (#39)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/39) — Layer 1 sessionStart verify/repair/warn, shared husky-shim-repair helper, format-after-edit primitive, cloud-hooks skill + engineering-invariants, template polish, tests; plugin **1.9.1**
+- [ai-learning-docs (#40)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/40) — legacy outlier documented in cloud-hooks skill
+- [resumes hook retrofit (#94)](https://github.com/mastermichaelt/resumes/pull/94) — vendored Layer 1; stronger pre-commit (format:check); optional Layer 2a; AGENTS.md invariants
+- [portfolio hook retrofit (#34)](https://github.com/mastermichaelt/portfolio/pull/34) — vendored Layer 1; Layer 2a format.sh; AGENTS.md invariants
+- [codenames hygiene (#561)](https://github.com/multipliers-dev/codenames-ai-guesser/pull/561) — re-vendored Layer 1 snapshot after drift found (comment/copy-only)
+
+**What shipped:**
+
+- Layer 1 sessionStart verify/repair/warn + shared `husky-shim-repair` helper (single repair definition with `prepare-git-hooks.sh`)
+- Optional `format-after-edit` primitive for Layer 2a agent ergonomics
+- resumes, portfolio, and codenames vendored marketplace Layer 1 snapshots
+- resumes stronger pre-commit (`format:check` added to Layer 2b)
+- ai-learning documented as legacy outlier (no retrofit)
+- Plugin/marketplace **1.9.1**
+
+**Deferred work:**
+
+- No ai-learning retrofit (intentionally documented gap only)
+- No Prettier in greenfield repo-bootstrap template
+- No forcing savepoints/renovate-workflow to adopt Layer 2a Prettier
+- codenames keeps Cursor stdin JSON for `afterFileEdit` (intentional divergence from marketplace copy-only primitive)
