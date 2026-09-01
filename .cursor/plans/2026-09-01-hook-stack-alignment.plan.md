@@ -111,6 +111,7 @@ Codenames is the **reference product**; [plugins/team-harness/](plugins/team-har
 - **No runtime marketplace coupling** in product repos (copy-only vendoring).
 - **ai-learning:** document gap only; no retrofit PR.
 - **Each slice:** Open PR only; one repo per PR; branch from latest `origin/main`.
+- **Single repair definition (Layer 1):** `prepare-git-hooks.sh` and `session-ensure-git-hooks.sh` must share one helper for “hooks need repair” detection and shim repair when the logic is non-trivial — do not maintain two divergent copies of `needs_husky_shim_repair` / husky re-run behavior.
 
 ## Recommended execution authority
 
@@ -148,7 +149,7 @@ Enhance [`plugins/team-harness/scripts/session-ensure-git-hooks.sh`](../../plugi
 
 1. Existing: rechain `ensure-hooks.sh` (Cloud agent-hooks bridge).
 2. **New:** run `verify-git-hooks.sh` against the **current checkout**.
-3. **On verify failure:** attempt shim repair using the same logic as [`prepare-git-hooks.sh`](../../plugins/team-harness/scripts/prepare-git-hooks.sh) (`needs_husky_shim_repair` / husky re-run) — extract shared repair helper if needed to avoid duplication.
+3. **On verify failure:** attempt shim repair via a **shared helper** sourced from the same logic as [`prepare-git-hooks.sh`](../../plugins/team-harness/scripts/prepare-git-hooks.sh) (`needs_husky_shim_repair` / husky re-run). **Extract** `scripts/husky-shim-repair.sh` (or equivalent) if repair/detection is non-trivial — sessionStart must call the helper, not reimplement detection inline.
 4. **If still failing:** emit a **visible, actionable warning** to stderr (e.g. `HOOKS NOT RUNNABLE: run npm run prepare in this checkout before committing`). SessionStart remains fail-open (do not block session boot).
 5. Re-verify after repair attempt when repair ran.
 
@@ -345,9 +346,9 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: Layer 1 sessionStart verify/repair/warn in session-ensure-git-hooks.sh; optional format-after-edit.sh; cloud-hooks skill + engineering-invariants updates; template hooks.json timeout; tests in check.sh; plugin bump. Document that core.hooksPath ≠ runnable hooks. Mark marketplace-portable-primitive completed in frontmatter in this PR.
+Deliverables: Layer 1 sessionStart verify/repair/warn in session-ensure-git-hooks.sh; shared husky-shim-repair helper (single repair definition with prepare-git-hooks.sh — no duplicated detection logic); optional format-after-edit.sh; cloud-hooks skill + engineering-invariants updates; template hooks.json timeout; tests in check.sh; plugin bump. Document that core.hooksPath ≠ runnable hooks. Mark marketplace-portable-primitive completed in frontmatter in this PR.
 
-Verification: check.sh green including runnable-hook smoke; no Prettier added to repo-bootstrap template; no runtime coupling pattern introduced.
+Verification: check.sh green including runnable-hook smoke; prepare and sessionStart call the same repair helper; no Prettier added to repo-bootstrap template; no runtime coupling pattern introduced.
 ```
 
 ### resumes-hook-retrofit
