@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-09-03-checkout-identity.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -52,10 +52,10 @@ This plan is **same-repo / single-checkout**: it edits only `multipliers-dev/cur
 
 The card says “AGENTS.md **or a shared workflow note**.” A demo-only AGENTS.md line would not apply across repos and would drift.
 
-House style for always-on cross-repo agent instructions is the same as [keep-pr-metadata](archive/2026-08-28-keep-pr-metadata-current.plan.md):
+House style for always-on cross-repo agent instructions is the same as [keep-pr-metadata](2026-08-28-keep-pr-metadata-current.plan.md):
 
-- Short bullets in [`docs/engineering-invariants.md`](../../docs/engineering-invariants.md) (User Rules paste)
-- Procedure in [`plugins/team-harness/skills/planning-methodology/SKILL.md`](../../plugins/team-harness/skills/planning-methodology/SKILL.md)
+- Short bullets in [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) (User Rules paste)
+- Procedure in [`plugins/team-harness/skills/planning-methodology/SKILL.md`](../../../plugins/team-harness/skills/planning-methodology/SKILL.md)
 - **Do not** copy into consumer-repo `AGENTS.md` / `merge-safe-prs.mdc`
 - After merge, **re-paste** the invariants file into Cursor User Rules (plugin install does not update User Rules)
 
@@ -108,7 +108,7 @@ Existing **Multi-repo environment preflight** answers “which repos must be ava
 
 ### What to add
 
-**Invariant** (new short section in [`docs/engineering-invariants.md`](../../docs/engineering-invariants.md), after **PR execution**):
+**Invariant** (new short section in [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md), after **PR execution**):
 
 - Before any `git` mutation or `gh` write (commit, push, branch create, `gh pr create` / `edit` / `merge`), prove the shell is in the intended checkout: `pwd` and `git remote get-url origin`.
 - Do not trust Shell `working_directory` alone in multi-root workspaces — it can start in the first listed root.
@@ -119,13 +119,13 @@ Existing **Multi-repo environment preflight** answers “which repos must be ava
 - Same three bullets as procedure, plus: this check is required even when the slice is single-checkout.
 - No new skill, hook, or GitHub Action.
 
-**Version:** bump [`plugins/team-harness/.cursor-plugin/plugin.json`](../../plugins/team-harness/.cursor-plugin/plugin.json) and [`.cursor-plugin/marketplace.json`](../../.cursor-plugin/marketplace.json) from whatever is on `origin/main` at implement time (currently **1.9.1** → **1.10.0**).
+**Version:** bump [`plugins/team-harness/.cursor-plugin/plugin.json`](../../../plugins/team-harness/.cursor-plugin/plugin.json) and [`.cursor-plugin/marketplace.json`](../../../.cursor-plugin/marketplace.json) from whatever is on `origin/main` at implement time (currently **1.9.1** → **1.10.0**).
 
 **Notion:** set the Improvement [Status](https://app.notion.com/p/3d06cffaff9c81f3be46eaeeb1621b23) to `In Progress` when the implementation PR opens; `Done` after that PR merges **and** User Rules are re-pasted.
 
 ### Operator step after merge (required for always-on)
 
-Re-paste [`docs/engineering-invariants.md`](../../docs/engineering-invariants.md) into the Cursor User Rule that currently holds that paste. Until that happens, only chats that invoke `/planning-methodology` will see the new procedure.
+Re-paste [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) into the Cursor User Rule that currently holds that paste. Until that happens, only chats that invoke `/planning-methodology` will see the new procedure.
 
 ### Verification
 
@@ -164,7 +164,7 @@ After `checkout-identity` is **merged** to `main`:
 4. Move the plan to `.cursor/plans/archive/2026-09-03-checkout-identity.plan.md`.
 5. Mark `plan-closure` completed; update agent prompt path references.
 
-Operator step (not a code change): re-paste [`docs/engineering-invariants.md`](../../docs/engineering-invariants.md) into Cursor User Rules, then set Improvement Status to `Done`.
+Operator step (not a code change): re-paste [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) into Cursor User Rules, then set Improvement Status to `Done`.
 
 ---
 
@@ -175,7 +175,7 @@ Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exa
 ### plan-review
 
 ```text
-@.cursor/plans/2026-09-03-checkout-identity.plan.md
+@.cursor/plans/archive/2026-09-03-checkout-identity.plan.md
 
 Implement slice plan-review only. Do not start checkout-identity or plan-closure. Do not edit engineering-invariants.md or planning-methodology.
 
@@ -183,7 +183,7 @@ Authority: Plan-only PR — plan artifact only; stop after opening the PR; do no
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: commit .cursor/plans/2026-09-03-checkout-identity.plan.md with this plan’s envelope. Mark plan-review completed in plan frontmatter in this PR.
+Deliverables: commit .cursor/plans/archive/2026-09-03-checkout-identity.plan.md with this plan’s envelope. Mark plan-review completed in plan frontmatter in this PR.
 
 Verification: PR contains only the plan file (plus planning-standard alignment if needed); no invariants, skill, or version changes.
 ```
@@ -191,7 +191,7 @@ Verification: PR contains only the plan file (plus planning-standard alignment i
 ### checkout-identity
 
 ```text
-@.cursor/plans/2026-09-03-checkout-identity.plan.md
+@.cursor/plans/archive/2026-09-03-checkout-identity.plan.md
 
 Implement slice checkout-identity only. Do not start plan-closure. Do not edit consumer-repo AGENTS.md files.
 
@@ -207,7 +207,7 @@ Verification: invariants stay short; skill distinguishes preflight vs cwd/origin
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-09-03-checkout-identity.plan.md
+@.cursor/plans/archive/2026-09-03-checkout-identity.plan.md
 
 Execute only plan-closure.
 
@@ -221,3 +221,25 @@ Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans
 
 Verification: confirm the implementation PR is merged and slice todos are completed before archiving.
 ```
+
+# Shipped
+
+**Date:** 3 Sep 2026
+
+**PRs:**
+
+- [Plan review (#42)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/42) — plan artifact committed
+- [Implementation (#43)](https://github.com/multipliers-dev/cursor-team-marketplace/pull/43) — Checkout identity invariants + planning-methodology procedure; plugin/marketplace **1.10.0**
+
+**What shipped:**
+
+- Checkout identity bullets in [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) — prove `pwd` + `origin` once at the start of a git/`gh` write sequence, not before every command; re-prove after changing checkout or cwd
+- Distinct `## Checkout identity` subsection in planning-methodology `SKILL.md` (separate from Multi-repo environment preflight)
+- Plugin/marketplace **1.10.0**
+
+**Deferred work:**
+
+- Operator: re-paste [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) into Cursor User Rules (plugin install does not update User Rules)
+- Operator: set [Improvement card](https://app.notion.com/p/3d06cffaff9c81f3be46eaeeb1621b23) Status to `Done` after User Rules re-paste
+- No consumer-repo `AGENTS.md` copies (intentionally out of scope)
+- No GitHub Action, Cursor hooks, or team-harness alwaysApply rule
