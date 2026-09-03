@@ -119,7 +119,7 @@ Existing **Multi-repo environment preflight** answers “which repos must be ava
 - Same three bullets as procedure, plus: this check is required even when the slice is single-checkout.
 - No new skill, hook, or GitHub Action.
 
-**Version:** bump [`plugins/team-harness/.cursor-plugin/plugin.json`](../../plugins/team-harness/.cursor-plugin/plugin.json) and [`.cursor-plugin/marketplace.json`](../../.cursor-plugin/marketplace.json) from whatever is on `origin/main` at implement time (currently **1.9.0** → **1.10.0**).
+**Version:** bump [`plugins/team-harness/.cursor-plugin/plugin.json`](../../plugins/team-harness/.cursor-plugin/plugin.json) and [`.cursor-plugin/marketplace.json`](../../.cursor-plugin/marketplace.json) from whatever is on `origin/main` at implement time (currently **1.9.1** → **1.10.0**).
 
 **Notion:** set the Improvement [Status](https://app.notion.com/p/3d06cffaff9c81f3be46eaeeb1621b23) to `In Progress` when the implementation PR opens; `Done` after that PR merges **and** User Rules are re-pasted.
 
