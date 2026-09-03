@@ -97,6 +97,18 @@ Hard-stop: if any required repository is missing, inaccessible, identity-mismatc
 
 Cloud Agents: when a slice's required repositories include more than one repository, use a multi-repo Cloud Agent environment containing every required repository. GitHub App access to those repositories is not sufficient evidence that the current job token or environment contains them.
 
+## Checkout identity
+
+Distinct from multi-repo environment preflight: preflight answers which repositories must be available for the slice; checkout identity answers whether this shell's cwd and `origin` are the intended repo before a git mutation or `gh` write sequence.
+
+Before entering a git mutation or `gh` write sequence (commit, push, branch create, `gh pr create` / `edit` / `merge`):
+
+- prove the intended checkout with `pwd` and `git remote get-url origin` once at the start of that sequence — not before every command; re-prove after changing checkout or cwd
+- do not trust Shell `working_directory` alone in multi-root workspaces — it can start in the first listed root
+- abort if the remote owner/repo is not the intended target; `cd` to the correct checkout and re-prove before continuing
+
+Required even when the slice is single-checkout (multi-root sessions can still land in the wrong repo).
+
 ## Merge-safe PRs (generic)
 
 Each PR must be merge-safe on its own. Do not defer known gaps the current PR already exposes:
