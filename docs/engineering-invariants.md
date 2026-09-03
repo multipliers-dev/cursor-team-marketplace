@@ -34,6 +34,14 @@
 
 - Skip bot-owned PRs (Renovate and similar). Skip when title and body still match the branch.
 
+## Checkout identity
+
+- Before any git mutation or `gh` write (commit, push, branch create, `gh pr create` / `edit` / `merge`), prove the shell is in the intended checkout: `pwd` and `git remote get-url origin`.
+
+- Do not trust Shell `working_directory` alone in multi-root workspaces — it can start in the first listed root.
+
+- Abort if the remote owner/repo is not the intended target. `cd` to the correct checkout and re-prove before continuing.
+
 ## Planning skill (when available)
 
 - When creating or executing staged plans, use the **planning-methodology** skill **if it is installed**.

@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: checkout-identity
     content: Add Checkout identity to engineering-invariants.md + planning-methodology; bump plugin/marketplace version from main
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-09-03-checkout-identity.plan.md"
     status: pending
