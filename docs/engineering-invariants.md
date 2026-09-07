@@ -36,11 +36,11 @@
 
 ## Checkout identity
 
-- Before entering a git mutation or `gh` write sequence (commit, push, branch create, `gh pr create` / `edit` / `merge`), prove the intended checkout with `pwd` and `git remote get-url origin`. Prove once at the start of that sequence, not before every command; re-prove after changing checkout or cwd.
+- Before any git mutation or `gh` write (commit, push, branch create, `gh pr create` / `edit` / `merge`), prove the intended checkout in **the same Shell command** as the mutation: `cd` to the checkout, then `pwd` and `git remote get-url origin`.
 
-- Do not trust Shell `working_directory` alone in multi-root workspaces — it can start in the first listed root.
+- Do not treat a prior proof, Shell `working_directory`, or the active editor file as cwd. In a multi-root workspace each Shell call can start in the first listed folder.
 
-- Abort if the remote owner/repo is not the intended target. `cd` to the correct checkout and re-prove before continuing.
+- Abort if the remote owner/repo is not the intended target. `cd` to the correct checkout and re-prove in the same command before continuing.
 
 ## Planning skill (when available)
 

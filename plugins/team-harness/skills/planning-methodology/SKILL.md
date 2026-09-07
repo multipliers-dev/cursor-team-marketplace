@@ -99,13 +99,15 @@ Cloud Agents: when a slice's required repositories include more than one reposit
 
 ## Checkout identity
 
-Distinct from multi-repo environment preflight: preflight answers which repositories must be available for the slice; checkout identity answers whether this shell's cwd and `origin` are the intended repo before a git mutation or `gh` write sequence.
+Distinct from multi-repo environment preflight: preflight answers which repositories must be available for the slice; checkout identity answers whether this shell's cwd and `origin` are the intended repo before a git mutation or `gh` write.
 
-Before entering a git mutation or `gh` write sequence (commit, push, branch create, `gh pr create` / `edit` / `merge`):
+Each Shell invocation is a new process. In a multi-root workspace it can start in the first listed folder. `working_directory` is not a reliable cwd. A proof in an earlier command does not apply to a later one.
 
-- prove the intended checkout with `pwd` and `git remote get-url origin` once at the start of that sequence — not before every command; re-prove after changing checkout or cwd
-- do not trust Shell `working_directory` alone in multi-root workspaces — it can start in the first listed root
-- abort if the remote owner/repo is not the intended target; `cd` to the correct checkout and re-prove before continuing
+Before any git mutation or `gh` write (commit, push, branch create, `gh pr create` / `edit` / `merge`):
+
+- put `cd` to the intended checkout plus `pwd` and `git remote get-url origin` in the **same** command as the mutation
+- do not rely on a proof from an earlier command, Shell `working_directory`, or the active editor file
+- abort if the remote owner/repo is not the intended target; `cd` to the correct checkout and re-prove in the same command before continuing
 
 Required even when the slice is single-checkout (multi-root sessions can still land in the wrong repo).
 
