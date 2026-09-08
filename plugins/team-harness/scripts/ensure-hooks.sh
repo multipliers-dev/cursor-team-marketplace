@@ -15,6 +15,10 @@
 #   wait        — on Cloud, poll for agent-hooks then configure; fail if timeout
 #   require     — on Cloud, fail unless agent-hooks bridge is live now (no wait)
 #
+# Observed on Cloud (mastermichaelt/resumes PR #104): healthy bridge → pre-commit ~8s;
+# early commits with bridge missing → ~130–160ms (full lint-staged/lint/tsc/format:check
+# recipe did not run). prepare/ensure-hooks can finish before agent-hooks exists.
+#
 # On Cloud, when agent-hooks exists, bridge misconfiguration is always fail-closed.
 
 set -e

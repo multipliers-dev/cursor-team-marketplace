@@ -156,7 +156,7 @@ Copy `format-after-edit.sh` → `.cursor/hooks/format.sh`. Layer 2a is **agent e
 }
 ```
 
-**Timing note:** On Cloud VMs, `npm install` → `prepare` often runs before Cursor installs `~/.cursor/agent-hooks`. Earlier `ensure-hooks.sh` versions exited 0 silently in that window; commits could finish in ~130ms with no Husky stack. Blocking `start` (wait mode) closes the race; `sessionStart` remains a fail-open secondary rechained.
+**Timing note (observed: [mastermichaelt/resumes PR #104](https://github.com/mastermichaelt/resumes/pull/104)):** On Cloud VMs, `npm install` → `prepare` often runs before Cursor installs `~/.cursor/agent-hooks`. Earlier `ensure-hooks.sh` versions exited 0 silently in that window. In that session, bad-format commits finished in **~130–160ms** each; after the bridge was healthy the same repo’s pre-commit recipe (lint-staged → lint → typecheck → format:check) took **~8.3s**, and `GIT_TRACE=1` showed pre-commit via the agent-hooks dispatcher with `core.hooksPath` under `~/.cursor/agent-hooks`. Consumer wiring (environment.json install/start, prepare, sessionStart) was already present — the gap was ordering, not missing config. Blocking `start` (wait mode) closes the race; `sessionStart` remains a fail-open secondary rechained.
 
 **When `.nvmrc` pins a newer major than the Cloud base image:**
 

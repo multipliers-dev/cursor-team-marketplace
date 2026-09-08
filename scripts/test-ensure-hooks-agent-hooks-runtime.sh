@@ -1,6 +1,13 @@
 #!/usr/bin/env sh
 # Runtime smoke: agent-hooks appearing after prepare must not silently skip Husky.
 # Simulates Cloud VM ordering (prepare → late agent-hooks → start wait → commit).
+#
+# Grounded by mastermichaelt/resumes PR #104 (merged): when the agent-hooks bridge
+# was healthy, pre-commit (lint-staged → lint → typecheck → format:check) took ~8.3s;
+# bad-format commits in the same Cloud session finished in ~130–160ms — incompatible
+# with that recipe running. Wiring (environment.json start, prepare, sessionStart)
+# was already present; the gap was prepare/ensure-hooks finishing before agent-hooks
+# existed, so early commits bypassed Husky until sessionStart rechained the bridge.
 # Invoked from scripts/check.sh.
 set -eu
 
