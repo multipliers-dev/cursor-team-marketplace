@@ -129,6 +129,7 @@ sh scripts/test-cloud-agent-install-runtime.sh
 sh scripts/test-repo-bootstrap-runtime.sh
 sh scripts/test-prepare-git-hooks-worktree-runtime.sh
 sh scripts/test-session-ensure-git-hooks-runtime.sh
+sh scripts/test-ensure-hooks-agent-hooks-runtime.sh
 sh scripts/test-format-after-edit-runtime.sh
 
 # Stale-reference guard: live docs/code must not contain old invoke paths or names.

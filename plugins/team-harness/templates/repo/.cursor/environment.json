@@ -1,5 +1,5 @@
 {
   "name": "__REPO_NAME__",
   "install": "npm install",
-  "start": "sh scripts/ensure-hooks.sh"
+  "start": "ENSURE_HOOKS_MODE=wait ENSURE_HOOKS_WAIT_SECS=120 sh scripts/ensure-hooks.sh"
 }

@@ -2,7 +2,7 @@
 # Portable sessionStart rechain + runnable-hook verify (team-harness marketplace primitive).
 # Re-chain Husky after Cursor may install agent-hooks post-npm-prepare.
 # Verify .husky/_ shims are runnable in this checkout; attempt repair; warn if still broken.
-# Fail open: never block session start.
+# Fail open: never block session start (desktop IDE UX).
 #
 # prepare runs ensure-hooks too early on some Cloud VMs (socket present,
 # ~/.cursor/agent-hooks not yet). sessionStart runs later and closes that gap.
@@ -12,12 +12,25 @@
 
 trap 'exit 0' EXIT
 
+is_cursor_cloud() {
+  [ -d "${HOME}/.cursor/agent-hooks" ] || [ -S "${CURSOR_AGENT_SOCKET:-/run/cursor/api.sock}" ]
+}
+
 command -v git >/dev/null 2>&1 || exit 0
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$repo_root" || exit 0
 
 ensure="$repo_root/scripts/ensure-hooks.sh"
-[ -f "$ensure" ] && sh "$ensure" >/dev/null 2>&1 || true
+if [ -f "$ensure" ]; then
+  if is_cursor_cloud; then
+    ENSURE_HOOKS_MODE=wait ENSURE_HOOKS_WAIT_SECS="${ENSURE_HOOKS_SESSION_WAIT_SECS:-30}" \
+      sh "$ensure" >/dev/null 2>&1 || {
+      echo "HOOKS BRIDGE NOT LIVE: agent-hooks missing or bridge not configured — run npm run prepare before committing" >&2
+    }
+  else
+    sh "$ensure" >/dev/null 2>&1 || true
+  fi
+fi
 
 verify="$repo_root/scripts/verify-git-hooks.sh"
 [ -f "$verify" ] || exit 0
@@ -33,7 +46,14 @@ if [ -f "$repair_helper" ]; then
   . "$repair_helper"
   if attempt_husky_shim_repair; then
     repaired=1
-    [ -f "$ensure" ] && sh "$ensure" >/dev/null 2>&1 || true
+    if [ -f "$ensure" ]; then
+      if is_cursor_cloud; then
+        ENSURE_HOOKS_MODE=wait ENSURE_HOOKS_WAIT_SECS="${ENSURE_HOOKS_SESSION_WAIT_SECS:-30}" \
+          sh "$ensure" >/dev/null 2>&1 || true
+      else
+        sh "$ensure" >/dev/null 2>&1 || true
+      fi
+    fi
   fi
 fi
 
