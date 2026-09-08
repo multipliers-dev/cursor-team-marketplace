@@ -74,12 +74,12 @@ Relative to the `team-harness` plugin root:
 | `scripts/prepare-git-hooks.sh` | Cloud-aware prepare: run Husky on Cursor Cloud even when `CI=true`; skip Vercel / GitHub Actions / non-Cloud CI; self-heal missing/non-executable `.husky/_` shims via shared `husky-shim-repair.sh`; order is install/repair → verify → ensure-hooks (ensure-hooks last, always runs even when verify fails; prepare still exits non-zero on bad shims) |
 | `scripts/verify-git-hooks.sh` | Fail fast when any repo-defined Git hook under `.husky/<hook>` lacks an executable `.husky/_/<hook>` shim; helpers like `common.sh` are ignored |
 | `scripts/husky-shim-repair.sh` | Shared shim detection + husky re-run — single repair definition for prepare and sessionStart |
-| `scripts/ensure-hooks.sh` | Point Cloud `agent-hooks` dispatcher at `~/.cursor/husky-bridge`, which resolves the current repo’s `.husky/*` at hook time |
-| `scripts/session-ensure-git-hooks.sh` | `sessionStart`: rechain ensure-hooks; verify runnable shims in current checkout; attempt shared shim repair; emit `HOOKS NOT RUNNABLE` warning when still broken (fail-open) |
+| `scripts/ensure-hooks.sh` | Point Cloud `agent-hooks` dispatcher at `~/.cursor/husky-bridge`, which resolves the current repo’s `.husky/*` at hook time. Modes via `ENSURE_HOOKS_MODE`: `best-effort` (default — configure when present), `wait` (poll for agent-hooks on Cloud, fail closed on timeout), `require` (fail closed if bridge not live now). On Cloud, misconfigured bridges fail closed instead of silent skip. |
+| `scripts/session-ensure-git-hooks.sh` | `sessionStart`: on Cloud, `wait` rechains ensure-hooks then verifies shims; repair/warn when broken. Fail-open for session start (desktop UX); emits `HOOKS BRIDGE NOT LIVE` when agent-hooks bridge is missing on Cloud. |
 | `scripts/format-after-edit.sh` | Optional Layer 2a: fail-open Prettier on agent-edited paths; copy to `.cursor/hooks/format.sh` + wire `afterFileEdit` — **agent ergonomics only**, not a Husky or pre-commit substitute |
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent); safe to source repeatedly |
 | `scripts/cloud-agent-install.sh` | If PATH Node major ≠ `.nvmrc` major, extract the full official Node distribution prefix into `/usr/local`; persist session PATH; run declared dependency command |
-| `scripts/cloud-agent-start.sh` | Session PATH + Node probe log + `sh scripts/ensure-hooks.sh` |
+| `scripts/cloud-agent-start.sh` | Session PATH + Node probe log + blocking `ensure-hooks` (`ENSURE_HOOKS_MODE=wait`, default 120s) — **environment start must not return until the agent-hooks bridge is live** |
 
 ## One-time wiring checklist (per Husky repo)
 
@@ -95,13 +95,13 @@ When **Cloud Agents are expected**, complete all applicable steps during bootstr
 3. Ensure `.cursor/hooks.json` includes a `sessionStart` entry that runs `.cursor/hooks/ensure-git-hooks.sh` with `timeout: 15` (fail-open).
 4. Keep **per-repo** `.husky/pre-commit` (and friends) contents — lint-staged recipes differ; the plugin does not replace them (**Layer 2b**).
 5. **Commit `.cursor/environment.json`** with lifecycle commands for this repo:
-   - **Minimal** (Node already matches Cloud VM / no `.nvmrc` pin needed): `"install"` = this repo’s deterministic dependency command (must trigger `prepare`); `"start"` = `sh scripts/ensure-hooks.sh`.
+   - **Minimal** (Node already matches Cloud VM / no `.nvmrc` pin needed): `"install"` = this repo’s deterministic dependency command (must trigger `prepare`); `"start"` = blocking wait, e.g. `ENSURE_HOOKS_MODE=wait ENSURE_HOOKS_WAIT_SECS=120 sh scripts/ensure-hooks.sh` (prepare alone is too early — agent-hooks may not exist until start).
    - **When `.nvmrc` pins a newer Node major** than typical Cloud VMs: also copy `cloud-agent-session-path.sh`, `cloud-agent-install.sh`, and `cloud-agent-start.sh`; set `"install"` / `"start"` to those wrappers; declare the install script’s dependency command from **this repo’s** CI/lockfile (wrapper script, env var, or args — not hardcoded inside the portable script).
    - If `engines.node` implies a newer major but no `.nvmrc` exists, decide whether to add a `.nvmrc` pin as part of bootstrap before wiring Cloud lifecycle.
 6. **Optional Layer 2a (agent ergonomics):** copy `format-after-edit.sh` → `.cursor/hooks/format.sh` and add `afterFileEdit` to `hooks.json` (e.g. 30s timeout). This is a **redundant formatting path for agent sessions** — it does **not** replace Husky, pre-commit lint/typecheck/format:check, or CI. Skip for test+typecheck-only repos (e.g. greenfield `/repo-bootstrap`).
 7. Verify on Cloud: Build runs `install` → deps + `prepare`; start runs ensure-hooks; a commit triggers the bridge (`[ensure-hooks]` messages) and runs the repo’s Husky hooks.
 8. **After `git worktree add`:** run `npm run prepare` (or `npm run verify:git-hooks` after prepare) in the new worktree before committing — worktrees inherit `core.hooksPath=.husky/_` but not executable `.husky/_` shims until prepare runs there.
-9. **When re-wiring existing repos:** re-copy `prepare-git-hooks.sh`, `verify-git-hooks.sh`, and `husky-shim-repair.sh` (plus optional `verify:git-hooks` script) from the installed plugin — older in-repo copies may lack worktree shim self-healing, sessionStart verify/repair, or generalized verify.
+9. **When re-wiring existing repos:** re-copy Layer 1 scripts (`prepare-git-hooks.sh`, `verify-git-hooks.sh`, `husky-shim-repair.sh`, `ensure-hooks.sh`, `session-ensure-git-hooks.sh`, and optional `cloud-agent-start.sh`) from the installed plugin — older copies may lack agent-hooks wait/fail-closed modes, worktree shim self-healing, or sessionStart bridge warnings. Update `environment.json` `start` to blocking wait (see step 5).
 10. **After merge:** trigger and promote a **new environment Build** so Cloud stops reusing the old snapshot. The plugin cannot automate Build promotion.
 
 ## Conceptual `environment.json` shapes
@@ -152,9 +152,11 @@ Copy `format-after-edit.sh` → `.cursor/hooks/format.sh`. Layer 2a is **agent e
 {
   "name": "<repo>",
   "install": "<repo's deterministic dependency install>",
-  "start": "sh scripts/ensure-hooks.sh"
+  "start": "ENSURE_HOOKS_MODE=wait ENSURE_HOOKS_WAIT_SECS=120 sh scripts/ensure-hooks.sh"
 }
 ```
+
+**Timing note:** On Cloud VMs, `npm install` → `prepare` often runs before Cursor installs `~/.cursor/agent-hooks`. Earlier `ensure-hooks.sh` versions exited 0 silently in that window; commits could finish in ~130ms with no Husky stack. Blocking `start` (wait mode) closes the race; `sessionStart` remains a fail-open secondary rechained.
 
 **When `.nvmrc` pins a newer major than the Cloud base image:**
 

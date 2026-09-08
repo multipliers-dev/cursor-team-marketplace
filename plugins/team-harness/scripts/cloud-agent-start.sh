@@ -24,4 +24,6 @@ mkdir -p "$LOG_DIR"
   fi
 } >>"$LOG_FILE"
 
-sh "$SCRIPT_DIR/ensure-hooks.sh"
+# Block Cloud Agent work until agent-hooks bridge is live (fail closed, not silent skip).
+ENSURE_HOOKS_MODE=wait ENSURE_HOOKS_WAIT_SECS="${ENSURE_HOOKS_START_WAIT_SECS:-120}" \
+  sh "$SCRIPT_DIR/ensure-hooks.sh"
