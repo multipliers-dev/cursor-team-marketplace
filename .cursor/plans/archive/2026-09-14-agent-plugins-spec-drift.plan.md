@@ -3,15 +3,44 @@ name: Agent Plugins spec drift
 overview: Add advisory upstream Agent Plugins spec drift detection to cursor-team-marketplace (weekly scheduled issue + offline tests) while preserving existing blocking offline conformance in scripts/check.sh. Repo stays on Agent Plugins 1.0.0; no automatic migration.
 todos:
   - id: plan-review
-    content: "Plan-only PR: commit .cursor/plans/2026-09-14-agent-plugins-spec-drift.plan.md; mark plan-review completed; stop after opening PR"
+    content: "Plan-only PR: commit .cursor/plans/archive/2026-09-14-agent-plugins-spec-drift.plan.md; mark plan-review completed; stop after opening PR"
     status: completed
   - id: spec-drift-detection
     content: "PR: TypeScript lib + drift CLI + offline Vitest tests + weekly advisory workflow + minimal root Node tooling + ci.yml offline test gate + versioning docs (preserve blocking check.sh)"
     status: completed
   - id: plan-closure
     content: "Docs-only PR after spec-drift-detection merges: # Shipped note, archive plan, mark plan-closure completed"
-    status: pending
+    status: completed
 isProject: false
+---
+
+# Shipped
+
+Agent Plugins spec-drift detection plan completed 2026-09-14.
+
+| Slice | Outcome |
+| --- | --- |
+| **plan-review** | Plan artifact merged as [multipliers-dev/cursor-team-marketplace#51](https://github.com/multipliers-dev/cursor-team-marketplace/pull/51). |
+| **spec-drift-detection** | TypeScript lib, drift CLI, offline tests, weekly advisory workflow, CI offline gate, versioning docs. Merged as [multipliers-dev/cursor-team-marketplace#52](https://github.com/multipliers-dev/cursor-team-marketplace/pull/52). |
+| **plan-closure** | Docs-only archive (this PR). |
+
+**What shipped:**
+
+- [`scripts/lib/agent-plugins-spec.ts`](../../../scripts/lib/agent-plugins-spec.ts) — pure parse/compare/dual-signal helpers
+- [`scripts/check-agent-plugins-spec-drift.ts`](../../../scripts/check-agent-plugins-spec-drift.ts) — advisory network CLI (default `plugins/team-harness/plugin.json`)
+- [`scripts/agent-plugins-spec-drift.test.ts`](../../../scripts/agent-plugins-spec-drift.test.ts) — offline Vitest with mocked `fetch`
+- Root dev-tooling (`package.json`, `vitest.config.ts`, etc.)
+- [`.github/workflows/agent-plugins-spec-drift.yml`](../../../.github/workflows/agent-plugins-spec-drift.yml) — weekly + `workflow_dispatch` advisory issue management
+- [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) — offline `npm ci` / `typecheck` / `test` (no network drift in PR CI)
+- [`plugins/team-harness/docs/versioning.md`](../../../plugins/team-harness/docs/versioning.md) — conformance vs drift section
+
+**Deferred (out of scope for this plan):**
+
+- Migrating beyond Agent Plugins 1.0.0
+- Migrating `scripts/check.sh` structural validation to TypeScript
+- Network in `scripts/check.sh` or normal PR drift execution
+- Auto-bump `$schema` or migration PRs
+
 ---
 
 # Agent Plugins spec-drift detection (cursor-team-marketplace)
@@ -169,7 +198,7 @@ flowchart TB
 
 ### Slice `plan-review` (this PR only)
 
-- [`.cursor/plans/2026-09-14-agent-plugins-spec-drift.plan.md`](.cursor/plans/2026-09-14-agent-plugins-spec-drift.plan.md) — this plan; mark `plan-review` **completed** only
+- [`.cursor/plans/archive/2026-09-14-agent-plugins-spec-drift.plan.md`](.cursor/plans/archive/2026-09-14-agent-plugins-spec-drift.plan.md) — this plan; mark `plan-review` **completed** only
 
 ### Slice `spec-drift-detection`
 
@@ -388,7 +417,7 @@ Mark `spec-drift-detection` **completed** in plan frontmatter in the implementat
 ### `spec-drift-detection`
 
 ```text
-@.cursor/plans/2026-09-14-agent-plugins-spec-drift.plan.md
+@.cursor/plans/archive/2026-09-14-agent-plugins-spec-drift.plan.md
 
 Implement slice spec-drift-detection only. Do not start plan-closure. Do not archive the plan.
 
