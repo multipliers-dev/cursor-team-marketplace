@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: spec-drift-detection
     content: "PR: TypeScript lib + drift CLI + offline Vitest tests + weekly advisory workflow + minimal root Node tooling + ci.yml offline test gate + versioning docs (preserve blocking check.sh)"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after spec-drift-detection merges: # Shipped note, archive plan, mark plan-closure completed"
     status: pending
