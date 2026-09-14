@@ -1,10 +1,12 @@
 {
   "name": "team-harness",
-  "description": "Team harness: portable planning methodology, repo bootstrap, and Cloud-hooks primitive (install ≠ zero-wiring Cloud-safety).",
-  "version": "1.10.2",
+  "description": "Merge-safe planning methodology (cross-client) plus Cursor repo bootstrap and Cloud-hooks bootstrap skills (Cursor-dependent).",
+  "version": "1.11.0",
   "author": {
     "name": "Michael Truong",
     "email": "michael@multipliers.dev"
   },
-  "keywords": ["planning", "merge-safe", "husky", "cloud-hooks", "staged-plans", "repo-bootstrap", "bootstrap"]
+  "repository": "https://github.com/multipliers-dev/cursor-team-marketplace",
+  "keywords": ["planning", "merge-safe", "husky", "cloud-hooks", "staged-plans", "repo-bootstrap", "bootstrap"],
+  "skills": "./skills"
 }

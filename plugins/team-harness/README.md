@@ -1,14 +1,18 @@
 # team-harness
 
-Cursor plugin: portable **planning methodology**, **repo bootstrap**, and **Cloud-hooks** primitive.
+Cursor plugin: **merge-safe planning methodology** (cross-client) plus **repo bootstrap** and **Cloud-hooks bootstrap** skills (Cursor-dependent).
+
+Package surface vs per-skill portability: [docs/layers.md](docs/layers.md). Version alignment: [docs/versioning.md](docs/versioning.md).
 
 ## Skills
 
-| Skill                     | Invoke                     | Role                                                                          |
-| ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
-| `planning-methodology`    | `/planning-methodology`    | Full staged-plan / merge-safe procedure (canonical copy)                      |
-| `repo-bootstrap`          | `/repo-bootstrap`          | One-shot empty-directory → pre-wired greenfield repo (tsx run/dev + Vitest + hooks + CI + GitHub) |
-| `cloud-hooks-bootstrap`   | `/cloud-hooks-bootstrap`   | One-time Husky Cloud wiring + `environment.json` lifecycle using scripts in `scripts/` |
+| Skill | Invoke | Portability | Role |
+| --- | --- | --- | --- |
+| `planning-methodology` | `/planning-methodology` | **Cross-client** | Full staged-plan / merge-safe procedure (canonical copy) |
+| `repo-bootstrap` | `/repo-bootstrap` | **Cursor-dependent** | One-shot empty-directory → pre-wired greenfield repo (tsx run/dev + Vitest + hooks + CI + GitHub) |
+| `cloud-hooks-bootstrap` | `/cloud-hooks-bootstrap` | **Cursor-dependent** | One-time Husky Cloud wiring + `environment.json` lifecycle using scripts in `scripts/` |
+
+Agent Plugins discovery exposes all three skills under `skills/`. That does **not** make `repo-bootstrap` or `cloud-hooks-bootstrap` cross-client portable — see [layers.md](docs/layers.md).
 
 ## Scripts (portable primitive)
 

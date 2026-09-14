@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "team-harness",
+  "version": "1.11.0",
+  "description": "Merge-safe planning methodology for staged multi-PR work: authority ladder, repository topology, and merge-safe acceptance criteria.",
+  "author": {
+    "name": "Michael Truong",
+    "email": "michael@multipliers.dev"
+  },
+  "homepage": "https://github.com/multipliers-dev/cursor-team-marketplace#readme",
+  "repository": "https://github.com/multipliers-dev/cursor-team-marketplace",
+  "license": "MIT",
+  "keywords": ["planning", "merge-safe", "staged-plans", "pull-requests", "methodology"]
+}
