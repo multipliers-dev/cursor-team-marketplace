@@ -2,11 +2,13 @@
 
 Public Cursor plugin for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships three capabilities with different portability semantics.
 
-| Component | After install | Meaning |
-| --- | --- | --- |
-| **Planning methodology skill** | Skill available in Agent chats | Single canonical planning procedure for every repo |
-| **Repo bootstrap** | `/repo-bootstrap` + `repo-bootstrap.sh` | One-shot empty-directory → pre-wired greenfield repo (tsx run/dev + verify + enforce; no product decisions) |
-| **Cloud-hooks primitive** | Scripts + bootstrap skill available | **Not** automatic Cloud-safety — each Husky repo still needs one-time `prepare` / wiring; when Cloud Agents are expected, also commit `environment.json` lifecycle (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major). The repo bootstrap preset ships this wiring automatically; use `/cloud-hooks-bootstrap` for existing repos. |
+| Component | After install | Portability | Meaning |
+| --- | --- | --- | --- |
+| **Planning methodology skill** | Skill available in Agent chats | **Cross-client** | Single canonical planning procedure for every repo |
+| **Repo bootstrap** | `/repo-bootstrap` + `repo-bootstrap.sh` | **Cursor-dependent** | One-shot empty-directory → pre-wired greenfield repo (tsx run/dev + verify + enforce; no product decisions) |
+| **Cloud-hooks primitive** | Scripts + bootstrap skill available | **Cursor-dependent** | **Not** automatic Cloud-safety — each Husky repo still needs one-time `prepare` / wiring; when Cloud Agents are expected, also commit `environment.json` lifecycle (and Node-from-`.nvmrc` wrappers when `.nvmrc` pins a newer major). The repo bootstrap preset ships this wiring automatically; use `/cloud-hooks-bootstrap` for existing repos. |
+
+Agent Plugins discovery exposes all three skills under `skills/`. That does **not** make bootstrap or Cloud-hooks skills cross-client portable. See [plugins/team-harness/docs/layers.md](plugins/team-harness/docs/layers.md).
 
 ## Install
 

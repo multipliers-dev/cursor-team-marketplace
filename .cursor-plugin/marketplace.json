@@ -5,15 +5,15 @@
     "email": "michael@multipliers.dev"
   },
   "metadata": {
-    "description": "Portable planning methodology, repo bootstrap, and Cloud-hooks primitive. Skills install with the plugin; Cloud-hooks still need one-time repo wiring.",
-    "version": "1.10.2",
+    "description": "Merge-safe planning methodology (cross-client) plus Cursor repo bootstrap and Cloud-hooks bootstrap skills. Agent Plugins discovery exposes all skills; bootstrap skills are Cursor-dependent.",
+    "version": "1.11.0",
     "pluginRoot": "plugins"
   },
   "plugins": [
     {
       "name": "team-harness",
       "source": "team-harness",
-      "description": "Planning methodology, repo bootstrap, and Cloud-hooks installer/bridge + bootstrap recipe"
+      "description": "Planning methodology (cross-client), repo bootstrap, and Cloud-hooks bootstrap (Cursor-dependent)"
     }
   ]
 }

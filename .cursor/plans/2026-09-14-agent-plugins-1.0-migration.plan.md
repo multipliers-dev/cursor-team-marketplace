@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: agent-plugins-migration
     content: "PR: package plugin.json, overlay/marketplace updates, layers+versioning docs, check.sh boundary validation, 1.11.0 bump"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after agent-plugins-migration merges: # Shipped note, archive plan, mark plan-closure completed"
     status: pending

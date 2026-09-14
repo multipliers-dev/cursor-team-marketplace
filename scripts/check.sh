@@ -12,6 +12,23 @@ from pathlib import Path
 
 ROOT = Path(".").resolve()
 
+# Closed Agent Plugins 1.0 portable manifest top-level fields (§5.2).
+PORTABLE_PLUGIN_TOP_LEVEL_KEYS = frozenset(
+    {
+        "$schema",
+        "name",
+        "version",
+        "description",
+        "author",
+        "homepage",
+        "repository",
+        "license",
+        "keywords",
+        "extensions",
+    }
+)
+AGENT_PLUGINS_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+
 
 def die(msg: str) -> None:
     print(f"error: {msg}", file=sys.stderr)
@@ -60,6 +77,9 @@ marketplace = load_json(marketplace_path)
 if not isinstance(marketplace, dict):
     die("marketplace.json: expected object")
 metadata = marketplace.get("metadata") or {}
+marketplace_version = metadata.get("version")
+if not isinstance(marketplace_version, str) or not marketplace_version.strip():
+    die("marketplace.json: metadata.version must be a non-empty string")
 plugin_root = ROOT / str(metadata.get("pluginRoot", "plugins"))
 plugins = marketplace.get("plugins")
 if not isinstance(plugins, list) or not plugins:
@@ -74,10 +94,42 @@ for plugin in plugins:
     plugin_dir = plugin_root / str(source)
     if not plugin_dir.is_dir():
         die(f"missing plugin dir: {plugin_dir}")
+    package_manifest_path = plugin_dir / "plugin.json"
+    package_manifest = load_json(package_manifest_path)
+    if not isinstance(package_manifest, dict):
+        die(f"{package_manifest_path}: expected object")
+    if package_manifest.get("$schema") != AGENT_PLUGINS_SCHEMA:
+        die(f"{package_manifest_path}: $schema must be {AGENT_PLUGINS_SCHEMA!r}")
+    extra_keys = set(package_manifest) - PORTABLE_PLUGIN_TOP_LEVEL_KEYS
+    if extra_keys:
+        die(
+            f"{package_manifest_path}: disallowed top-level keys for Agent Plugins "
+            f"package manifest: {sorted(extra_keys)!r}"
+        )
+    if "skills" in package_manifest or "agents" in package_manifest:
+        die(f"{package_manifest_path}: skills/agents belong in Cursor overlay only")
+    package_version = package_manifest.get("version")
+    if not isinstance(package_version, str) or not package_version.strip():
+        die(f"{package_manifest_path}: missing version")
+    if package_version != marketplace_version:
+        die(
+            f"version mismatch: {package_manifest_path} has {package_version!r}, "
+            f"marketplace metadata.version is {marketplace_version!r}"
+        )
+    print(f"ok package manifest {package_manifest_path.relative_to(ROOT)}")
+
     plugin_json_path = plugin_dir / ".cursor-plugin" / "plugin.json"
     plugin_json = load_json(plugin_json_path)
     if not isinstance(plugin_json, dict) or not plugin_json.get("name"):
         die(f"{plugin_json_path}: missing name")
+    overlay_version = plugin_json.get("version")
+    if overlay_version != package_version:
+        die(
+            f"version mismatch: {plugin_json_path} has {overlay_version!r}, "
+            f"{package_manifest_path} has {package_version!r}"
+        )
+    if plugin_json.get("skills") != "./skills":
+        die(f'{plugin_json_path}: skills must be "./skills"')
     print(f"ok plugin {plugin_json['name']}")
 
     skills_dir = plugin_dir / "skills"
