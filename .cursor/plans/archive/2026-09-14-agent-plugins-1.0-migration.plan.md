@@ -10,9 +10,37 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after agent-plugins-migration merges: # Shipped note, archive plan, mark plan-closure completed"
-    status: pending
+    status: completed
 isProject: false
 ---
+
+---
+
+# Shipped
+
+Agent Plugins 1.0 migration plan completed 2026-09-14.
+
+| Slice | Outcome |
+| --- | --- |
+| **plan-review** | Plan artifact merged as [multipliers-dev/cursor-team-marketplace#48](https://github.com/multipliers-dev/cursor-team-marketplace/pull/48). |
+| **agent-plugins-migration** | Package `plugin.json`, overlay/marketplace **1.11.0**, layers + versioning docs, `check.sh` boundary validation, README updates. Merged as [multipliers-dev/cursor-team-marketplace#49](https://github.com/multipliers-dev/cursor-team-marketplace/pull/49). |
+| **plan-closure** | Docs-only archive (this PR). |
+
+**What shipped:**
+
+- [`plugins/team-harness/plugin.json`](../../../plugins/team-harness/plugin.json) — Agent Plugins 1.0 closed-schema package manifest (planning methodology as cross-client capability)
+- Cursor overlay + marketplace metadata **1.11.0** with explicit `"skills": "./skills"` and per-skill portability wording
+- [`plugins/team-harness/docs/layers.md`](../../../plugins/team-harness/docs/layers.md) and [`plugins/team-harness/docs/versioning.md`](../../../plugins/team-harness/docs/versioning.md)
+- [`scripts/check.sh`](../../../scripts/check.sh) package/Cursor boundary validation
+
+**Deferred (out of scope for this plan):**
+
+- Skill semantic rewrites or splitting skill trees
+- Shipping marketplace repo `.cursor/hooks` or `environment.json`
+- Public Cursor Marketplace submission
+- Root `package.json` / npm test harness
+- Consumer-repo migrations
+- `mcp.json`
 
 # Agent Plugins 1.0 migration for team-harness
 
@@ -260,7 +288,7 @@ Existing runtime smoke tests (`test-*-runtime.sh`) stay unchanged.
 
 **Deliverables:**
 
-- [`.cursor/plans/2026-09-14-agent-plugins-1.0-migration.plan.md`](.cursor/plans/2026-09-14-agent-plugins-1.0-migration.plan.md) (this plan)
+- [`.cursor/plans/archive/2026-09-14-agent-plugins-1.0-migration.plan.md`](.cursor/plans/archive/2026-09-14-agent-plugins-1.0-migration.plan.md) (this plan)
 - Mark `plan-review` `completed` in frontmatter in the plan-only PR
 
 **Acceptance:** PR contains only the plan artifact (+ planning-standard alignment if needed). No manifest, check.sh, or doc changes.
@@ -322,7 +350,7 @@ Existing runtime smoke tests (`test-*-runtime.sh`) stay unchanged.
 ### plan-review
 
 ```text
-@.cursor/plans/2026-09-14-agent-plugins-1.0-migration.plan.md
+@.cursor/plans/archive/2026-09-14-agent-plugins-1.0-migration.plan.md
 
 Execute only plan-review. Do not start agent-plugins-migration or plan-closure. Do not implement the migration.
 
@@ -338,7 +366,7 @@ Verification: plan satisfies repo planning methodology; no manifest, check.sh, s
 ### agent-plugins-migration
 
 ```text
-@.cursor/plans/2026-09-14-agent-plugins-1.0-migration.plan.md
+@.cursor/plans/archive/2026-09-14-agent-plugins-1.0-migration.plan.md
 
 Implement slice agent-plugins-migration only. Do not start plan-closure. Do not archive the plan.
 
@@ -354,7 +382,7 @@ Verification: sh scripts/check.sh passes; package manifest closed schema; no ski
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-09-14-agent-plugins-1.0-migration.plan.md
+@.cursor/plans/archive/2026-09-14-agent-plugins-1.0-migration.plan.md
 
 Execute only plan-closure.
 
