@@ -2,6 +2,8 @@
 
 Public Cursor plugin for [multipliers-dev](https://github.com/multipliers-dev): one plugin that ships three capabilities with different portability semantics.
 
+**Background:** [I was solving agent portability at the wrong boundary](https://dev.to/michaeltruong/i-was-solving-agent-portability-at-the-wrong-boundary-1406) (DEV Community) — the scope split (policy vs procedures vs repo mechanics), portability boundaries, and architecture that led to this repository.
+
 | Component | After install | Portability | Meaning |
 | --- | --- | --- | --- |
 | **Planning methodology skill** | Skill available in Agent chats | **Cross-client** | Single canonical planning procedure for every repo |
@@ -21,6 +23,13 @@ Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository**
 Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
 
 Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
+
+## Documentation
+
+- [I was solving agent portability at the wrong boundary](https://dev.to/michaeltruong/i-was-solving-agent-portability-at-the-wrong-boundary-1406) — background essay (DEV Community)
+- [plugins/team-harness/docs/layers.md](plugins/team-harness/docs/layers.md) — portable vs Cursor-dependent skill layers
+- [plugins/team-harness/docs/versioning.md](plugins/team-harness/docs/versioning.md) — version alignment
+- [plugins/team-harness/README.md](plugins/team-harness/README.md) — plugin skills and scripts reference
 
 ## License
 
