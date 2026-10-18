@@ -12,6 +12,8 @@ Public Cursor plugin for [multipliers-dev](https://github.com/multipliers-dev): 
 
 ## Git hook reliability across worktrees and Cloud Agents
 
+**Background:** [Git said the commit succeeded. My hooks never ran.](https://dev.to/michaeltruong/git-said-the-commit-succeeded-my-hooks-never-ran-49e2) — the worktree incident that motivated these safeguards, and why hook availability, agent feedback, pre-commit checks, and CI need separate responsibilities.
+
 A configured `core.hooksPath` does not guarantee that Git hooks execute. New worktrees can lack executable Husky shims, while Cursor Cloud Agents introduce a separate hook-dispatcher lifecycle.
 
 The [cloud-hooks-bootstrap](plugins/team-harness/skills/cloud-hooks-bootstrap/SKILL.md) skill provides reusable scripts for:
@@ -22,8 +24,6 @@ The [cloud-hooks-bootstrap](plugins/team-harness/skills/cloud-hooks-bootstrap/SK
 - Connecting Cursor Cloud's Git hook dispatcher to repository-local hooks.
 
 Local pre-commit checks and CI remain the responsibility of each consuming repository. Installing the plugin alone does not enforce them.
-
-See the [Cloud hooks bootstrap guide](plugins/team-harness/skills/cloud-hooks-bootstrap/SKILL.md) for setup and limitations.
 
 Agent Plugins discovery exposes all three skills under `skills/`. That does **not** make bootstrap or Cloud-hooks skills cross-client portable. See [plugins/team-harness/docs/layers.md](plugins/team-harness/docs/layers.md).
 
@@ -41,10 +41,9 @@ Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/eng
 
 ## Documentation
 
-- [I was solving agent portability at the wrong boundary](https://dev.to/michaeltruong/i-was-solving-agent-portability-at-the-wrong-boundary-1406) — background essay (DEV Community)
-- [plugins/team-harness/docs/layers.md](plugins/team-harness/docs/layers.md) — portable vs Cursor-dependent skill layers
-- [plugins/team-harness/docs/versioning.md](plugins/team-harness/docs/versioning.md) — version alignment
-- [plugins/team-harness/README.md](plugins/team-harness/README.md) — plugin skills and scripts reference
+- [Plugin skills and scripts](plugins/team-harness/README.md) — capabilities and implementation reference
+- [Skill portability layers](plugins/team-harness/docs/layers.md) — portable vs Cursor-dependent components
+- [Versioning](plugins/team-harness/docs/versioning.md) — version alignment
 
 ## License
 
