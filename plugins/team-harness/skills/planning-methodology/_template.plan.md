@@ -46,7 +46,7 @@ When a slice reads, modifies, validates against, migrates from, or migrates to a
 
 ---
 
-## Slice 1 — First merge-safe slice
+## Slice — slice-1
 
 <!-- When converting from a native Cursor plan, paste mermaid/diagrams from the source into the slice that will execute them. Do not invent dummy diagrams in this boilerplate. -->
 
@@ -64,7 +64,7 @@ When a slice reads, modifies, validates against, migrates from, or migrates to a
 
 ---
 
-## Slice 2 — Second merge-safe slice
+## Slice — slice-2
 
 **Recommended authority:** Open PR only
 

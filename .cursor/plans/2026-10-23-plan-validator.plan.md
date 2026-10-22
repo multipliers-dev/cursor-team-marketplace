@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ci-npm
     content: "PR: validate:plans npm scripts, ci.yml/check.sh template gate, plugin/marketplace version bump (no new deps)"
-    status: pending
+    status: completed
   - id: docs-skill
     content: "PR: plan-validation.md; align SKILL.md item 7 todo/prompt rule with validator; README scripts table"
     status: pending

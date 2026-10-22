@@ -33,3 +33,5 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run validate:plans:template
+      - run: npm run validate:plans

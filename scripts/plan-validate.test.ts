@@ -163,15 +163,8 @@ describe("plan-validate fixture corpus (integration)", () => {
     expect(validatePlanFile(promptPath, { profile: "template" })).toEqual([]);
   });
 
-  // Informational until ci-npm/docs-skill rename template slice headings; then tighten to expect
-  // zero issues under profile template (template profile should pass once headings are canonical).
-  it("reports skill _template.plan.md under --profile template (informational)", () => {
-    const defaultIssues = validatePlanFile(skillTemplatePath, { profile: "default" });
-    const templateIssues = validatePlanFile(skillTemplatePath, { profile: "template" });
-
-    expect(defaultIssues.some((i) => i.rule === "prompts.placeholder")).toBe(true);
-    expect(templateIssues.some((i) => i.rule === "prompts.placeholder")).toBe(false);
-    expect(templateIssues.some((i) => i.rule === "slice.missing")).toBe(true);
+  it("skill _template.plan.md passes under --profile template with zero issues", () => {
+    expect(validatePlanFile(skillTemplatePath, { profile: "template" })).toEqual([]);
   });
 
   it("default discovery excludes archive/** and _template.plan.md", async () => {

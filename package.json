@@ -7,7 +7,9 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p scripts/tsconfig.json",
-    "check:agent-plugins-spec-drift": "tsx scripts/check-agent-plugins-spec-drift.ts"
+    "check:agent-plugins-spec-drift": "tsx scripts/check-agent-plugins-spec-drift.ts",
+    "validate:plans": "tsx plugins/team-harness/scripts/validate-plans.ts",
+    "validate:plans:template": "tsx plugins/team-harness/scripts/validate-plans.ts --profile template plugins/team-harness/skills/planning-methodology/_template.plan.md"
   },
   "devDependencies": {
     "@types/node": "^24.13.4",
