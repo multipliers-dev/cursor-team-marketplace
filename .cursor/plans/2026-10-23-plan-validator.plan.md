@@ -6,16 +6,16 @@ todos:
     content: "Plan-only PR: commit this plan under .cursor/plans/ and open for review; do not implement"
     status: completed
   - id: plan-validate-lib
-    content: "PR: plugins/team-harness/scripts/lib/plan-validate.ts + validate-plans.ts CLI"
+    content: "PR: plan-validate lib + CLI, yaml devDependency + lockfile, co-located minimal Vitest unit tests"
     status: pending
   - id: fixtures-tests
-    content: "PR: scripts/fixtures/plan-validate/* and scripts/plan-validate.test.ts"
+    content: "PR: expand regression fixtures under scripts/fixtures/plan-validate and integration-style Vitest coverage"
     status: pending
   - id: ci-npm
-    content: "PR: package.json scripts, yaml dep, ci.yml/check.sh template validation; bump plugin/marketplace version"
+    content: "PR: validate:plans npm scripts, ci.yml/check.sh template gate, plugin/marketplace version bump (no new deps)"
     status: pending
   - id: docs-skill
-    content: "PR: plan-validation.md, planning-methodology SKILL.md + team-harness README"
+    content: "PR: plan-validation.md; align SKILL.md item 7 todo/prompt rule with validator; README scripts table"
     status: pending
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-10-23-plan-validator.plan.md"
@@ -103,20 +103,21 @@ flowchart LR
 
 **Rationale:**
 
-- Core library + CLI are one merge-safe unit before tests and CI wire-up
+- Core library + CLI must typecheck and run on a clean checkout after `npm ci` — **`yaml` lands in this slice**, not `ci-npm`
+- Merge-safe: minimal Vitest unit tests co-located with the library (not deferred to `fixtures-tests`)
 - No consumer-repo changes
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-**Goal:** Implement the canonical validator under team-harness scripts.
+**Goal:** Implement the canonical validator under team-harness scripts with parser contract below and first-line regression tests.
 
 **Acceptance:**
 
 - [`plugins/team-harness/scripts/lib/plan-validate.ts`](../../plugins/team-harness/scripts/lib/plan-validate.ts) exports validation with `PlanIssue` (`file`, `line`, `rule`, `message`)
 - [`plugins/team-harness/scripts/validate-plans.ts`](../../plugins/team-harness/scripts/validate-plans.ts) CLI: discovery, explicit paths, `--profile template`, optional `.cursor/plan-validator.json`
-- Frontmatter via `yaml`; body via line-scanned markdown (no AST framework)
-- Actionable-todo prompt rule: `pending` / `in_progress` require `### <todo-id>`; completed/cancelled optional; orphan/duplicate headings rejected
-- Machine rules per plan sections below (authority, topology labels, slice blocks, closure)
+- Root [`package.json`](../../package.json): add **`yaml`** devDependency + updated **`package-lock.json`** (required for clean-checkout `npm ci`)
+- Minimal Vitest tests in this PR (e.g. [`scripts/plan-validate-lib.test.ts`](../../scripts/plan-validate-lib.test.ts) importing the plugin lib, **or** extend [`vitest.config.ts`](../../vitest.config.ts) `include` if tests live under `plugins/team-harness/scripts/`): at least one valid-plan pass, one frontmatter failure, one actionable-todo prompt failure — enough to lock parser/CLI behavior introduced in this PR
+- Implement **Parser and CLI behavior** (section below); machine rules per **Machine-enforced rules**
 
 **Prerequisite:** `plan-review` merged.
 
@@ -128,17 +129,17 @@ flowchart LR
 
 **Rationale:**
 
-- Regression coverage before CI gates depend on validator
-- Fixtures stay in marketplace `scripts/` (not plugin-only) for Vitest
+- **Expands** regression coverage and fixture corpus; does not carry merge-safety alone for `plan-validate-lib`
+- Fixtures stay in marketplace `scripts/` (not plugin-only) for Vitest integration tests
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-**Goal:** Automated coverage for valid/invalid plans and diagnostic line numbers.
+**Goal:** Broad automated coverage for valid/invalid plans, discovery exclusions, and diagnostic line numbers.
 
 **Acceptance:**
 
 - [`scripts/fixtures/plan-validate/`](../../scripts/fixtures/plan-validate/) valid single/multi-slice and targeted `invalid-*` fixtures
-- [`scripts/plan-validate.test.ts`](../../scripts/plan-validate.test.ts) asserts rules and line numbers
+- [`scripts/plan-validate.test.ts`](../../scripts/plan-validate.test.ts) (or equivalent) asserts rules, profiles, and line numbers across fixtures
 - Default discovery excludes `archive/**` and `_template.plan.md`
 
 **Prerequisite:** `plan-validate-lib` merged.
@@ -151,15 +152,16 @@ flowchart LR
 
 **Rationale:**
 
-- Wires validator into repo scripts and CI without doc/skill churn in same PR
+- Wires validator into npm scripts and CI **after** deps and core tests exist on `main`
+- No new dependencies in this slice (`yaml` already on `main`)
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-**Goal:** Marketplace can run template validation and tests in CI.
+**Goal:** Marketplace CI runs plan validation gates.
 
 **Acceptance:**
 
-- Root `package.json`: `validate:plans`, `validate:plans:template`; add `yaml` devDependency
+- Root `package.json`: register `validate:plans` and `validate:plans:template` only (no dependency changes unless a script path fix requires none)
 - [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs template validation after tests; optional `check.sh` hook
 - Bump plugin + marketplace version per [`versioning.md`](../../plugins/team-harness/docs/versioning.md) (`1.11.0` → `1.12.0`)
 
@@ -174,18 +176,38 @@ flowchart LR
 **Rationale:**
 
 - Distribution and authoring guidance ship after validator exists and CI proves it
+- **Normative skill text must match validator** (actionable vs completed/cancelled prompt headings)
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-**Goal:** Document vendoring and extend planning-methodology skill.
+**Goal:** Document vendoring and align planning-methodology with enforced contract.
 
 **Acceptance:**
 
 - New [`plugins/team-harness/docs/plan-validation.md`](../../plugins/team-harness/docs/plan-validation.md) (install, run, update, CI without plugin)
-- [`planning-methodology/SKILL.md`](../../plugins/team-harness/skills/planning-methodology/SKILL.md): Plan validation subsection
+- [`planning-methodology/SKILL.md`](../../plugins/team-harness/skills/planning-methodology/SKILL.md):
+  - **Revise item 7** (and any duplicate wording in staged authoring): require `### <todo-id>` for **actionable** todos (`pending`, `in_progress`); **completed** and **cancelled** todos may omit prompts; any existing `###` under Agent prompts must reference a known todo id (no orphans/duplicates)
+  - Add **Plan validation** subsection (when to run `validate:plans`, deterministic vs semantic review)
+- Mirror the todo/prompt rule in [`reference.md`](../../plugins/team-harness/skills/planning-methodology/reference.md) and boilerplate note in [`_template.plan.md`](../../plugins/team-harness/skills/planning-methodology/_template.plan.md) if they still say every todo requires a heading
 - [`team-harness/README.md`](../../plugins/team-harness/README.md) scripts table updated
 
 **Prerequisite:** `ci-npm` merged.
+
+---
+
+## Parser and CLI behavior (implement before coding)
+
+These decisions are part of the validator contract; `plan-validate-lib` must implement them.
+
+| Topic | Behavior |
+| --- | --- |
+| **Fenced code** | Headings and structure inside fenced blocks are **ignored** for agent-prompt and slice-section scans. Only the **outer** markdown document structure counts. Scan ` ```text ` / ` ``` ` blocks in the Agent prompts section for labeled lines. |
+| **YAML frontmatter** | Missing `---` delimiters, unclosed frontmatter, or **malformed YAML** → **fail closed** with a parse error issue (line 1 or delimiter line). Empty `todos` or wrong types → schema issues. |
+| **Todo `status`** | Only `pending`, `in_progress`, `completed`, `cancelled`. **Unrecognized status → error** (fail closed). |
+| **Authority labels** | Normalize slice/table/prompt authorities to the four known labels (+ orthogonal Manual gate). **Unrecognized recommended authority → error** when the slice is actionable. Prompt `Authority:` must prefix-match a known label after normalization. |
+| **Multi-file runs** | **Aggregate all diagnostics** across discovered or explicit paths; exit non-zero if any file has issues. Do not stop at first file or first issue within a file (report all issues per file). |
+| **`--profile template`** | Same schema and rules; **relaxes placeholder checks only** (allow `….` / `…` in Deliverables, Verification, Acceptance). Does not skip frontmatter, heading correspondence, or authority structure. Used for skill `_template.plan.md` CI. |
+| **Default profile** | Strict placeholders: Deliverables / Verification / Acceptance that are only ellipsis placeholders → error for actionable todos. |
 
 ---
 
@@ -271,9 +293,9 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: plugins/team-harness/scripts/lib/plan-validate.ts and validate-plans.ts per slice acceptance. Mark plan-validate-lib completed in plan frontmatter in this PR.
+Deliverables: plan-validate lib + CLI; yaml devDependency + package-lock.json; co-located minimal Vitest tests per slice acceptance; implement Parser and CLI behavior table. Mark plan-validate-lib completed in plan frontmatter in this PR.
 
-Verification: npm run typecheck; manual run validate-plans CLI on a minimal fixture once added locally or smoke path documented in PR.
+Verification: npm ci; npm run typecheck; npm test (minimal plan-validate tests green); tsx plugins/team-harness/scripts/validate-plans.ts on an inline or co-located smoke fixture.
 ```
 
 ### fixtures-tests
@@ -303,9 +325,9 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: package.json scripts, yaml dep, ci.yml and optional check.sh template validation; plugin/marketplace version bump from main. Mark ci-npm completed in plan frontmatter in this PR.
+Deliverables: validate:plans npm scripts only; ci.yml and optional check.sh template validation; plugin/marketplace version bump from main (no new dependencies). Mark ci-npm completed in plan frontmatter in this PR.
 
-Verification: npm ci; npm run typecheck; npm test; npm run validate:plans:template (once script exists).
+Verification: npm ci; npm run typecheck; npm test; npm run validate:plans:template.
 ```
 
 ### docs-skill
@@ -319,9 +341,9 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: plan-validation.md, planning-methodology SKILL.md subsection, team-harness README scripts table. Mark docs-skill completed in plan frontmatter in this PR.
+Deliverables: plan-validation.md; SKILL.md item 7 revised for actionable vs completed/cancelled prompts + Plan validation subsection; reference.md/_template.plan.md aligned if needed; team-harness README scripts table. Mark docs-skill completed in plan frontmatter in this PR.
 
-Verification: sh scripts/check.sh; npm test.
+Verification: sh scripts/check.sh; npm test; grep/read confirms SKILL item 7 matches validator todo/prompt rules.
 ```
 
 ### plan-closure
