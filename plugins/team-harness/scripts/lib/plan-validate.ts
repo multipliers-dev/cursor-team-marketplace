@@ -59,6 +59,20 @@ const DEFAULT_EXCLUDE_GLOBS = [
   "**/planning-methodology/_template.plan.md",
 ];
 
+/** Default archive exclusion removed only when `--include-archive` is set. */
+export const PLANS_ARCHIVE_EXCLUDE_GLOB = ".cursor/plans/archive/**";
+
+export function effectiveExcludeGlobs(
+  config?: PlanValidatorConfig,
+  includeArchive = false,
+): string[] {
+  const excludeGlobs = [...(config?.excludeGlobs ?? DEFAULT_EXCLUDE_GLOBS)];
+  if (!includeArchive) {
+    return excludeGlobs;
+  }
+  return excludeGlobs.filter((g) => g !== PLANS_ARCHIVE_EXCLUDE_GLOB);
+}
+
 const ELLIPSIS_PLACEHOLDER =
   /^[\s*]*(?:\.{3}|…+|\.…|…\.|\u2026|\*+\s*)+[\s*]*$/u;
 
@@ -327,22 +341,23 @@ function isActionableTodo(todo: PlanTodo): boolean {
   return todo.status === "pending" || todo.status === "in_progress";
 }
 
-function sliceHeadingMatchesTodo(headingText: string, todoId: string): boolean {
-  const normalized = headingText.toLowerCase();
-  if (todoId === PLAN_CLOSURE_ID) {
-    return normalized.includes("plan closure");
+/**
+ * Canonical slice `##` headings (fenced blocks excluded by callers):
+ * - `Slice — <todo-id>` with em dash (—), en dash (–), or ASCII hyphen (-) after "Slice".
+ *   Methodology examples use em dash; en dash and hyphen are accepted for common typos.
+ * - `Plan closure` with optional `(docs-only PR)` suffix maps to todo id `plan-closure`.
+ * Substring-only matches (e.g. "Notes on plan-validate-lib") do not count.
+ */
+export function sliceHeadingTodoId(headingText: string): string | null {
+  const trimmed = headingText.trim();
+  if (/^Plan closure(\s*\([^)]*\))?\s*$/iu.test(trimmed)) {
+    return PLAN_CLOSURE_ID;
   }
-  if (normalized.includes(`— ${todoId}`) || normalized.includes(`- ${todoId}`)) {
-    return true;
+  const match = trimmed.match(/^Slice\s+[—–-]\s+(\S+)\s*$/u);
+  if (!match) {
+    return null;
   }
-  if (normalized.endsWith(` ${todoId}`) || normalized.includes(` ${todoId} `)) {
-    return true;
-  }
-  const sliceDash = `slice — ${todoId}`;
-  if (normalized.includes(sliceDash)) {
-    return true;
-  }
-  return false;
+  return match[1]!;
 }
 
 function findSliceSection(
@@ -370,7 +385,7 @@ function findSliceSection(
           text: lines.slice(start - 1, i).join("\n"),
         };
       }
-      if (sliceHeadingMatchesTodo(text, todoId)) {
+      if (sliceHeadingTodoId(text) === todoId) {
         start = i + 1;
       }
     }
@@ -414,9 +429,16 @@ function extractField(sectionText: string, field: string): { value: string; line
   return null;
 }
 
-function parseAuthorityTable(content: string, bodyStartLine: number): Map<string, AuthorityLabel> {
+export interface AuthorityTableEntry {
+  todoId: string;
+  line: number;
+  authorityRaw: string;
+  authority: AuthorityLabel | null;
+}
+
+export function parseAuthorityTable(content: string, bodyStartLine: number): AuthorityTableEntry[] {
   const lines = content.split(/\r?\n/);
-  const map = new Map<string, AuthorityLabel>();
+  const entries: AuthorityTableEntry[] = [];
   let state: LineState = { inFence: false, fenceMarker: null };
   let inTable = false;
 
@@ -449,23 +471,113 @@ function parseAuthorityTable(content: string, bodyStartLine: number): Map<string
     if (cells.length < 2) {
       continue;
     }
-    const sliceCell = cells[0]!
-      .replace(/\*\*/g, "")
-      .trim()
-      .toLowerCase();
-    const authorityCell = cells[1]!.replace(/\*\*/g, "").trim();
-    if (sliceCell === "slice" || sliceCell.includes("recommended authority")) {
+    const sliceId = cells[0]!.replace(/\*\*/g, "").trim();
+    const sliceHeaderProbe = sliceId.toLowerCase();
+    if (sliceHeaderProbe === "slice" || sliceHeaderProbe.includes("recommended authority")) {
       continue;
     }
-    const normalized = normalizeAuthority(authorityCell);
-    if (normalized) {
-      map.set(sliceCell.replace(/\s+/g, "-"), normalized);
-      map.set(sliceCell.replace(/-/g, " "), normalized);
-      map.set(sliceCell, normalized);
+    const authorityCell = cells[1]!.replace(/\*\*/g, "").trim();
+    entries.push({
+      todoId: sliceId,
+      line: i + 1,
+      authorityRaw: authorityCell,
+      authority: normalizeAuthority(authorityCell),
+    });
+  }
+
+  return entries;
+}
+
+function todoIdKnown(todoIds: Set<string>, tableTodoId: string): boolean {
+  const lower = tableTodoId.toLowerCase();
+  for (const id of todoIds) {
+    if (id.toLowerCase() === lower) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function authorityTableRowsForTodo(
+  entries: AuthorityTableEntry[],
+  todoId: string,
+): AuthorityTableEntry[] {
+  const lower = todoId.toLowerCase();
+  return entries.filter((e) => e.todoId.toLowerCase() === lower);
+}
+
+function validateAuthorityTable(
+  entries: AuthorityTableEntry[],
+  todos: PlanTodo[],
+  todoIds: Set<string>,
+  file: string,
+  authoritySectionLine: number,
+): PlanIssue[] {
+  const issues: PlanIssue[] = [];
+
+  for (const entry of entries) {
+    if (!todoIdKnown(todoIds, entry.todoId)) {
+      issues.push(
+        issue(
+          file,
+          entry.line,
+          "authority.table.unknown-todo",
+          `Authority table row references unknown todo id "${entry.todoId}"`,
+        ),
+      );
+    }
+    if (entry.authority === null) {
+      issues.push(
+        issue(
+          file,
+          entry.line,
+          "authority.table.unrecognized-label",
+          `Authority table has unrecognized recommended authority "${entry.authorityRaw}" for "${entry.todoId}"`,
+        ),
+      );
     }
   }
 
-  return map;
+  const grouped = new Map<string, AuthorityTableEntry[]>();
+  for (const entry of entries) {
+    const key = entry.todoId.toLowerCase();
+    const list = grouped.get(key) ?? [];
+    list.push(entry);
+    grouped.set(key, list);
+  }
+  for (const [, rows] of grouped) {
+    if (rows.length > 1) {
+      for (const row of rows.slice(1)) {
+        issues.push(
+          issue(
+            file,
+            row.line,
+            "authority.table.duplicate-row",
+            `Duplicate authority table row for todo "${row.todoId}"`,
+          ),
+        );
+      }
+    }
+  }
+
+  for (const todo of todos) {
+    if (!isActionableTodo(todo)) {
+      continue;
+    }
+    const rows = authorityTableRowsForTodo(entries, todo.id);
+    if (rows.length === 0) {
+      issues.push(
+        issue(
+          file,
+          authoritySectionLine,
+          "authority.table.missing-row",
+          `Authority table missing row for actionable todo "${todo.id}"`,
+        ),
+      );
+    }
+  }
+
+  return issues;
 }
 
 function findRepoDefaultLine(content: string, bodyStartLine: number): number | null {
@@ -524,13 +636,80 @@ function findAgentPromptsSection(
   return null;
 }
 
-function parsePromptBlocks(sectionText: string, sectionStartLine: number): Map<string, { body: string; line: number }> {
+export type PromptBlockStatus = "complete" | "fence-missing" | "fence-unclosed";
+
+export interface PromptBlockScan {
+  headingLine: number;
+  status: PromptBlockStatus;
+  fenceOpenLine: number | null;
+  body: string | null;
+}
+
+function finalizePromptSlot(
+  slots: Map<string, PromptBlockScan>,
+  todoId: string,
+  headingLine: number,
+  openedFence: boolean,
+  inFence: boolean,
+  fenceOpenLine: number,
+  fenceContent: string[],
+): void {
+  if (!openedFence) {
+    slots.set(todoId, {
+      headingLine,
+      status: "fence-missing",
+      fenceOpenLine: null,
+      body: null,
+    });
+    return;
+  }
+  if (inFence) {
+    slots.set(todoId, {
+      headingLine,
+      status: "fence-unclosed",
+      fenceOpenLine,
+      body: null,
+    });
+    return;
+  }
+  slots.set(todoId, {
+    headingLine,
+    status: "complete",
+    fenceOpenLine,
+    body: fenceContent.join("\n"),
+  });
+}
+
+export function scanPromptBlocks(
+  sectionText: string,
+  sectionStartLine: number,
+): Map<string, PromptBlockScan> {
   const lines = sectionText.split(/\r?\n/);
-  const map = new Map<string, { body: string; line: number }>();
+  const slots = new Map<string, PromptBlockScan>();
   let state: LineState = { inFence: false, fenceMarker: null };
   let currentId: string | null = null;
-  let fenceStart = -1;
+  let headingLine = -1;
+  let openedFence = false;
+  let fenceOpenLine = -1;
   let fenceContent: string[] = [];
+
+  const flushCurrent = (): void => {
+    if (!currentId) {
+      return;
+    }
+    finalizePromptSlot(
+      slots,
+      currentId,
+      headingLine,
+      openedFence,
+      state.inFence,
+      fenceOpenLine,
+      fenceContent,
+    );
+    currentId = null;
+    openedFence = false;
+    fenceContent = [];
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
@@ -539,7 +718,11 @@ function parsePromptBlocks(sectionText: string, sectionStartLine: number): Map<s
     if (!state.inFence) {
       const hm = line.match(/^###\s+(.+?)\s*$/);
       if (hm) {
+        flushCurrent();
         currentId = hm[1]!.trim();
+        headingLine = absLine;
+        openedFence = false;
+        fenceContent = [];
         continue;
       }
     }
@@ -548,7 +731,8 @@ function parsePromptBlocks(sectionText: string, sectionStartLine: number): Map<s
     state = updateFenceState(line, state);
 
     if (!before && state.inFence) {
-      fenceStart = absLine + 1;
+      openedFence = true;
+      fenceOpenLine = absLine;
       fenceContent = [];
       continue;
     }
@@ -557,15 +741,10 @@ function parsePromptBlocks(sectionText: string, sectionStartLine: number): Map<s
       fenceContent.push(line);
       continue;
     }
-
-    if (before && !state.inFence && currentId) {
-      map.set(currentId, { body: fenceContent.join("\n"), line: fenceStart });
-      currentId = null;
-      fenceContent = [];
-    }
   }
 
-  return map;
+  flushCurrent();
+  return slots;
 }
 
 function parseLabeledPromptLines(block: string): Record<string, string> {
@@ -644,7 +823,21 @@ export function validatePlanContent(
     }
   }
 
-  const authorityTable = parseAuthorityTable(content, bodyStartLine);
+  const authorityTableEntries = parseAuthorityTable(content, bodyStartLine);
+  const todoIds = new Set(todos.map((t) => t.id));
+  const authoritySectionLine =
+    structure.headings.find(
+      (h) => h.level === 2 && /^Recommended execution authority/i.test(h.text),
+    )?.line ?? bodyStartLine;
+  issues.push(
+    ...validateAuthorityTable(
+      authorityTableEntries,
+      todos,
+      todoIds,
+      file,
+      authoritySectionLine,
+    ),
+  );
 
   for (const todo of todos) {
     if (!isActionableTodo(todo)) {
@@ -692,18 +885,14 @@ export function validatePlanContent(
           ),
         );
       } else {
-        const tableKey = todo.id.toLowerCase();
-        const tableAuth =
-          authorityTable.get(tableKey) ??
-          authorityTable.get(todo.id) ??
-          authorityTable.get(todo.id.replace(/-/g, " "));
-        if (tableAuth && tableAuth !== normalized) {
+        const tableRows = authorityTableRowsForTodo(authorityTableEntries, todo.id);
+        if (tableRows.length === 1 && tableRows[0]!.authority && tableRows[0]!.authority !== normalized) {
           issues.push(
             issue(
               file,
               sliceLineOffset + recAuth.line - 1,
               "authority.mismatch",
-              `Slice "${todo.id}" authority "${normalized}" does not match authority table "${tableAuth}"`,
+              `Slice "${todo.id}" authority "${normalized}" does not match authority table "${tableRows[0]!.authority}"`,
             ),
           );
         }
@@ -761,15 +950,14 @@ export function validatePlanContent(
       ),
     );
   } else {
-    const promptMap = parsePromptBlocks(agentSection.text, agentSection.startLine);
-    const todoIds = new Set(todos.map((t) => t.id));
+    const promptSlots = scanPromptBlocks(agentSection.text, agentSection.startLine);
 
-    for (const [headingId, block] of promptMap) {
+    for (const [headingId, slot] of promptSlots) {
       if (!todoIds.has(headingId)) {
         issues.push(
           issue(
             file,
-            block.line - 1,
+            slot.headingLine,
             "prompts.orphan",
             `Agent prompt heading "### ${headingId}" does not match any frontmatter todo id`,
           ),
@@ -782,20 +970,44 @@ export function validatePlanContent(
         continue;
       }
 
-      const prompt = promptMap.get(todo.id);
-      if (!prompt) {
+      const slot = promptSlots.get(todo.id);
+      if (!slot) {
         issues.push(
           issue(
             file,
             agentSection.startLine,
             "prompts.missing",
-            `Actionable todo "${todo.id}" missing ### ${todo.id} agent prompt`,
+            `Actionable todo "${todo.id}" missing ### ${todo.id} agent prompt heading`,
           ),
         );
         continue;
       }
 
-      const labeled = parseLabeledPromptLines(prompt.body);
+      if (slot.status === "fence-missing") {
+        issues.push(
+          issue(
+            file,
+            slot.headingLine,
+            "prompts.fence-missing",
+            `Agent prompt for "${todo.id}" has ### heading but no fenced code block`,
+          ),
+        );
+        continue;
+      }
+
+      if (slot.status === "fence-unclosed") {
+        issues.push(
+          issue(
+            file,
+            slot.fenceOpenLine ?? slot.headingLine,
+            "prompts.fence-unclosed",
+            `Agent prompt for "${todo.id}" has a fenced code block that is not closed`,
+          ),
+        );
+        continue;
+      }
+
+      const labeled = parseLabeledPromptLines(slot.body ?? "");
       const requiredLabels = ["Authority", "Topology", "Deliverables", "Verification"] as const;
 
       for (const label of requiredLabels) {
@@ -803,7 +1015,7 @@ export function validatePlanContent(
           issues.push(
             issue(
               file,
-              prompt.line,
+              slot.fenceOpenLine ?? slot.headingLine,
               "prompts.labeled-lines",
               `Prompt for "${todo.id}" missing labeled line "${label}:"`,
             ),
@@ -817,7 +1029,7 @@ export function validatePlanContent(
           issues.push(
             issue(
               file,
-              prompt.line,
+              slot.fenceOpenLine ?? slot.headingLine,
               "prompts.authority-label",
               `Prompt for "${todo.id}" has unrecognized Authority label`,
             ),
@@ -832,9 +1044,24 @@ export function validatePlanContent(
             issues.push(
               issue(
                 file,
-                prompt.line,
+                slot.fenceOpenLine ?? slot.headingLine,
                 "authority.mismatch",
                 `Prompt authority "${normalized}" does not match slice recommended authority "${sliceAuth}" for "${todo.id}"`,
+              ),
+            );
+          }
+          const tableRows = authorityTableRowsForTodo(authorityTableEntries, todo.id);
+          if (
+            tableRows.length === 1 &&
+            tableRows[0]!.authority &&
+            tableRows[0]!.authority !== normalized
+          ) {
+            issues.push(
+              issue(
+                file,
+                slot.fenceOpenLine ?? slot.headingLine,
+                "authority.mismatch",
+                `Prompt authority "${normalized}" does not match authority table "${tableRows[0]!.authority}" for "${todo.id}"`,
               ),
             );
           }
@@ -848,7 +1075,7 @@ export function validatePlanContent(
             issues.push(
               issue(
                 file,
-                prompt.line,
+                slot.fenceOpenLine ?? slot.headingLine,
                 "prompts.placeholder",
                 `Prompt for "${todo.id}" ${label} is only an ellipsis placeholder`,
               ),
@@ -935,12 +1162,7 @@ export async function discoverPlanFiles(
   includeArchive = false,
 ): Promise<string[]> {
   const plansGlobs = config?.plansGlobs ?? DEFAULT_PLANS_GLOBS;
-  const excludeGlobs = [...(config?.excludeGlobs ?? DEFAULT_EXCLUDE_GLOBS)];
-  if (includeArchive) {
-    const filtered = excludeGlobs.filter((g) => !g.includes("archive"));
-    excludeGlobs.length = 0;
-    excludeGlobs.push(...filtered);
-  }
+  const excludeGlobs = effectiveExcludeGlobs(config, includeArchive);
 
   const files = new Set<string>();
   for (const pattern of plansGlobs) {
