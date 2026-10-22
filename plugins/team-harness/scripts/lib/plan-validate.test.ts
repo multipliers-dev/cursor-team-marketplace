@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -15,7 +16,22 @@ import {
 } from "./plan-validate.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(here, "..", "..", "..", "..");
+const cliPath = join(here, "..", "validate-plans.ts");
 const fixturesDir = join(here, "..", "fixtures", "plan-validate");
+
+function runValidatePlansCli(args: string[]): { status: number | null; stderr: string; stdout: string } {
+  const result = spawnSync("npx", ["tsx", cliPath, ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: process.env,
+  });
+  return {
+    status: result.status,
+    stderr: result.stderr ?? "",
+    stdout: result.stdout ?? "",
+  };
+}
 
 function minimalPlan(body: string): string {
   return `---
@@ -361,6 +377,30 @@ ${agentPrompts(
     expect(issues.some((i) => i.rule === "slice.acceptance")).toBe(true);
   });
 
+  it("requires Acceptance when Recommended authority is missing", () => {
+    const body = `${sliceBlock("slice-a")
+      .replace("**Recommended authority:** Open PR only\n\n", "")
+      .replace("**Acceptance:**\n\n- ships work", "")}
+
+${sliceBlock("plan-closure")}
+
+${agentPrompts(
+  [
+    promptBlock(
+      "slice-a",
+      "Authority: Open PR only — x\nTopology: x\nDeliverables: x\nVerification: x",
+    ),
+    promptBlock(
+      "plan-closure",
+      "Authority: Open PR only — x\nTopology: x\nDeliverables: x\nVerification: x",
+    ),
+  ].join("\n\n"),
+)}`;
+    const issues = validatePlanContent(minimalPlan(body), "missing-auth-acceptance.plan.md");
+    expect(issues.some((i) => i.rule === "slice.recommended-authority")).toBe(true);
+    expect(issues.some((i) => i.rule === "slice.acceptance")).toBe(true);
+  });
+
   it("does not exempt Acceptance when slice authority is unrecognized", () => {
     const body = `${sliceBlock("slice-a").replace(
       "**Recommended authority:** Open PR only",
@@ -387,7 +427,54 @@ ${agentPrompts(
   });
 
   it("rejects ellipsis-only slice Acceptance in default profile", () => {
-    const body = `${sliceBlock("slice-a").replace("- ships work", "…")}
+    const prompts = agentPrompts(
+      [
+        promptBlock(
+          "slice-a",
+          "Authority: Open PR only — x\nTopology: x\nDeliverables: x\nVerification: x",
+        ),
+        promptBlock(
+          "plan-closure",
+          "Authority: Open PR only — x\nTopology: x\nDeliverables: x\nVerification: x",
+        ),
+      ].join("\n\n"),
+    );
+
+    for (const acceptanceBody of ["…", "- …", "- ...", "- …\n- ..."]) {
+      const body = `${sliceBlock("slice-a").replace("- ships work", acceptanceBody)}
+
+${sliceBlock("plan-closure")}
+
+${prompts}`;
+      const strict = validatePlanContent(minimalPlan(body), "ellipsis-acceptance.plan.md");
+      expect(
+        strict.some(
+          (i) => i.rule === "slice.acceptance" && i.message.includes("ellipsis placeholder"),
+        ),
+      ).toBe(true);
+      const relaxed = validatePlanContent(minimalPlan(body), "ellipsis-acceptance.plan.md", {
+        profile: "template",
+      });
+      expect(
+        relaxed.some(
+          (i) => i.rule === "slice.acceptance" && i.message.includes("ellipsis placeholder"),
+        ),
+      ).toBe(false);
+    }
+
+    const mixedBody = `${sliceBlock("slice-a").replace("- ships work", "- …\n- real acceptance item")}
+
+${sliceBlock("plan-closure")}
+
+${prompts}`;
+    const mixedIssues = validatePlanContent(minimalPlan(mixedBody), "mixed-acceptance.plan.md");
+    expect(
+      mixedIssues.some(
+        (i) => i.rule === "slice.acceptance" && i.message.includes("ellipsis placeholder"),
+      ),
+    ).toBe(false);
+
+    const promptEllipsisBody = `${sliceBlock("slice-a")}
 
 ${sliceBlock("plan-closure")}
 
@@ -395,7 +482,7 @@ ${agentPrompts(
   [
     promptBlock(
       "slice-a",
-      "Authority: Open PR only — x\nTopology: x\nDeliverables: x\nVerification: x",
+      "Authority: Open PR only — x\nTopology: x\nDeliverables: - …\nVerification: x",
     ),
     promptBlock(
       "plan-closure",
@@ -403,20 +490,12 @@ ${agentPrompts(
     ),
   ].join("\n\n"),
 )}`;
-    const strict = validatePlanContent(minimalPlan(body), "ellipsis-acceptance.plan.md");
+    const promptIssues = validatePlanContent(minimalPlan(promptEllipsisBody), "prompt-ellipsis.plan.md");
     expect(
-      strict.some(
-        (i) => i.rule === "slice.acceptance" && i.message.includes("ellipsis placeholder"),
+      promptIssues.some(
+        (i) => i.rule === "prompts.placeholder" && i.message.includes("Deliverables"),
       ),
     ).toBe(true);
-    const relaxed = validatePlanContent(minimalPlan(body), "ellipsis-acceptance.plan.md", {
-      profile: "template",
-    });
-    expect(
-      relaxed.some(
-        (i) => i.rule === "slice.acceptance" && i.message.includes("ellipsis placeholder"),
-      ),
-    ).toBe(false);
   });
 
   it("reports authority.mismatch for every conflicting duplicate table row", () => {
@@ -472,6 +551,22 @@ ${agentPrompts(
     expect(dup).toBeDefined();
     expect(dup!.line).toBeGreaterThan(1);
     expect(content.split("\n")[dup!.line - 1]?.trim()).toMatch(/^### slice-a$/);
+  });
+
+  it("CLI exits 0 for valid fixture and non-zero for discovery.empty and missing path", () => {
+    const valid = runValidatePlansCli([
+      "plugins/team-harness/scripts/fixtures/plan-validate/valid-minimal.plan.md",
+    ]);
+    expect(valid.status).toBe(0);
+
+    const emptyRoot = mkdtempSync(join(tmpdir(), "plan-validate-cli-empty-"));
+    const empty = runValidatePlansCli(["--repo-root", emptyRoot]);
+    expect(empty.status).toBe(1);
+    expect(empty.stderr).toContain("[discovery.empty]");
+
+    const missing = runValidatePlansCli(["--repo-root", emptyRoot, "missing-plan.plan.md"]);
+    expect(missing.status).toBe(1);
+    expect(missing.stderr).toContain("[io.not-found]");
   });
 
   it("reports discovery.empty and handles explicit paths", async () => {

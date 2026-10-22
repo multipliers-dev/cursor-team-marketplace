@@ -773,12 +773,29 @@ function parseLabeledPromptLines(block: string): Record<string, string> {
   return result;
 }
 
-function isEllipsisPlaceholder(value: string): boolean {
-  const trimmed = value.trim();
+function contentAfterListMarker(line: string): string {
+  const trimmed = line.trim();
   if (!trimmed) {
-    return true;
+    return "";
   }
-  return ELLIPSIS_PLACEHOLDER.test(trimmed);
+  return trimmed.replace(/^(?:[-*+]|\d+\.)\s+/, "").trim();
+}
+
+/** True when every non-empty line is only an ellipsis placeholder (optional list marker per line). */
+export function isEllipsisPlaceholder(value: string): boolean {
+  const lines = value.split(/\r?\n/);
+  let sawNonEmpty = false;
+  for (const line of lines) {
+    if (!line.trim()) {
+      continue;
+    }
+    sawNonEmpty = true;
+    const content = contentAfterListMarker(line);
+    if (!content || !ELLIPSIS_PLACEHOLDER.test(content)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function authorityAllowsMissingAcceptance(authority: AuthorityLabel): boolean {
