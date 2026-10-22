@@ -102,7 +102,7 @@ After the last implementation slice merges:
 
 ## Agent prompts (copy/paste for Cursor)
 
-Use a **fresh Agent-mode chat** per slice. Each default frontmatter todo has exactly one `### <todo-id>` heading copied from that todo’s `id` — do not rename ids to match prose.
+Use a **fresh Agent-mode chat** per slice. Each **actionable** todo (`pending`, `in_progress`) has exactly one `### <todo-id>` heading copied from that todo’s `id` — do not rename ids to match prose. Completed or cancelled todos may omit prompts; orphan or duplicate `###` headings are invalid (see `/planning-methodology` and [plan-validation.md](../../docs/plan-validation.md)).
 
 > **Same-repo template behavior.** The slice prompts below assume the plan file and the implementation land in the **same repo**, so each marks its own todo `completed` in the same PR. For a **cross-repo slice** (authoritative plan lives in a different repo than the implementation), do **not** edit the plan from the implementation repo — use the cross-repo variant below instead.
 

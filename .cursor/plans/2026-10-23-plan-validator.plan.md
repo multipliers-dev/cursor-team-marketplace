@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: docs-skill
     content: "PR: plan-validation.md; align SKILL.md item 7 todo/prompt rule with validator; README scripts table"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-10-23-plan-validator.plan.md"
     status: pending

@@ -30,5 +30,6 @@ Copy into a target repo during one-time bootstrap — locate scripts in the inst
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent)                                                            |
 | `scripts/cloud-agent-install.sh`      | Node-from-`.nvmrc` major → full prefix under `/usr/local`; persist PATH; run declared dependency command |
 | `scripts/cloud-agent-start.sh`        | Session PATH + Node probe log + blocking `ensure-hooks` (wait mode, default 120s)                          |
+| `scripts/validate-plans.ts` + `scripts/lib/plan-validate.ts` | Deterministic `.cursor/plans/*.plan.md` validator (copy-only; see [docs/plan-validation.md](docs/plan-validation.md)) |
 
 **Plugin install alone does not wire `package.json` `prepare`, `.husky/` contents, or `.cursor/environment.json`.** When Cloud Agents are expected, wiring includes committed `environment.json` lifecycle and, when `.nvmrc` pins a newer major, Node-from-`.nvmrc` Build/session PATH — not only `prepare`. See `/cloud-hooks-bootstrap`.
