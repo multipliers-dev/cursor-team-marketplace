@@ -29,6 +29,13 @@ const INVALID_FIXTURE_EXPECTATIONS: Record<string, ExpectedIssue[]> = {
     { rule: "authority.mismatch", line: 20 },
     { rule: "authority.mismatch", line: 20 },
   ],
+  "invalid-authority-table-duplicate-conflict.plan.md": [
+    { rule: "authority.table.duplicate-row", line: 21 },
+    { rule: "authority.mismatch", line: 20 },
+    { rule: "authority.mismatch", line: 21 },
+    { rule: "authority.mismatch", line: 20 },
+    { rule: "authority.mismatch", line: 21 },
+  ],
   "invalid-authority-table-duplicate-row.plan.md": [
     { rule: "authority.table.duplicate-row", line: 21 },
   ],
@@ -42,6 +49,7 @@ const INVALID_FIXTURE_EXPECTATIONS: Record<string, ExpectedIssue[]> = {
     { rule: "authority.table.unrecognized-label", line: 20 },
   ],
   "invalid-frontmatter-delimiter.plan.md": [{ rule: "frontmatter.delimiter", line: 1 }],
+  "invalid-frontmatter-duplicate-todo-id.plan.md": [{ rule: "frontmatter.todos", line: 1 }],
   "invalid-frontmatter-plan-closure-last.plan.md": [{ rule: "frontmatter.todos", line: 1 }],
   "invalid-frontmatter-schema.plan.md": [
     { rule: "frontmatter.schema", line: 1 },
@@ -69,19 +77,27 @@ const INVALID_FIXTURE_EXPECTATIONS: Record<string, ExpectedIssue[]> = {
     { rule: "slice.acceptance", line: 35 },
   ],
   "invalid-slice-acceptance-placeholder.plan.md": [{ rule: "slice.acceptance", line: 35 }],
+  // Same four slice.* lines: fence-only-fields keeps metadata inside a fence (fence-awareness regression).
   "invalid-slice-fence-only-fields.plan.md": [
     { rule: "slice.recommended-authority", line: 25 },
     { rule: "slice.rationale", line: 25 },
     { rule: "slice.agent-instruction", line: 25 },
     { rule: "slice.acceptance", line: 25 },
   ],
+  // Same four slice.* lines: missing-fields omits labels in the open document (not fenced).
   "invalid-slice-missing-fields.plan.md": [
     { rule: "slice.recommended-authority", line: 25 },
     { rule: "slice.rationale", line: 25 },
     { rule: "slice.agent-instruction", line: 25 },
     { rule: "slice.acceptance", line: 25 },
   ],
+  "invalid-slice-missing-authority-no-exemption.plan.md": [
+    { rule: "slice.recommended-authority", line: 25 },
+    { rule: "slice.acceptance", line: 25 },
+  ],
+  // Same slice.missing line: "Notes on slice-a" is a substring-only false positive guard.
   "invalid-slice-missing.plan.md": [{ rule: "slice.missing", line: 14 }],
+  // Same slice.missing line: "Slice 1 — slice-a prose title" is template-style non-canonical heading.
   "invalid-slice-non-canonical-heading.plan.md": [{ rule: "slice.missing", line: 14 }],
   "invalid-slice-unknown-authority-no-exemption.plan.md": [
     { rule: "slice.authority-label", line: 27 },
@@ -147,6 +163,8 @@ describe("plan-validate fixture corpus (integration)", () => {
     expect(validatePlanFile(promptPath, { profile: "template" })).toEqual([]);
   });
 
+  // Informational until ci-npm/docs-skill rename template slice headings; then tighten to expect
+  // zero issues under profile template (template profile should pass once headings are canonical).
   it("reports skill _template.plan.md under --profile template (informational)", () => {
     const defaultIssues = validatePlanFile(skillTemplatePath, { profile: "default" });
     const templateIssues = validatePlanFile(skillTemplatePath, { profile: "template" });
@@ -209,11 +227,17 @@ describe("plan-validate fixture corpus (integration)", () => {
     expect(withArchive).not.toContain(cursorTemplatePath);
   });
 
-  it("CLI smoke: valid corpus fixture exits 0", () => {
+  it("CLI smoke: valid corpus fixture exits 0; invalid fixture exits 1 with rule id", () => {
     const valid = runValidatePlansCli([
       "scripts/fixtures/plan-validate/valid-minimal.plan.md",
     ]);
     expect(valid.status).toBe(0);
     expect(valid.stdout).toContain("ok plan validation");
+
+    const invalid = runValidatePlansCli([
+      "scripts/fixtures/plan-validate/invalid-prompts-missing.plan.md",
+    ]);
+    expect(invalid.status).toBe(1);
+    expect(invalid.stderr).toContain("[prompts.missing]");
   });
 });
