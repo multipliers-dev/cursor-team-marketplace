@@ -163,15 +163,8 @@ describe("plan-validate fixture corpus (integration)", () => {
     expect(validatePlanFile(promptPath, { profile: "template" })).toEqual([]);
   });
 
-  // Informational until ci-npm/docs-skill rename template slice headings; then tighten to expect
-  // zero issues under profile template (template profile should pass once headings are canonical).
-  it("reports skill _template.plan.md under --profile template (informational)", () => {
-    const defaultIssues = validatePlanFile(skillTemplatePath, { profile: "default" });
-    const templateIssues = validatePlanFile(skillTemplatePath, { profile: "template" });
-
-    expect(defaultIssues.some((i) => i.rule === "prompts.placeholder")).toBe(true);
-    expect(templateIssues.some((i) => i.rule === "prompts.placeholder")).toBe(false);
-    expect(templateIssues.some((i) => i.rule === "slice.missing")).toBe(true);
+  it("skill _template.plan.md passes under --profile template with zero issues", () => {
+    expect(validatePlanFile(skillTemplatePath, { profile: "template" })).toEqual([]);
   });
 
   it("default discovery excludes archive/** and _template.plan.md", async () => {
@@ -196,7 +189,7 @@ describe("plan-validate fixture corpus (integration)", () => {
     writeFileSync(cursorTemplatePath, validSample);
     writeFileSync(skillTemplateCopy, validSample);
 
-    const issues = await validatePlanPaths([], { repoRoot: root });
+    const { issues } = await validatePlanPaths([], { repoRoot: root });
     expect(issues).toEqual([]);
 
     const files = await discoverPlanFiles(root, undefined, false);
@@ -239,5 +232,83 @@ describe("plan-validate fixture corpus (integration)", () => {
     ]);
     expect(invalid.status).toBe(1);
     expect(invalid.stderr).toContain("[prompts.missing]");
+  });
+
+  describe("CLI --allow-empty (discovery only)", () => {
+    const validSample = readFileSync(join(fixturesDir, "valid-minimal.plan.md"), "utf8");
+    const invalidSample = readFileSync(
+      join(fixturesDir, "invalid-prompts-missing.plan.md"),
+      "utf8",
+    );
+
+    function planAt(root: string, rel: string, content: string): string {
+      const path = join(root, rel);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, content);
+      return path;
+    }
+
+    it("(a) empty discovery + --allow-empty → exit 0 + skip message", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-a-"));
+      const result = runValidatePlansCli(["--repo-root", root, "--allow-empty"]);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("skip plan validation: no active plans discovered");
+      expect(result.stdout).toContain(root);
+      expect(result.stdout).toContain("plansGlobs:");
+      expect(result.stdout).toContain("excludeGlobs:");
+    });
+
+    it("(b) empty discovery without flag → exit 1 discovery.empty", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-b-"));
+      const result = runValidatePlansCli(["--repo-root", root]);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("[discovery.empty]");
+    });
+
+    it("(c) discovery with a valid plan + --allow-empty → exit 0", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-c-"));
+      planAt(root, ".cursor/plans/active/ok.plan.md", validSample);
+      const result = runValidatePlansCli(["--repo-root", root, "--allow-empty"]);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("ok plan validation");
+    });
+
+    it("(d) discovery with an invalid plan + --allow-empty → exit 1 with the rule", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-d-"));
+      planAt(root, ".cursor/plans/active/bad.plan.md", invalidSample);
+      const result = runValidatePlansCli(["--repo-root", root, "--allow-empty"]);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("[prompts.missing]");
+    });
+
+    it("(e) explicit missing path + --allow-empty → exit 1 io.not-found", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-e-"));
+      const result = runValidatePlansCli([
+        "--repo-root",
+        root,
+        "--allow-empty",
+        "missing-plan.plan.md",
+      ]);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("[io.not-found]");
+    });
+
+    it("(f) invalid config + --allow-empty → failure", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-f-"));
+      const configPath = join(root, ".cursor/plan-validator.json");
+      mkdirSync(dirname(configPath), { recursive: true });
+      writeFileSync(configPath, "{ not-json");
+      const result = runValidatePlansCli(["--repo-root", root, "--allow-empty"]);
+      expect(result.status).not.toBe(0);
+      expect(result.status).not.toBe(1);
+    });
+
+    it("(g) archive-only tree + --allow-empty → skip (exit 0)", () => {
+      const root = mkdtempSync(join(tmpdir(), "plan-validate-allow-empty-g-"));
+      planAt(root, ".cursor/plans/archive/archived.plan.md", validSample);
+      const result = runValidatePlansCli(["--repo-root", root, "--allow-empty"]);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("skip plan validation: no active plans discovered");
+    });
   });
 });

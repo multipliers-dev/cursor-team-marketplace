@@ -572,15 +572,15 @@ ${agentPrompts(
   it("reports discovery.empty and handles explicit paths", async () => {
     const emptyRoot = mkdtempSync(join(tmpdir(), "plan-validate-empty-"));
     const emptyIssues = await validatePlanPaths([], { repoRoot: emptyRoot });
-    expect(emptyIssues.some((i) => i.rule === "discovery.empty")).toBe(true);
+    expect(emptyIssues.issues.some((i) => i.rule === "discovery.empty")).toBe(true);
 
     const validPath = join(fixturesDir, "valid-minimal.plan.md");
     const explicitOk = await validatePlanPaths([validPath], { repoRoot: emptyRoot });
-    expect(explicitOk).toEqual([]);
+    expect(explicitOk.issues).toEqual([]);
 
     const missing = await validatePlanPaths(["does-not-exist.plan.md"], {
       repoRoot: emptyRoot,
     });
-    expect(missing.some((i) => i.rule === "io.not-found")).toBe(true);
+    expect(missing.issues.some((i) => i.rule === "io.not-found")).toBe(true);
   });
 });
