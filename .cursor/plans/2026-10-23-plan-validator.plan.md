@@ -58,6 +58,25 @@ Multi-slice plans stack execution order, not Git branches. Integration branch is
 
 The authoritative plan file lives in **`multipliers-dev/cursor-team-marketplace`**. Slices through `ci-npm` are same-repo. **`centralized-consumption`** requires one consumer repository **selected and explicitly authorized by Michael** for **smoke verification only** (see that slice); marketplace implementation and consumer smoke may run in **separate** Cloud Agent sessions. **`consumer-adoption`** rolls out workflow configuration across applicable repositories via **separate per-repo PRs** plus a **plan-status PR** in this repo. Do not assume GitHub App access means required repositories are checked out—Cloud Agents launched against one repository receive credentials for that repository only; each consumer repo needs its own launch, preflight, and checkout identity proof before edits.
 
+### Repository inventory
+
+| Role | Repository |
+| --- | --- |
+| **Canonical source** | `multipliers-dev/cursor-team-marketplace` |
+| **Candidate consumers** (inspect in **`consumer-adoption`**; smoke target in **`centralized-consumption`**) | See list below |
+
+**Candidate consumers:**
+
+- `mastermichaelt/resumes` — proposed smoke-test consumer for **`centralized-consumption`** (subject to Michael’s explicit authorization, access, and checkout preflight)
+- `mastermichaelt/portfolio`
+- `mastermichaelt/mastermichaelt`
+- `multipliers-dev/editorial-workflow`
+- `multipliers-dev/renovate-workflow`
+- `multipliers-dev/codenames-ai-guesser`
+- `multipliers-dev/savepoints`
+
+Both GitHub accounts (`mastermichaelt`, `multipliers-dev`) may be reachable via the connected GitHub integration, but **GitHub API / App access alone is not proof of a local checkout**. Each repository still requires its own checkout and identity preflight (`pwd`, `git remote get-url origin`) in the environment that executes work for that repo.
+
 ---
 
 ## Context from reconnaissance
@@ -225,7 +244,7 @@ Installing the Cursor plugin does **not** automatically configure consumer CI. C
 **Required repositories:**
 
 - `multipliers-dev/cursor-team-marketplace` — canonical validator + reusable workflow host, read/write (implementation PR).
-- **One authorized consumer repository** (Michael-selected before slice start) — **required** for smoke verification of plugin invocation and reusable workflow call; read/write in the session that runs smoke. Hard-stop if that checkout is missing, identity-mismatched, or not the authorized repo. Disposable repos are allowed only when Michael explicitly authorizes that disposable repo for smoke.
+- **`mastermichaelt/resumes`** — **proposed** smoke-test consumer (see Prerequisites); **required** for smoke verification of plugin invocation and reusable workflow call once Michael explicitly authorizes this repo for the slice. Read/write in the session that runs smoke. Hard-stop if checkout is missing, identity-mismatched, or not `mastermichaelt/resumes`. If access or checkout cannot be verified, **stop and escalate to Michael**—do **not** substitute another repository for smoke.
 
 **Acceptance:**
 
@@ -242,15 +261,15 @@ Installing the Cursor plugin does **not** automatically configure consumer CI. C
 **Verification:**
 
 - Marketplace PR: `npm ci`; `npm run typecheck`; `npm test`; `npm run validate:plans`; `sh scripts/check.sh`
-- Consumer smoke environment: prove checkout identity in the **same command** as smoke work (`pwd`, `git remote get-url origin`) before plugin/workflow smoke; hard-stop on mismatch
-- Documented plugin invocation smoke result from the authorized consumer checkout (pass/fail/limitation recorded in PR or linked doc)
-- Reusable workflow smoke: workflow run on the authorized consumer repo validates that repo’s plans (link run URL in PR description)
+- Consumer smoke environment (`mastermichaelt/resumes`): prove checkout identity in the **same command** as smoke work (`pwd`, `git remote get-url origin`); hard-stop on mismatch or missing checkout—escalate to Michael, do not substitute another repo
+- Documented plugin invocation smoke result from `mastermichaelt/resumes` (pass/fail/limitation recorded in PR or linked doc)
+- Reusable workflow smoke: workflow run on `mastermichaelt/resumes` validates that repo’s plans (link run URL in PR description)
 - Confirm validator checkout pin and working-directory defaults cannot validate marketplace paths when invoked from a consumer
 
 **Prerequisites:**
 
 - `ci-npm` merged.
-- **Before implementation starts:** Michael selects and explicitly authorizes **one** consumer repository for smoke verification (record owner/name in the marketplace PR or plan-status note).
+- **Before implementation starts:** Michael explicitly authorizes **`mastermichaelt/resumes`** as the smoke-test consumer (record in the marketplace PR). Verify the smoke execution environment has required repository access and a **real checkout** of `mastermichaelt/resumes` before smoke work; if not, stop and escalate—do not pick a different repo.
 
 ---
 
@@ -275,33 +294,33 @@ Installing the Cursor plugin does **not** automatically configure consumer CI. C
 
 **Deliverables:**
 
-- Adoption inventory and status matrix (in plan-status PR and/or team-harness docs stub consumed by `docs-skill`)
-- Open per-repo configuration PRs where adoption applies
-- Plan-status PR in `cursor-team-marketplace` linking merged consumer PRs, pinned validator versions, and documented exclusions
+- **Adoption matrix** covering all **seven candidate consumers** from [Repository inventory](#repository-inventory): per-repo decision (**adopt** / **defer** / **exclude**) with rationale, planning/CI findings, pins, and PR links once known (in plan-status PR and/or team-harness docs stub consumed by `docs-skill`)
+- Open per-repo configuration PRs for each repository marked **adopt** (one PR per repo)
+- Plan-status PR in `cursor-team-marketplace` linking merged consumer PRs, pinned validator versions, deferrals, and exclusions
 
 **Required repositories:**
 
 - `multipliers-dev/cursor-team-marketplace` — plan owner, reusable workflow host, plan-status PR target, read/write.
-- **Each applicable consumer repository** — discovered in inventory; read/write only when that repo is a **real checkout** in the agent environment with identity proved via preflight (not App access alone). Launch one Cloud Agent (or session) per consumer repo as needed.
+- **Each of the seven candidate consumer repositories** listed under Repository inventory — inspect with read-only preflight when not editing; read/write only when opening that repo’s adoption PR and only when that repo is a **real checkout** in the agent environment with identity proved via preflight (not App/API access alone). Launch one Cloud Agent (or session) per consumer repo as needed.
 
 **Acceptance:**
 
-1. Inventory all known consuming repositories. Verify actual adoption rather than assuming every repository needs the validator.
-2. Identify each repository’s planning configuration, CI environment, existing validation commands, and required compatibility changes.
-3. Confirm that the centralized plugin execution and reusable GitHub Actions workflow have been implemented and verified before beginning adoption.
-4. Configure applicable repositories to invoke the centralized reusable workflow using an immutable commit SHA or appropriately protected version tag.
+1. Inspect **all seven candidate consumers** from the Repository inventory to determine which actually use planning methodology / team-harness, their active-plan conventions (plan paths, `archive/`, template usage), GitHub Actions configuration, and whether centralized validation is appropriate.
+2. Produce an adoption matrix with a **decision and rationale per repository** (**adopt** / **defer** / **exclude**), plus pins and PR links once known. Do **not** automatically exclude a repository because it has no current active plans—the validator supports `--allow-empty` for that case.
+3. Confirm that centralized plugin execution and the reusable GitHub Actions workflow were implemented and verified in **`centralized-consumption`** before beginning adoption.
+4. Configure each **adopt** repository to invoke the centralized reusable workflow using an immutable commit SHA or appropriately protected version tag.
 5. Preserve existing repository-specific CI checks, permissions and branch protection.
 6. Do not copy validator TypeScript files, publish an npm package, or duplicate the planning methodology.
-7. Test each repository independently, covering valid plans, invalid plans, and repositories without active plans.
-8. Open a separate implementation PR for each repository. Do not merge automatically.
-9. Record adoption status, PR links, pinned validator versions, exceptions and any repositories deliberately excluded.
+7. Test each **adopt** repository independently, covering valid plans, invalid plans, and repositories without active plans (`--allow-empty`).
+8. Open a **separate implementation PR for each adopt repository**. Do not merge automatically.
+9. Record adoption status, PR links, pinned validator versions, deferrals, and deliberate exclusions in the matrix.
 10. After consumer PRs merge, record completion through a plan-status PR in `cursor-team-marketplace`.
 
 **Verification:**
 
-- Preflight: for each repo touched, prove checkout exists, `git remote` identity matches owner/name, and minimum capability for declared role before edits
+- Preflight: for each candidate inspected or edited, prove checkout exists, `pwd` and `git remote get-url origin` match expected owner/name, and minimum capability for declared role before edits
 - Per consumer PR: CI runs reusable workflow against **that** repo’s checkout; evidence for valid-plan pass, invalid-plan fail, and `--allow-empty` / no-active-plans behavior where applicable
-- Plan-status PR: frontmatter marks `consumer-adoption` completed; matrix lists every inventoried repo (adopted, excluded, pending) with PR links and pins
+- Plan-status PR: frontmatter marks `consumer-adoption` completed; matrix lists **all seven** candidates with decision, rationale, pins, and PR links (or documented defer/exclude)
 
 **Prerequisite:** `centralized-consumption` merged.
 
@@ -491,17 +510,17 @@ Verification: npm ci; npm run typecheck; npm test; npm run validate:plans:templa
 ```text
 @.cursor/plans/2026-10-23-plan-validator.plan.md
 
-Implement slice centralized-consumption only. Prerequisites: ci-npm merged; Michael has selected and explicitly authorized one consumer repository for smoke before you start implementation. Do not start consumer-adoption, docs-skill, or plan-closure. Do not archive the plan.
+Implement slice centralized-consumption only. Prerequisites: ci-npm merged; Michael explicitly authorizes mastermichaelt/resumes as smoke-test consumer before you start. Do not start consumer-adoption, docs-skill, or plan-closure. Do not archive the plan.
 
 Authority: Open PR only — implement and open the PR; do not merge.
 
-Topology: marketplace implementation PR on latest origin/main (branch = this slice only; PR base main). Required smoke in the Michael-authorized consumer repo—not full rollout (consumer-adoption). Implementation and consumer smoke may use separate Cloud Agent launches; do not assume both repos are available in one environment.
+Topology: marketplace implementation PR on latest origin/main (branch = this slice only; PR base main). Required smoke on mastermichaelt/resumes—not full rollout (consumer-adoption). Implementation and consumer smoke may use separate Cloud Agent launches; do not assume both repos are available in one environment.
 
-Repositories: multipliers-dev/cursor-team-marketplace (implementation, read/write); one Michael-authorized consumer repository (required smoke, read/write in the smoke session)—hard-stop if smoke repo is not present, identity-mismatched, or not the authorized repo. Preflight smoke session with pwd and git remote get-url origin in the same command as smoke work. Do not assume App access equals checkout.
+Repositories: multipliers-dev/cursor-team-marketplace (implementation, read/write); mastermichaelt/resumes (required smoke, read/write in the smoke session once Michael authorized)—verify access and real checkout with pwd and git remote get-url origin in the same command as smoke work; hard-stop and escalate to Michael if missing or identity-mismatched—do not substitute another repo. Do not assume App/API access equals checkout.
 
-Deliverables: document plugin file exposure and plugin-side invocation (or documented limitation + smallest centralized alternative without copy vendoring); reusable GHA workflow with pinned validator checkout validating caller repo plans (--allow-empty preserved); permissions/runtime/pinning/failure notes; smoke evidence from the authorized consumer repository. Mark centralized-consumption completed in plan frontmatter in the marketplace PR. Do not npm-publish, duplicate validator source, or perform multi-repo rollout here.
+Deliverables: document plugin file exposure and plugin-side invocation (or documented limitation + smallest centralized alternative without copy vendoring); reusable GHA workflow with pinned validator checkout validating caller repo plans (--allow-empty preserved); permissions/runtime/pinning/failure notes; smoke evidence from mastermichaelt/resumes. Mark centralized-consumption completed in plan frontmatter in the marketplace PR. Do not npm-publish, duplicate validator source, or perform multi-repo rollout here.
 
-Verification: npm ci; npm run typecheck; npm test; npm run validate:plans; sh scripts/check.sh; linked consumer smoke for plugin and reusable workflow on the authorized repo with checkout identity proved; confirm validation targets consumer checkout not marketplace.
+Verification: npm ci; npm run typecheck; npm test; npm run validate:plans; sh scripts/check.sh; linked consumer smoke for plugin and reusable workflow on mastermichaelt/resumes with checkout identity proved; confirm validation targets consumer checkout not marketplace.
 ```
 
 ### consumer-adoption
@@ -515,11 +534,11 @@ Authority: Open PR only — open per-repo PRs and plan-status PR; do not merge a
 
 Topology: one implementation PR per applicable consumer repo (each merge-safe on that repo’s main); separate plan-status PR in cursor-team-marketplace after consumer PRs merge. Do not edit the plan from consumer repos.
 
-Repositories: multipliers-dev/cursor-team-marketplace (plan-status, read/write); each applicable consumer repo from inventory (read/write per repo)—preflight each checkout (exists, remote identity, role capability) before edits; hard-stop if missing or identity-mismatched. GitHub App access is not a checkout; Cloud Agents only get credentials for the repo they were launched against—launch or authorize per consumer repo.
+Repositories: multipliers-dev/cursor-team-marketplace (plan-status, read/write); all seven candidate consumers from Repository inventory (mastermichaelt/resumes, mastermichaelt/portfolio, mastermichaelt/mastermichaelt, multipliers-dev/editorial-workflow, multipliers-dev/renovate-workflow, multipliers-dev/codenames-ai-guesser, multipliers-dev/savepoints)—preflight each checkout inspected or edited (pwd, git remote get-url origin, role capability); hard-stop if missing or identity-mismatched. GitHub App/API access is not a checkout; Cloud Agents only get credentials for the repo they were launched against—launch per consumer repo.
 
-Deliverables: inventory and adoption matrix; per-repo workflow configuration PRs with immutable SHA or protected tag pin; independent test evidence (valid plans, invalid plans, no active plans); matrix with PR links, pins, exceptions/exclusions; after consumer PRs merge, plan-status PR marking consumer-adoption completed in this repo (do not mark completed from consumer PRs).
+Deliverables: inspect all seven candidates (methodology use, plan paths/archive/template, GHA config, validation fit); adoption matrix with adopt/defer/exclude decision and rationale per repo (do not exclude solely for no active plans); per-adopt-repo workflow PRs with immutable SHA or protected tag pin; test evidence (valid, invalid, --allow-empty); matrix with PR links and pins; after consumer PRs merge, plan-status PR marking consumer-adoption completed in this repo (do not mark completed from consumer PRs).
 
-Verification: preflight proved for every repo edited; each consumer PR CI validates that repo’s plans; plan-status PR links merged consumer PRs and documents exclusions.
+Verification: preflight proved for every candidate inspected or edited; each adopt-repo PR CI validates that repo’s plans; plan-status PR matrix covers all seven candidates with decisions and links.
 ```
 
 ### docs-skill
