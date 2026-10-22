@@ -18,7 +18,7 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..", "..", "..");
 const cliPath = join(here, "..", "validate-plans.ts");
-const fixturesDir = join(here, "..", "fixtures", "plan-validate");
+const fixturesDir = join(repoRoot, "scripts", "fixtures", "plan-validate");
 
 function runValidatePlansCli(args: string[]): { status: number | null; stderr: string; stdout: string } {
   const result = spawnSync("npx", ["tsx", cliPath, ...args], {
@@ -114,7 +114,7 @@ describe("plan-validate", () => {
   });
 
   it("reports malformed frontmatter", () => {
-    const path = join(fixturesDir, "invalid-malformed-frontmatter.plan.md");
+    const path = join(fixturesDir, "invalid-frontmatter-unclosed.plan.md");
     const content = readFileSync(path, "utf8");
     const parsed = parsePlanFrontmatter(content, path);
     expect(parsed.ok).toBe(false);
@@ -126,7 +126,7 @@ describe("plan-validate", () => {
   });
 
   it("reports missing agent prompt heading for actionable todo", () => {
-    const path = join(fixturesDir, "invalid-actionable-prompt-gap.plan.md");
+    const path = join(fixturesDir, "invalid-prompts-missing.plan.md");
     const issues = validatePlanFile(path);
     expect(
       issues.some(
@@ -555,7 +555,7 @@ ${agentPrompts(
 
   it("CLI exits 0 for valid fixture and non-zero for discovery.empty and missing path", () => {
     const valid = runValidatePlansCli([
-      "plugins/team-harness/scripts/fixtures/plan-validate/valid-minimal.plan.md",
+      "scripts/fixtures/plan-validate/valid-minimal.plan.md",
     ]);
     expect(valid.status).toBe(0);
 

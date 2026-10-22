@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: fixtures-tests
     content: "PR: expand regression fixtures under scripts/fixtures/plan-validate and integration-style Vitest coverage"
-    status: pending
+    status: completed
   - id: ci-npm
     content: "PR: validate:plans npm scripts, ci.yml/check.sh template gate, plugin/marketplace version bump (no new deps)"
     status: pending
