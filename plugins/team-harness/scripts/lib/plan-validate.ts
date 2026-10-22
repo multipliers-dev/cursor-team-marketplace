@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 
@@ -404,27 +404,40 @@ function findSliceSection(
 function extractField(sectionText: string, field: string): { value: string; line: number } | null {
   const lines = sectionText.split(/\r?\n/);
   const pattern = new RegExp(`^\\*\\*${field}:\\*\\*\\s*(.*)$`);
+  let state: LineState = { inFence: false, fenceMarker: null };
+
   for (let i = 0; i < lines.length; i++) {
-    const m = lines[i]!.match(pattern);
-    if (m) {
-      const valueParts = [m[1] ?? ""];
-      for (let j = i + 1; j < lines.length; j++) {
-        const next = lines[j]!;
-        if (/^\*\*[^*]+:\*\*/.test(next) || /^##\s/.test(next)) {
-          break;
-        }
-        if (next.trim() === "") {
-          valueParts.push("");
-          continue;
-        }
-        if (/^[-*]\s/.test(next) || /^\d+\.\s/.test(next)) {
-          valueParts.push(next);
-          continue;
-        }
-        valueParts.push(next);
-      }
-      return { value: valueParts.join("\n").trim(), line: i + 1 };
+    const line = lines[i]!;
+    state = updateFenceState(line, state);
+    if (state.inFence) {
+      continue;
     }
+    const m = line.match(pattern);
+    if (!m) {
+      continue;
+    }
+    const valueParts = [m[1] ?? ""];
+    let collectState: LineState = { ...state };
+    for (let j = i + 1; j < lines.length; j++) {
+      const next = lines[j]!;
+      collectState = updateFenceState(next, collectState);
+      if (collectState.inFence) {
+        continue;
+      }
+      if (/^\*\*[^*]+:\*\*/.test(next) || /^##\s/.test(next)) {
+        break;
+      }
+      if (next.trim() === "") {
+        valueParts.push("");
+        continue;
+      }
+      if (/^[-*]\s/.test(next) || /^\d+\.\s/.test(next)) {
+        valueParts.push(next);
+        continue;
+      }
+      valueParts.push(next);
+    }
+    return { value: valueParts.join("\n").trim(), line: i + 1 };
   }
   return null;
 }
@@ -768,12 +781,30 @@ function isEllipsisPlaceholder(value: string): boolean {
   return ELLIPSIS_PLACEHOLDER.test(trimmed);
 }
 
-function authorityAllowsMissingAcceptance(authority: AuthorityLabel | null): boolean {
-  return (
-    authority === "Plan-only PR" ||
-    authority === "Manual verification gate" ||
-    authority === null
-  );
+function authorityAllowsMissingAcceptance(authority: AuthorityLabel): boolean {
+  return authority === "Plan-only PR" || authority === "Manual verification gate";
+}
+
+function appendAuthorityTableMismatches(
+  issues: PlanIssue[],
+  file: string,
+  todoId: string,
+  expected: AuthorityLabel,
+  entries: AuthorityTableEntry[],
+  subject: string,
+): void {
+  for (const row of authorityTableRowsForTodo(entries, todoId)) {
+    if (row.authority !== null && row.authority !== expected) {
+      issues.push(
+        issue(
+          file,
+          row.line,
+          "authority.mismatch",
+          `${subject} authority "${expected}" does not match authority table row "${row.authority}" for "${todoId}"`,
+        ),
+      );
+    }
+  }
 }
 
 export function validatePlanContent(
@@ -885,17 +916,14 @@ export function validatePlanContent(
           ),
         );
       } else {
-        const tableRows = authorityTableRowsForTodo(authorityTableEntries, todo.id);
-        if (tableRows.length === 1 && tableRows[0]!.authority && tableRows[0]!.authority !== normalized) {
-          issues.push(
-            issue(
-              file,
-              sliceLineOffset + recAuth.line - 1,
-              "authority.mismatch",
-              `Slice "${todo.id}" authority "${normalized}" does not match authority table "${tableRows[0]!.authority}"`,
-            ),
-          );
-        }
+        appendAuthorityTableMismatches(
+          issues,
+          file,
+          todo.id,
+          normalized,
+          authorityTableEntries,
+          `Slice "${todo.id}"`,
+        );
       }
     }
 
@@ -925,17 +953,32 @@ export function validatePlanContent(
       ? normalizeAuthority(recAuth.value.split("\n")[0] ?? recAuth.value)
       : null;
     const skipAcceptance =
-      todo.id === PLAN_CLOSURE_ID || authorityAllowsMissingAcceptance(sliceAuthority);
+      todo.id === PLAN_CLOSURE_ID ||
+      (sliceAuthority !== null && authorityAllowsMissingAcceptance(sliceAuthority));
 
-    if (!skipAcceptance && (!acceptance || !acceptance.value.trim())) {
-      issues.push(
-        issue(
-          file,
-          sliceLineOffset,
-          "slice.acceptance",
-          `Slice "${todo.id}" missing **Acceptance:**`,
-        ),
-      );
+    if (!skipAcceptance) {
+      const acceptanceLine = acceptance
+        ? sliceLineOffset + acceptance.line - 1
+        : sliceLineOffset;
+      if (!acceptance || !acceptance.value.trim()) {
+        issues.push(
+          issue(
+            file,
+            acceptanceLine,
+            "slice.acceptance",
+            `Slice "${todo.id}" missing **Acceptance:**`,
+          ),
+        );
+      } else if (profile === "default" && isEllipsisPlaceholder(acceptance.value)) {
+        issues.push(
+          issue(
+            file,
+            acceptanceLine,
+            "slice.acceptance",
+            `Slice "${todo.id}" **Acceptance:** is only an ellipsis placeholder`,
+          ),
+        );
+      }
     }
   }
 
@@ -1050,21 +1093,14 @@ export function validatePlanContent(
               ),
             );
           }
-          const tableRows = authorityTableRowsForTodo(authorityTableEntries, todo.id);
-          if (
-            tableRows.length === 1 &&
-            tableRows[0]!.authority &&
-            tableRows[0]!.authority !== normalized
-          ) {
-            issues.push(
-              issue(
-                file,
-                slot.fenceOpenLine ?? slot.headingLine,
-                "authority.mismatch",
-                `Prompt authority "${normalized}" does not match authority table "${tableRows[0]!.authority}" for "${todo.id}"`,
-              ),
-            );
-          }
+          appendAuthorityTableMismatches(
+            issues,
+            file,
+            todo.id,
+            normalized,
+            authorityTableEntries,
+            `Prompt "${todo.id}"`,
+          );
         }
       }
 
@@ -1085,10 +1121,11 @@ export function validatePlanContent(
       }
     }
 
-    const headingCounts = new Map<string, number>();
+    const headingLines = new Map<string, number[]>();
     const promptLines = agentSection.text.split(/\r?\n/);
     let fence: LineState = { inFence: false, fenceMarker: null };
-    for (const line of promptLines) {
+    for (let i = 0; i < promptLines.length; i++) {
+      const line = promptLines[i]!;
       fence = updateFenceState(line, fence);
       if (fence.inFence) {
         continue;
@@ -1096,17 +1133,20 @@ export function validatePlanContent(
       const hm = line.match(/^###\s+(.+?)\s*$/);
       if (hm) {
         const id = hm[1]!.trim();
-        headingCounts.set(id, (headingCounts.get(id) ?? 0) + 1);
+        const absLine = agentSection.startLine + i;
+        const list = headingLines.get(id) ?? [];
+        list.push(absLine);
+        headingLines.set(id, list);
       }
     }
-    for (const [headingId, count] of headingCounts) {
-      if (count > 1) {
+    for (const [headingId, lines] of headingLines) {
+      for (const dupLine of lines.slice(1)) {
         issues.push(
           issue(
             file,
-            agentSection.startLine,
+            dupLine,
             "prompts.duplicate",
-            `Duplicate agent prompt heading "### ${headingId}" (${count} times)`,
+            `Duplicate agent prompt heading "### ${headingId}"`,
           ),
         );
       }
@@ -1193,14 +1233,36 @@ export async function validatePlanPaths(
   const config = options.config ?? loadPlanValidatorConfig(repoRoot);
   const allIssues: PlanIssue[] = [];
 
+  const explicitPaths = paths.length > 0;
   let files: string[];
-  if (paths.length > 0) {
+  if (explicitPaths) {
     files = paths.map((p) => (p.startsWith("/") ? p : resolve(repoRoot, p)));
+    for (const file of files) {
+      if (!existsSync(file)) {
+        allIssues.push(
+          issue(file, 1, "io.not-found", `Plan file not found: ${file}`),
+        );
+      }
+    }
   } else {
     files = await discoverPlanFiles(repoRoot, config, options.includeArchive ?? false);
+    if (files.length === 0) {
+      allIssues.push(
+        issue(
+          repoRoot,
+          1,
+          "discovery.empty",
+          "No plan files discovered for validation (check globs and exclude patterns)",
+        ),
+      );
+      return allIssues;
+    }
   }
 
   for (const file of files) {
+    if (!existsSync(file)) {
+      continue;
+    }
     try {
       const issues = validatePlanFile(file, { ...options, config });
       allIssues.push(...issues);
