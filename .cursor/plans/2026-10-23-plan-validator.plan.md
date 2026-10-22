@@ -6,7 +6,7 @@ todos:
     content: "Plan-only PR: commit this plan under .cursor/plans/ and open for review; do not implement"
     status: completed
   - id: plan-validate-lib
-    content: "PR: plan-validate lib + CLI, yaml devDependency + lockfile, co-located minimal Vitest unit tests"
+    content: "PR: validator lib + CLI under plugins/team-harness/scripts, tsconfig scope, yaml + lockfile, minimal merge-safe tests + CLI smoke"
     status: pending
   - id: fixtures-tests
     content: "PR: expand regression fixtures under scripts/fixtures/plan-validate and integration-style Vitest coverage"
@@ -113,11 +113,19 @@ flowchart LR
 
 **Acceptance:**
 
-- [`plugins/team-harness/scripts/lib/plan-validate.ts`](../../plugins/team-harness/scripts/lib/plan-validate.ts) exports validation with `PlanIssue` (`file`, `line`, `rule`, `message`)
-- [`plugins/team-harness/scripts/validate-plans.ts`](../../plugins/team-harness/scripts/validate-plans.ts) CLI: discovery, explicit paths, `--profile template`, optional `.cursor/plan-validator.json`
-- Root [`package.json`](../../package.json): add **`yaml`** devDependency + updated **`package-lock.json`** (required for clean-checkout `npm ci`)
-- Minimal Vitest tests in this PR (e.g. [`scripts/plan-validate-lib.test.ts`](../../scripts/plan-validate-lib.test.ts) importing the plugin lib, **or** extend [`vitest.config.ts`](../../vitest.config.ts) `include` if tests live under `plugins/team-harness/scripts/`): at least one valid-plan pass, one frontmatter failure, one actionable-todo prompt failure — enough to lock parser/CLI behavior introduced in this PR
+- Add the canonical validator library and CLI under [`plugins/team-harness/scripts/`](../../plugins/team-harness/scripts/) ([`lib/plan-validate.ts`](../../plugins/team-harness/scripts/lib/plan-validate.ts), [`validate-plans.ts`](../../plugins/team-harness/scripts/validate-plans.ts)): `PlanIssue` (`file`, `line`, `rule`, `message`); discovery, explicit paths, `--profile template`, optional `.cursor/plan-validator.json`
+- Extend [`scripts/tsconfig.json`](../../scripts/tsconfig.json) (or add a dedicated TypeScript configuration referenced from root `typecheck`) so **`npm run typecheck` covers both existing root `scripts/` and `plugins/team-harness/scripts/**/*.ts`**
+- Add the **`yaml`** devDependency and update **`package-lock.json`** in this slice
+- Include **minimal automated tests** for core parsing and validation (e.g. valid plan pass, malformed frontmatter, actionable-todo prompt gap) so this PR is **independently merge-safe** — extend [`vitest.config.ts`](../../vitest.config.ts) `include` if tests live under the plugin tree
 - Implement **Parser and CLI behavior** (section below); machine rules per **Machine-enforced rules**
+- Co-locate at least one **valid** and one **invalid** plan fixture for CLI smoke (may live under `plugins/team-harness/scripts/fixtures/` or `scripts/fixtures/plan-validate/`; `fixtures-tests` may relocate or expand them)
+
+**Verification:**
+
+- `npm ci`
+- `npm run typecheck` — must typecheck `plugins/team-harness/scripts/**/*.ts`
+- `npm test` — must exercise the new validator, not only pre-existing tests
+- CLI smoke: `tsx plugins/team-harness/scripts/validate-plans.ts` against valid and invalid fixtures — expect exit `0` vs non-zero and actionable diagnostics on stderr/stdout
 
 **Prerequisite:** `plan-review` merged.
 
@@ -134,12 +142,12 @@ flowchart LR
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-**Goal:** Broad automated coverage for valid/invalid plans, discovery exclusions, and diagnostic line numbers.
+**Goal:** Expanded positive, negative, and boundary coverage beyond `plan-validate-lib` minimal tests — discovery exclusions, profiles, and line-number regressions.
 
 **Acceptance:**
 
-- [`scripts/fixtures/plan-validate/`](../../scripts/fixtures/plan-validate/) valid single/multi-slice and targeted `invalid-*` fixtures
-- [`scripts/plan-validate.test.ts`](../../scripts/plan-validate.test.ts) (or equivalent) asserts rules, profiles, and line numbers across fixtures
+- [`scripts/fixtures/plan-validate/`](../../scripts/fixtures/plan-validate/) corpus: valid single/multi-slice plans and targeted `invalid-*` fixtures (expand or supersede smoke fixtures from `plan-validate-lib` if relocated)
+- [`scripts/plan-validate.test.ts`](../../scripts/plan-validate.test.ts) (or equivalent) asserts rules, profiles, and line numbers across the full fixture set
 - Default discovery excludes `archive/**` and `_template.plan.md`
 
 **Prerequisite:** `plan-validate-lib` merged.
@@ -293,9 +301,9 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: plan-validate lib + CLI; yaml devDependency + package-lock.json; co-located minimal Vitest tests per slice acceptance; implement Parser and CLI behavior table. Mark plan-validate-lib completed in plan frontmatter in this PR.
+Deliverables: canonical validator lib + CLI under plugins/team-harness/scripts; extend scripts/tsconfig (or dedicated config) so typecheck covers plugins/team-harness/scripts/**/*.ts; yaml + lockfile; minimal merge-safe validator tests; Parser and CLI behavior table; valid + invalid smoke fixtures for CLI. Mark plan-validate-lib completed in plan frontmatter in this PR.
 
-Verification: npm ci; npm run typecheck; npm test (minimal plan-validate tests green); tsx plugins/team-harness/scripts/validate-plans.ts on an inline or co-located smoke fixture.
+Verification: npm ci; npm run typecheck (includes plugins/team-harness/scripts/**/*.ts); npm test (new validator tests run, not only existing tests); CLI smoke on valid fixture (exit 0) and invalid fixture (non-zero + diagnostics).
 ```
 
 ### fixtures-tests
