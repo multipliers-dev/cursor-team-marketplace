@@ -6,6 +6,7 @@ import {
   formatPlanIssues,
   loadPlanValidatorConfig,
   validatePlanPaths,
+  type SkippedEmptyDiscovery,
   type ValidationProfile,
 } from "./lib/plan-validate.js";
 
@@ -13,11 +14,13 @@ function parseArgs(argv: string[]): {
   paths: string[];
   profile: ValidationProfile;
   includeArchive: boolean;
+  allowEmpty: boolean;
   repoRoot: string;
 } {
   const paths: string[] = [];
   let profile: ValidationProfile = "default";
   let includeArchive = false;
+  let allowEmpty = false;
   let repoRoot = process.cwd();
 
   for (let i = 0; i < argv.length; i++) {
@@ -35,6 +38,10 @@ function parseArgs(argv: string[]): {
       includeArchive = true;
       continue;
     }
+    if (arg === "--allow-empty") {
+      allowEmpty = true;
+      continue;
+    }
     if (arg === "--repo-root" && argv[i + 1]) {
       repoRoot = resolve(argv[++i]!);
       continue;
@@ -46,22 +53,37 @@ function parseArgs(argv: string[]): {
     paths.push(arg);
   }
 
-  return { paths, profile, includeArchive, repoRoot };
+  return { paths, profile, includeArchive, allowEmpty, repoRoot };
+}
+
+export function formatSkippedEmptyDiscoveryMessage(skip: SkippedEmptyDiscovery): string {
+  const globs = skip.plansGlobs.join(", ");
+  const excludes = skip.excludeGlobs.join(", ");
+  return (
+    `skip plan validation: no active plans discovered under ${skip.repoRoot} ` +
+    `(plansGlobs: ${globs}; excludeGlobs: ${excludes})`
+  );
 }
 
 async function main(): Promise<void> {
-  const { paths, profile, includeArchive, repoRoot } = parseArgs(process.argv.slice(2));
+  const { paths, profile, includeArchive, allowEmpty, repoRoot } = parseArgs(process.argv.slice(2));
   const config = loadPlanValidatorConfig(repoRoot);
 
-  const issues = await validatePlanPaths(paths, {
+  const result = await validatePlanPaths(paths, {
     profile,
     config,
     repoRoot,
     includeArchive,
+    allowEmpty,
   });
 
-  if (issues.length > 0) {
-    console.error(formatPlanIssues(issues));
+  if (result.skippedEmptyDiscovery) {
+    console.log(formatSkippedEmptyDiscoveryMessage(result.skippedEmptyDiscovery));
+    return;
+  }
+
+  if (result.issues.length > 0) {
+    console.error(formatPlanIssues(result.issues));
     process.exit(1);
   }
 

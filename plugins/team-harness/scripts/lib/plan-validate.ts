@@ -26,6 +26,17 @@ export interface ValidatePlanOptions {
   config?: PlanValidatorConfig;
 }
 
+export interface SkippedEmptyDiscovery {
+  repoRoot: string;
+  plansGlobs: string[];
+  excludeGlobs: string[];
+}
+
+export interface ValidatePlanPathsResult {
+  issues: PlanIssue[];
+  skippedEmptyDiscovery?: SkippedEmptyDiscovery;
+}
+
 export interface PlanFrontmatter {
   name?: unknown;
   overview?: unknown;
@@ -1244,8 +1255,13 @@ export async function discoverPlanFiles(
 
 export async function validatePlanPaths(
   paths: string[],
-  options: ValidatePlanOptions & { repoRoot?: string; includeArchive?: boolean } = {},
-): Promise<PlanIssue[]> {
+  options: ValidatePlanOptions & {
+    repoRoot?: string;
+    includeArchive?: boolean;
+    /** When true, empty automatic discovery succeeds instead of discovery.empty. Ignored for explicit paths. */
+    allowEmpty?: boolean;
+  } = {},
+): Promise<ValidatePlanPathsResult> {
   const repoRoot = options.repoRoot ?? process.cwd();
   const config = options.config ?? loadPlanValidatorConfig(repoRoot);
   const allIssues: PlanIssue[] = [];
@@ -1262,8 +1278,19 @@ export async function validatePlanPaths(
       }
     }
   } else {
-    files = await discoverPlanFiles(repoRoot, config, options.includeArchive ?? false);
+    const includeArchive = options.includeArchive ?? false;
+    files = await discoverPlanFiles(repoRoot, config, includeArchive);
     if (files.length === 0) {
+      if (options.allowEmpty) {
+        return {
+          issues: [],
+          skippedEmptyDiscovery: {
+            repoRoot,
+            plansGlobs: config?.plansGlobs ?? DEFAULT_PLANS_GLOBS,
+            excludeGlobs: effectiveExcludeGlobs(config, includeArchive),
+          },
+        };
+      }
       allIssues.push(
         issue(
           repoRoot,
@@ -1272,7 +1299,7 @@ export async function validatePlanPaths(
           "No plan files discovered for validation (check globs and exclude patterns)",
         ),
       );
-      return allIssues;
+      return { issues: allIssues };
     }
   }
 
@@ -1289,7 +1316,7 @@ export async function validatePlanPaths(
     }
   }
 
-  return allIssues;
+  return { issues: allIssues };
 }
 
 export function formatPlanIssues(issues: PlanIssue[]): string {
