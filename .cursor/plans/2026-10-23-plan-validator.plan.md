@@ -1,6 +1,6 @@
 ---
 name: Plan validator
-overview: Add a vendored TypeScript plan validator under team-harness (canonical source), wire it into planning-methodology docs and marketplace CI via fixtures, and document copy-only adoption for consuming repos—without changing those repos in this PR.
+overview: Add a canonical TypeScript plan validator under team-harness, wire marketplace CI, establish centralized consumption (Cursor plugin execution and optional reusable GitHub Actions workflow), and document adoption—without copy-only vendoring, npm publishing, or duplicating validator source in consumers.
 todos:
   - id: plan-review
     content: "Plan-only PR: commit this plan under .cursor/plans/ and open for review; do not implement"
@@ -14,8 +14,11 @@ todos:
   - id: ci-npm
     content: "PR: validate:plans npm scripts, ci.yml/check.sh template gate, plugin/marketplace version bump (no new deps)"
     status: completed
+  - id: centralized-consumption
+    content: "PR: plugin-side validator invocation + reusable GHA workflow; verify in authorized consumer repo; no npm or copy vendoring"
+    status: pending
   - id: docs-skill
-    content: "PR: plan-validation.md; align SKILL.md item 7 todo/prompt rule with validator; README scripts table"
+    content: "PR: plan-validation.md; align SKILL.md item 7 todo/prompt rule with validator; README scripts table; adoption docs for both consumption paths"
     status: pending
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-10-23-plan-validator.plan.md"
@@ -27,14 +30,15 @@ isProject: false
 
 ## Recommended execution authority
 
-| Slice             | Recommended authority | Agent instruction                                      |
-| ----------------- | --------------------- | ------------------------------------------------------ |
-| plan-review       | Plan-only PR          | Do not implement. Stop after opening the plan-only PR. |
-| plan-validate-lib | Open PR only          | Do not merge. Stop after opening the PR.               |
-| fixtures-tests    | Open PR only          | Do not merge. Stop after opening the PR.               |
-| ci-npm            | Open PR only          | Do not merge. Stop after opening the PR.               |
-| docs-skill        | Open PR only          | Do not merge. Stop after opening the PR.               |
-| plan-closure      | Open PR only          | Do not merge. Stop after opening the PR.               |
+| Slice                    | Recommended authority | Agent instruction                                      |
+| ------------------------ | --------------------- | ------------------------------------------------------ |
+| plan-review              | Plan-only PR          | Do not implement. Stop after opening the plan-only PR. |
+| plan-validate-lib        | Open PR only          | Do not merge. Stop after opening the PR.               |
+| fixtures-tests           | Open PR only          | Do not merge. Stop after opening the PR.               |
+| ci-npm                   | Open PR only          | Do not merge. Stop after opening the PR.               |
+| centralized-consumption  | Open PR only          | Do not merge. Stop after opening the PR.               |
+| docs-skill               | Open PR only          | Do not merge. Stop after opening the PR.               |
+| plan-closure             | Open PR only          | Do not merge. Stop after opening the PR.               |
 
 Repo default: **Open PR only** (see team skill `/planning-methodology`).
 
@@ -48,7 +52,7 @@ Multi-slice plans stack execution order, not Git branches. Integration branch is
 
 **After opening the PR:** GitHub PR base is `main`; diff excludes prior-slice work except through merged `main`.
 
-This plan is **same-repo / single-checkout**: `multipliers-dev/cursor-team-marketplace` only. Do not edit consuming repositories in this plan.
+The authoritative plan file lives in **`multipliers-dev/cursor-team-marketplace`**. Slices through `ci-npm` are same-repo. **`centralized-consumption`** may require a separate consumer-repo adoption or verification PR (see that slice); do not edit consuming repositories except through that slice’s authorized workflow. Cloud Agents launched against one repository receive GitHub credentials for that repository only—a consumer verification or adoption PR needs its own launch/authorization.
 
 ---
 
@@ -57,26 +61,43 @@ This plan is **same-repo / single-checkout**: `multipliers-dev/cursor-team-marke
 | Area | Current state |
 | --- | --- |
 | Methodology | Canonical procedure in [`plugins/team-harness/skills/planning-methodology/SKILL.md`](../../plugins/team-harness/skills/planning-methodology/SKILL.md), skeleton in [`_template.plan.md`](../../plugins/team-harness/skills/planning-methodology/_template.plan.md) |
-| Consuming repos | Copy prose into repo `planning-standards.md` and `_template.plan.md`; **no** automated sync today |
-| Vendoring precedent | Copy-only snapshots from [`plugins/team-harness/scripts/`](../../plugins/team-harness/scripts/) (hooks) |
-| Marketplace CI | [`scripts/check.sh`](../../scripts/check.sh) + Vitest on `scripts/**/*.test.ts` |
-| Prior art | Resumes `validate:lifecycle` pattern; **no** plan validator exists |
+| Consuming repos | Install team-harness plugin for agent-side validation; optional reusable workflow reference for CI—**no** validator source copy |
+| Marketplace CI | [`scripts/check.sh`](../../scripts/check.sh) + Vitest; `validate:plans` / `validate:plans:template` on `main` |
+| Prior art | Resumes `validate:lifecycle` pattern; plan validator shipped in `plan-validate-lib` through `ci-npm` |
 
 ```mermaid
 flowchart LR
   canonical["plugins/team-harness/scripts/plan-validate"]
   marketplaceCI["cursor-team-marketplace CI"]
   fixtures["scripts/fixtures/plan-validate"]
-  consumer["Consuming repo scripts copy"]
-  consumerCI["Consumer npm run validate:plans"]
+  pluginExec["Team-harness plugin agent execution"]
+  reusableWF["Reusable GHA workflow in marketplace"]
+  consumerPlans["Consuming repository .cursor/plans"]
 
   canonical --> marketplaceCI
   fixtures --> marketplaceCI
-  canonical --> consumer
-  consumer --> consumerCI
+  canonical --> pluginExec
+  canonical --> reusableWF
+  pluginExec --> consumerPlans
+  reusableWF --> consumerPlans
 ```
 
 **Motivation:** recurring planning-conformance defects in consuming repos (authority, acceptance/verification, todo/prompt mismatch, topology, structural contradictions). Catch structural violations deterministically; keep semantic merge-safety review (Bugbot, humans).
+
+---
+
+## Architectural decisions
+
+### 2026-10-23 — Centralized consumption (no copy vendoring)
+
+Copy-only vendoring of validator TypeScript is **no longer desired**. The validator and planning methodology stay centrally maintained in `cursor-team-marketplace`. Consumers must not copy validator source, maintain independent validator implementations, or depend on an npm package.
+
+Two consumption paths, both using the **same canonical validator implementation** in this repository:
+
+1. **Cursor plugin execution:** agents use the installed team-harness plugin to validate the **active** repository’s plans directly, without copying validator files into the consumer.
+2. **Centralized CI:** an optional reusable GitHub Actions workflow hosted in `cursor-team-marketplace`, invoked by consumers through a **version-pinned** workflow reference.
+
+Installing the Cursor plugin does **not** automatically configure consumer CI. Consumer-specific workflow references and permissions are separate configuration (documented in `docs-skill` after this slice lands).
 
 ---
 
@@ -177,29 +198,84 @@ flowchart LR
 
 ---
 
+## Slice — centralized-consumption
+
+**Recommended authority:** Open PR only
+
+**Rationale:**
+
+- Validator on `main` is proven in marketplace CI; consumers need **centralized** execution paths without copying source
+- Plugin and reusable-workflow surfaces must be implemented and smoke-tested before adoption docs (`docs-skill`)
+- Marketplace workflow changes and optional consumer workflow wiring are **separate merge-safe PRs**
+
+**Agent instruction:** Do not merge. Stop after opening the PR.
+
+**Goal:** Establish and verify centralized validator execution without distributing source-code copies.
+
+**Topology:**
+
+- **Implementation PR** in `multipliers-dev/cursor-team-marketplace`: reusable workflow, plugin-side invocation path, and marketplace-local verification.
+- **Consumer adoption PR** (only if consumer repo configuration is required): separate branch/PR in the authorized consumer repository; independently merge-safe; must not be assumed to share this Cloud Agent’s credentials.
+
+**Required repositories:**
+
+- `multipliers-dev/cursor-team-marketplace` — canonical validator + reusable workflow host, read/write (implementation PR).
+- **Authorized consumer repository** — smoke-test target for plugin invocation and/or reusable workflow call; read/write only when Michael has **named or explicitly authorized** that repository for this slice. The plan does **not** assume a specific consumer repo. Disposable test repos count only when explicitly authorized.
+
+**Acceptance:**
+
+- Investigate and document how Cursor exposes installed plugin files to agents and whether bundled TypeScript scripts can reliably execute against the active repository.
+- Implement and smoke-test plugin-side invocation from a consuming repository.
+- If direct plugin execution is unsupported or unreliable, document the limitation and propose the smallest viable centralized alternative. Do not silently fall back to copying source files.
+- Add a reusable GitHub Actions workflow to the marketplace that checks out the canonical validator at a pinned version and validates plans in the calling repository.
+- Ensure validation runs against the consumer repository, not accidentally against `cursor-team-marketplace`.
+- Preserve strict template validation and the existing `--allow-empty` behavior for repositories without active plans.
+- Document permissions, runtime dependencies, version pinning, updates and failure behavior (in-repo docs under team-harness; full consumer adoption narrative may extend in `docs-skill`).
+- Verify the reusable workflow in a disposable or explicitly authorized consumer repository.
+- No npm publishing and no duplicated validator source.
+
+**Verification:**
+
+- Marketplace PR: `npm ci`; `npm run typecheck`; `npm test`; `npm run validate:plans`; `sh scripts/check.sh`
+- Documented plugin invocation smoke result from an authorized consumer checkout (pass/fail/limitation recorded in PR or linked doc)
+- Reusable workflow smoke: workflow run on consumer repo validates that repo’s plans (link run URL in PR description)
+- Confirm validator checkout pin and working-directory defaults cannot validate marketplace paths when invoked from a consumer
+
+**Prerequisite:** `ci-npm` merged.
+
+---
+
 ## Slice — docs-skill
 
 **Recommended authority:** Open PR only
 
 **Rationale:**
 
-- Distribution and authoring guidance ship after validator exists and CI proves it
+- **Distribution and execution mechanisms must be implemented and verified before** their installation and adoption procedures are documented
 - **Normative skill text must match validator** (actionable vs completed/cancelled prompt headings)
+- Open [PR 61](https://github.com/multipliers-dev/cursor-team-marketplace/pull/61) (`cursor/docs-skill-1253`) holds independently valid docs/methodology work; **keep and rebase/update** it after `centralized-consumption` merges—do not discard—then extend with adoption guidance for both consumption paths
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-**Goal:** Document vendoring and align planning-methodology with enforced contract.
+**Goal:** Document centralized adoption (plugin + reusable CI) and align planning-methodology with the enforced contract.
 
 **Acceptance:**
 
-- New [`plugins/team-harness/docs/plan-validation.md`](../../plugins/team-harness/docs/plan-validation.md) (install, run, update, CI without plugin)
+- New [`plugins/team-harness/docs/plan-validation.md`](../../plugins/team-harness/docs/plan-validation.md): distinguish (a) plugin availability and agent-side execution, (b) GitHub CI enforcement via reusable workflow reference, (c) consumer-specific configuration; version pinning, permissions, updates, failure behavior; **do not** recommend copy-only vendoring or npm install of the validator
+- Extend/reconcile with PR 61 content (`plan-validation.md`, SKILL item 7, Plan validation subsection, `reference.md` / `_template.plan.md`, README scripts row) after rebasing on `main` post-`centralized-consumption`
 - [`planning-methodology/SKILL.md`](../../plugins/team-harness/skills/planning-methodology/SKILL.md):
   - **Revise item 7** (and any duplicate wording in staged authoring): require `### <todo-id>` for **actionable** todos (`pending`, `in_progress`); **completed** and **cancelled** todos may omit prompts; any existing `###` under Agent prompts must reference a known todo id (no orphans/duplicates)
-  - Add **Plan validation** subsection (when to run `validate:plans`, deterministic vs semantic review)
+  - Add **Plan validation** subsection (when to run `validate:plans`, deterministic vs semantic review, how consumers invoke validation without copying source)
 - Mirror the todo/prompt rule in [`reference.md`](../../plugins/team-harness/skills/planning-methodology/reference.md) and boilerplate note in [`_template.plan.md`](../../plugins/team-harness/skills/planning-methodology/_template.plan.md) if they still say every todo requires a heading
 - [`team-harness/README.md`](../../plugins/team-harness/README.md) scripts table updated
 
-**Prerequisite:** `ci-npm` merged.
+**Verification:**
+
+- `sh scripts/check.sh`
+- `npm test`
+- Read/grep confirms SKILL item 7 matches validator todo/prompt rules and docs describe both consumption paths without implying plugin install configures CI automatically
+
+**Prerequisite:** `centralized-consumption` merged.
 
 ---
 
@@ -245,28 +321,37 @@ These decisions are part of the validator contract; `plan-validate-lib` must imp
 
 - In-flight consumer plans may omit prompts for **completed** todos; actionable todos still validated.
 - Archived marketplace plans excluded from default CI (`--include-archive` for audits).
-- Consumer rollout: copy scripts + optional config in **later** PRs (out of scope here).
+- **Consumption (current):**
+  - **(a) Plugin:** install/configure the team-harness Cursor plugin so agents can run the canonical validator against the **active** repository (no validator source copy).
+  - **(b) CI:** optionally add a version-pinned reusable workflow reference in the consumer repo’s GitHub Actions; validation runs in the **caller’s** checkout.
+  - **(c) Configuration:** consumer-specific workflow inputs, permissions, and pins are separate from plugin installation—documented in `docs-skill`.
+- **Not recommended:** copy-only vendoring of `plugins/team-harness/scripts/plan-validate*` into consumer repos, standalone npm packages, or forked validator implementations.
+- Repositories that previously copied validator scripts should migrate to plugin and/or reusable workflow paths in follow-up PRs (out of scope for this plan’s implementation slices unless listed in `centralized-consumption` verification).
 
 ---
 
-## Plan closure (docs-only PR)
+## Slice — plan-closure
 
 **Recommended authority:** Open PR only
 
 **Rationale:**
 
 - Docs-only archival; human review of closure checklist
+- Must confirm centralized consumption and documentation slices actually merged, including any cross-repo verification PRs recorded in `# Shipped`
 
 **Agent instruction:** Do not merge. Stop after opening the PR.
 
-After `docs-skill` merges:
+After `centralized-consumption` and `docs-skill` merge:
 
-1. Verify implementation PRs are actually merged to `main` (not merely frontmatter `completed`)
+1. Verify implementation PRs are actually merged to each target repository’s integration branch (`main`) — do not trust frontmatter `completed` alone. For `centralized-consumption`, include marketplace implementation PR(s) and any authorized consumer adoption/verification PR(s); follow **multi-repo environment preflight** and **checkout identity** when verifying linked repos.
 2. Verify remaining todos are `completed` or `cancelled`
-3. Add `# Shipped` with date, PR links, deferred work
-4. Move to `.cursor/plans/archive/2026-10-23-plan-validator.plan.md`
-5. Mark `plan-closure` completed; update agent prompt references to the archived path
-6. No production behavior changes
+3. Verify Manual verification gate verdicts / allowed artifacts when applicable
+4. Add `# Shipped` with date, PR links across all repos touched, deferred work
+5. Move to `.cursor/plans/archive/2026-10-23-plan-validator.plan.md`
+6. Mark `plan-closure` completed; update agent prompt references to the archived path
+7. No production behavior changes
+
+**Prerequisite:** `docs-skill` merged.
 
 ---
 
@@ -327,7 +412,7 @@ Verification: npm test.
 ```text
 @.cursor/plans/2026-10-23-plan-validator.plan.md
 
-Implement slice ci-npm only. Prerequisite: fixtures-tests merged. Do not start docs-skill or plan-closure. Do not archive the plan.
+Implement slice ci-npm only. Prerequisite: fixtures-tests merged. Do not start centralized-consumption, docs-skill, or plan-closure. Do not archive the plan.
 
 Authority: Open PR only — implement and open the PR; do not merge.
 
@@ -338,20 +423,38 @@ Deliverables: validate:plans npm scripts only; ci.yml and optional check.sh temp
 Verification: npm ci; npm run typecheck; npm test; npm run validate:plans:template.
 ```
 
+### centralized-consumption
+
+```text
+@.cursor/plans/2026-10-23-plan-validator.plan.md
+
+Implement slice centralized-consumption only. Prerequisite: ci-npm merged. Do not start docs-skill or plan-closure. Do not archive the plan.
+
+Authority: Open PR only — implement and open the PR; do not merge.
+
+Topology: marketplace implementation PR on latest origin/main (branch = this slice only; PR base main). Open a separate consumer adoption/verification PR only if needed; that PR is independently merge-safe and may require its own Cloud Agent launch—do not assume credentials for repos you were not launched against.
+
+Repositories: multipliers-dev/cursor-team-marketplace (implementation, read/write); authorized consumer repository named or approved by Michael for plugin/workflow smoke (read/write only when authorized)—hard-stop if consumer repo is not present, identity-mismatched, or not explicitly authorized.
+
+Deliverables: document plugin file exposure and plugin-side invocation (or documented limitation + smallest centralized alternative without copy vendoring); reusable GHA workflow with pinned validator checkout validating caller repo plans (--allow-empty preserved); permissions/runtime/pinning/failure notes; smoke evidence from authorized consumer. Mark centralized-consumption completed in plan frontmatter in the marketplace PR. Do not npm-publish or duplicate validator source into consumers.
+
+Verification: npm ci; npm run typecheck; npm test; npm run validate:plans; sh scripts/check.sh; linked consumer smoke for plugin and reusable workflow; confirm validation targets consumer checkout not marketplace.
+```
+
 ### docs-skill
 
 ```text
 @.cursor/plans/2026-10-23-plan-validator.plan.md
 
-Implement slice docs-skill only. Prerequisite: ci-npm merged. Do not start plan-closure. Do not archive the plan.
+Implement slice docs-skill only. Prerequisite: centralized-consumption merged. Do not start plan-closure. Do not archive the plan.
 
 Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: plan-validation.md; SKILL.md item 7 revised for actionable vs completed/cancelled prompts + Plan validation subsection; reference.md/_template.plan.md aligned if needed; team-harness README scripts table. Mark docs-skill completed in plan frontmatter in this PR.
+Deliverables: rebase/update open PR 61 work (keep, do not discard): plan-validation.md plus SKILL.md item 7 / Plan validation subsection / reference.md / _template.plan.md / README scripts row; extend adoption docs for plugin execution and reusable workflow CI without copy vendoring or implying plugin install configures CI. Mark docs-skill completed in plan frontmatter in this PR.
 
-Verification: sh scripts/check.sh; npm test; grep/read confirms SKILL item 7 matches validator todo/prompt rules.
+Verification: sh scripts/check.sh; npm test; read/grep confirms SKILL item 7 matches validator todo/prompt rules and both consumption paths are documented.
 ```
 
 ### plan-closure
@@ -363,11 +466,11 @@ Execute only plan-closure.
 
 Authority: Open PR only — docs-only archive PR; do not merge.
 
-Prerequisites: plan-validate-lib through docs-skill actually merged to main (not merely frontmatter completed).
+Prerequisites: plan-validate-lib through docs-skill (including centralized-consumption) actually merged to each target repo’s main—not merely frontmatter completed. For cross-repo consumer verification/adoption PRs, verify merges with multi-repo preflight and checkout identity before archiving.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: verify slice todos, add # Shipped note, move plan to .cursor/plans/archive/2026-10-23-plan-validator.plan.md, mark plan-closure completed, update agent prompt references to the archived path.
+Deliverables: verify slice todos and linked PRs across repos; add # Shipped note; move plan to .cursor/plans/archive/2026-10-23-plan-validator.plan.md; mark plan-closure completed; update agent prompt references to the archived path.
 
 Verification: confirm all prerequisite implementation PRs are merged and slice todos are completed before archiving.
 ```
