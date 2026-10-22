@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: plan-validate-lib
     content: "PR: validator lib + CLI under plugins/team-harness/scripts, tsconfig scope, yaml + lockfile, minimal merge-safe tests + CLI smoke"
-    status: pending
+    status: completed
   - id: fixtures-tests
     content: "PR: expand regression fixtures under scripts/fixtures/plan-validate and integration-style Vitest coverage"
     status: pending
