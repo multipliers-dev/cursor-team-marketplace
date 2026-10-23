@@ -183,6 +183,12 @@ sh scripts/test-prepare-git-hooks-worktree-runtime.sh
 sh scripts/test-session-ensure-git-hooks-runtime.sh
 sh scripts/test-ensure-hooks-agent-hooks-runtime.sh
 sh scripts/test-format-after-edit-runtime.sh
+sh scripts/test-plan-validate-repo-root-guard.sh
+
+for script in plugins/team-harness/scripts/run-plan-validate.sh; do
+  sh -n "$script"
+  echo "ok script $script"
+done
 
 # Stale-reference guard: live docs/code must not contain old invoke paths or names.
 # Archived plans only are excluded.

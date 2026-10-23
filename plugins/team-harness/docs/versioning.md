@@ -8,9 +8,9 @@ Keep these in sync when bumping:
 
 | File | Field | Current |
 | --- | --- | --- |
-| [`plugins/team-harness/plugin.json`](../plugin.json) (Agent Plugins 1.0 package) | `"version"` | `1.12.0` |
-| [`plugins/team-harness/.cursor-plugin/plugin.json`](../.cursor-plugin/plugin.json) (Cursor overlay) | `"version"` | `1.12.0` |
-| [`.cursor-plugin/marketplace.json`](../../../.cursor-plugin/marketplace.json) | `metadata.version` | `1.12.0` |
+| [`plugins/team-harness/plugin.json`](../plugin.json) (Agent Plugins 1.0 package) | `"version"` | `1.13.0` |
+| [`plugins/team-harness/.cursor-plugin/plugin.json`](../.cursor-plugin/plugin.json) (Cursor overlay) | `"version"` | `1.13.0` |
+| [`.cursor-plugin/marketplace.json`](../../../.cursor-plugin/marketplace.json) | `metadata.version` | `1.13.0` |
 
 Unlike [`renovate-workflow`](https://github.com/multipliers-dev/renovate-workflow) (marketplace catalog has no version field), this team marketplace uses `metadata.version` as a **release signal** for the catalog. Bump it together with the plugin package and overlay.
 
@@ -20,7 +20,7 @@ A minimal root `package.json` exists for **dev-tooling only** (Agent Plugins spe
 
 ## Agent Plugins spec version
 
-This is separate from the package version (`1.12.0` above). The repo targets **Agent Plugins spec 1.0.0** via [`plugins/team-harness/plugin.json`](../plugin.json) `$schema`:
+This is separate from the package version (`1.13.0` above). The repo targets **Agent Plugins spec 1.0.0** via [`plugins/team-harness/plugin.json`](../plugin.json) `$schema`:
 
 `https://agent-plugins.org/schemas/1.0.0/plugin.schema.json`
 

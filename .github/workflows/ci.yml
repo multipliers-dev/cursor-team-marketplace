@@ -13,6 +13,15 @@ permissions:
   contents: read
 
 jobs:
+  validate-plans-reusable:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/validate-plans.yml
+    with:
+      marketplace_ref: ${{ github.sha }}
+      template_path: plugins/team-harness/skills/planning-methodology/_template.plan.md
+      allow_empty: true
+
   test:
     runs-on: ubuntu-latest
     steps:

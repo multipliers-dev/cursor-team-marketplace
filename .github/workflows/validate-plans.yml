@@ -1,0 +1,123 @@
+name: Validate plans (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      marketplace_ref:
+        description: >-
+          Git ref (commit SHA or tag) of multipliers-dev/cursor-team-marketplace for the
+          validator checkout. When omitted, parsed from github.workflow_ref after @ (the ref
+          pinned on the caller's uses: ...@<ref> line). For same-repo ./ uses without @ref,
+          pass github.sha explicitly.
+        required: false
+        type: string
+      template_path:
+        description: >-
+          Optional path relative to the caller repository root for strict template profile
+          validation (e.g. .cursor/plans/_template.plan.md).
+        required: false
+        type: string
+      allow_empty:
+        description: Exit 0 when no active plans are discovered under the caller repo.
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout caller repository (plans source of truth)
+        uses: actions/checkout@v7
+        with:
+          path: caller
+
+      - name: Resolve marketplace ref
+        id: marketplace_ref
+        env:
+          INPUT_REF: ${{ inputs.marketplace_ref }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          set -eu
+          ref="${INPUT_REF:-}"
+          if [ -z "$ref" ]; then
+            case "$WORKFLOW_REF" in
+              *@*)
+                ref="${WORKFLOW_REF#*@}"
+                ;;
+            esac
+          fi
+          if [ -z "$ref" ]; then
+            echo "error: set marketplace_ref input or pin uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@<sha>" >&2
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "Using marketplace ref: $ref"
+
+      - name: Checkout validator (separate path)
+        uses: actions/checkout@v7
+        with:
+          repository: multipliers-dev/cursor-team-marketplace
+          ref: ${{ steps.marketplace_ref.outputs.ref }}
+          path: marketplace-validator
+
+      - name: Guard validation target is caller checkout
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+          MARKETPLACE_ROOT: ${{ github.workspace }}/marketplace-validator
+        run: |
+          set -eu
+          if [ "$CALLER_ROOT" = "$MARKETPLACE_ROOT" ]; then
+            echo "error: caller and marketplace paths must differ" >&2
+            exit 1
+          fi
+          if [ ! -d "$CALLER_ROOT/.git" ]; then
+            echo "error: caller checkout missing .git at $CALLER_ROOT" >&2
+            exit 1
+          fi
+          # Canary: marketplace has this plan file; caller checkout must not accidentally use marketplace as repo-root.
+          if [ -f "$MARKETPLACE_ROOT/.cursor/plans/2026-10-23-plan-validator.plan.md" ]; then
+            if [ ! -f "$CALLER_ROOT/.cursor/plans/2026-10-23-plan-validator.plan.md" ] && [ -z "${{ inputs.template_path }}" ]; then
+              echo "note: caller has no matching marketplace plan file (expected for consumer repos)"
+            fi
+          fi
+          printf 'ok validation target caller=%s marketplace=%s\n' "$CALLER_ROOT" "$MARKETPLACE_ROOT"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: marketplace-validator/package-lock.json
+
+      - name: Install validator dependencies
+        working-directory: marketplace-validator
+        run: npm ci
+
+      - name: Validate active plans (caller repo root)
+        working-directory: marketplace-validator
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+          ALLOW_EMPTY: ${{ inputs.allow_empty }}
+        run: |
+          set -eu
+          args=(--repo-root "$CALLER_ROOT")
+          if [ "$ALLOW_EMPTY" = "true" ]; then
+            args+=(--allow-empty)
+          fi
+          npx tsx plugins/team-harness/scripts/validate-plans.ts "${args[@]}"
+
+      - name: Validate template (optional)
+        if: inputs.template_path != ''
+        working-directory: marketplace-validator
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+          TEMPLATE_PATH: ${{ inputs.template_path }}
+        run: |
+          set -eu
+          npx tsx plugins/team-harness/scripts/validate-plans.ts \
+            --repo-root "$CALLER_ROOT" \
+            --profile template \
+            "$CALLER_ROOT/$TEMPLATE_PATH"
