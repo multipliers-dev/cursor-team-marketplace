@@ -25,8 +25,56 @@ todos:
     status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: add # Shipped note, move plan to .cursor/plans/archive/2026-10-23-plan-validator.plan.md"
-    status: pending
+    status: completed
 isProject: false
+---
+
+# Shipped
+
+**Date:** 23 Oct 2026
+
+Deterministic plan validation (team-harness) — all slices merged; npm `@multipliers-dev/plan-validator` and reusable workflow adopted across six consumer repositories.
+
+### Marketplace PRs
+
+| Slice | PR |
+| --- | --- |
+| plan-review | [#57](https://github.com/multipliers-dev/cursor-team-marketplace/pull/57) |
+| plan-validate-lib | [#58](https://github.com/multipliers-dev/cursor-team-marketplace/pull/58) |
+| fixtures-tests | [#59](https://github.com/multipliers-dev/cursor-team-marketplace/pull/59) |
+| ci-npm | [#60](https://github.com/multipliers-dev/cursor-team-marketplace/pull/60) |
+| centralized-consumption (implementation) | [#63](https://github.com/multipliers-dev/cursor-team-marketplace/pull/63) |
+| centralized-consumption (plan-status) | [#64](https://github.com/multipliers-dev/cursor-team-marketplace/pull/64) |
+| consumer-adoption (plan-status Phase B) | [#65](https://github.com/multipliers-dev/cursor-team-marketplace/pull/65) |
+| docs-skill | [#66](https://github.com/multipliers-dev/cursor-team-marketplace/pull/66) (merge `9f35719`) |
+| plan-closure | (this PR) |
+
+### npm package and publish
+
+- **docs-skill** completed: PR [#66](https://github.com/multipliers-dev/cursor-team-marketplace/pull/66) merged at `9f357193ee149ecbf514f73f95de2d6d0ef8217e`.
+- **`@multipliers-dev/plan-validator@0.1.1`** published 2026-10-23 via manual workflow [Publish plan-validator (manual)](https://github.com/multipliers-dev/cursor-team-marketplace/actions/runs/39898524547) (OIDC trusted publishing with provenance; built from `9f35719`). Registry: dist-tag `latest` = `0.1.1`; `npm audit signatures` shows verified registry signature and verified attestation (SLSA provenance v1); tarball contains `package/package.json`, `package/README.md`, `package/dist/plan-validator.mjs`; homepage/bugs set; `engines.node` `>=22`. CLI smoke on Node 22: no plans → exit 1 (`discovery.empty`); `--allow-empty` → exit 0; unknown option → exit 2; invalid plan → exit 1 (`frontmatter.todos`).
+- **`0.1.0`** was a local bootstrap publish with `--no-provenance`; **`0.1.1`** is the first trusted-publishing release (README/metadata-focused relative to `0.1.0`).
+- **Consumer pins:** six adopt repositories still use `validator_version: "0.1.0"` and reusable workflow `uses: …@refs/tags/plan-validator-workflow-v1.0.0` (protected by ruleset **Protect plan-validator workflow releases**, id `25695885`). Bumping consumers to `0.1.1` is optional follow-up, not part of this plan.
+
+### Consumer adoption (Phase A merges + pins)
+
+| Repository | Decision | Adoption PR |
+| --- | --- | --- |
+| mastermichaelt/mastermichaelt | EXCLUDE | — (profile README only) |
+| multipliers-dev/renovate-workflow | ADOPT | [#56](https://github.com/multipliers-dev/renovate-workflow/pull/56) |
+| multipliers-dev/editorial-workflow | ADOPT | [#27](https://github.com/multipliers-dev/editorial-workflow/pull/27) |
+| multipliers-dev/codenames-ai-guesser | ADOPT | [#633](https://github.com/multipliers-dev/codenames-ai-guesser/pull/633) |
+| mastermichaelt/portfolio | ADOPT | [#83](https://github.com/mastermichaelt/portfolio/pull/83) |
+| mastermichaelt/resumes | ADOPT | [#217](https://github.com/mastermichaelt/resumes/pull/217) |
+| multipliers-dev/savepoints | ADOPT | [#87](https://github.com/multipliers-dev/savepoints/pull/87) |
+
+**Workflow tag:** `plan-validator-workflow-v1.0.0` → annotated tag `6dcfe2a462ebfacc9825df3ecf95886961748802` (peels to `9b16a15835bffec3f6e5e9d5bd071c99db74b188`).
+
+### Optional follow-ups (not executed in this plan)
+
+- Bump consumer `validator_version` pins from `0.1.0` to `0.1.1` when desired.
+- Delete disposable smoke branch `smoke/plan-validator-0.1.0` on `mastermichaelt/resumes` when no longer needed.
+
 ---
 
 # Deterministic plan validation (team-harness)
@@ -517,7 +565,7 @@ Use a **fresh Agent-mode chat** per slice. Headings use frontmatter `id` values 
 ### plan-review
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Execute only plan-review. Do not start plan-validate-lib or later slices.
 
@@ -533,7 +581,7 @@ Verification: plan satisfies planning-methodology envelope (frontmatter, authori
 ### plan-validate-lib
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Implement slice plan-validate-lib only. Prerequisite: plan-review merged. Do not start fixtures-tests or later. Do not archive the plan.
 
@@ -549,7 +597,7 @@ Verification: npm ci; npm run typecheck (includes plugins/team-harness/scripts/*
 ### fixtures-tests
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Implement slice fixtures-tests only. Prerequisite: plan-validate-lib merged. Do not start ci-npm or later. Do not archive the plan.
 
@@ -565,7 +613,7 @@ Verification: npm test.
 ### ci-npm
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Implement slice ci-npm only. Prerequisite: fixtures-tests merged. Do not start centralized-consumption, consumer-adoption, docs-skill, or plan-closure. Do not archive the plan.
 
@@ -581,7 +629,7 @@ Verification: npm ci; npm run typecheck; npm test; npm run validate:plans:templa
 ### centralized-consumption
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Implement slice centralized-consumption only. Prerequisites: ci-npm merged; Michael explicitly authorizes mastermichaelt/resumes as smoke-test consumer before you start. Do not start consumer-adoption, docs-skill, or plan-closure. Do not archive the plan.
 
@@ -599,7 +647,7 @@ Verification: npm ci; typecheck; npm test; validate:plans; validate:plans:templa
 ### consumer-adoption
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Execute slice consumer-adoption only. Prerequisite: centralized-consumption merged. Do not start docs-skill or plan-closure. Do not archive the plan.
 
@@ -617,7 +665,7 @@ Verification: Phase A — preflight for every candidate inspected or edited; eac
 ### docs-skill
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Implement slice docs-skill only. Prerequisite: consumer-adoption merged (consumer PRs merged and plan-status PR recorded). Do not start plan-closure. Do not archive the plan.
 
@@ -633,7 +681,7 @@ Verification: sh scripts/check.sh; npm test; read/grep confirms SKILL item 7 mat
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-10-23-plan-validator.plan.md
+@.cursor/plans/archive/2026-10-23-plan-validator.plan.md
 
 Execute only plan-closure.
 
