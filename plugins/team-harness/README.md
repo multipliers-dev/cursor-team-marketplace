@@ -31,7 +31,8 @@ Copy into a target repo during one-time bootstrap — locate scripts in the inst
 | `scripts/cloud-agent-install.sh`      | Node-from-`.nvmrc` major → full prefix under `/usr/local`; persist PATH; run declared dependency command |
 | `scripts/cloud-agent-start.sh`        | Session PATH + Node probe log + blocking `ensure-hooks` (wait mode, default 120s)                          |
 | `scripts/validate-plans.ts`           | Canonical plan validator CLI (run via `run-plan-validate.sh` or marketplace `npm run validate:plans`)   |
-| `scripts/run-plan-validate.sh`        | Consumer-side wrapper: resolve installed plugin, `npx tsx` + `--repo-root` (no source copy)               |
+| `scripts/run-plan-validate.sh`        | Consumer-side wrapper: resolve installed plugin, run `dist/validate-plans.mjs` with Node 20+ (no npm)   |
+| `dist/validate-plans.mjs`             | Committed esbuild bundle of the validator CLI (regenerate via `npm run build:validator`)                  |
 
 Centralized consumption (plugin + reusable CI): [docs/centralized-consumption.md](docs/centralized-consumption.md).
 

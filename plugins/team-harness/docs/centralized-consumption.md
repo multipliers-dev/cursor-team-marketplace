@@ -1,15 +1,38 @@
 # Centralized plan validation (consumption)
 
-How consuming repositories run the **canonical** plan validator in `multipliers-dev/cursor-team-marketplace` without copying `plugins/team-harness/scripts/` into the consumer.
+How consuming repositories run the **canonical** plan validator in `multipliers-dev/cursor-team-marketplace` without copying TypeScript sources into the consumer.
 
-Two supported surfaces:
+Two supported surfaces execute the **same committed artifact** (`plugins/team-harness/dist/validate-plans.mjs`):
 
 | Surface | Where it runs | Best for |
 | --- | --- | --- |
 | **Plugin + shell wrapper** | Developer machine or Cloud Agent with team-harness installed | Ad-hoc agent runs, local pre-push |
 | **Reusable GitHub Actions workflow** | Caller repo CI | Deterministic gates on every PR |
 
-Do **not** vendor validator TypeScript into consumer repos. If the plugin path is unavailable, use the reusable workflow (or a one-off `actions/checkout` of the marketplace at a pinned SHA plus `npm ci` there)—not a source copy.
+Do **not** vendor validator TypeScript into consumer repos.
+
+---
+
+## Canonical source vs distribution artifact
+
+| Layer | Path | Role |
+| --- | --- | --- |
+| **Source (edit here)** | `plugins/team-harness/scripts/validate-plans.ts`, `scripts/lib/plan-validate.ts` | Single canonical implementation |
+| **Bundle (committed)** | `plugins/team-harness/dist/validate-plans.mjs` | Self-contained ESM for Node 20+; includes `yaml` |
+
+**Rebuild:** `npm run build:validator` (esbuild 0.28.2, target `node20`, ESM + `createRequire` shim for bundled `yaml`, no minify, `legalComments: none`, static banner — deterministic output).
+
+**Drift gate:** `npm run check:validator-bundle-drift` rebuilds and fails if `git diff` on the `.mjs` is non-empty (runs in marketplace CI after `npm ci`).
+
+Marketplace development still uses `tsx` on the TypeScript CLI for `npm run validate:plans*`; parity tests assert bundled CLI matches TS CLI.
+
+---
+
+## Node.js requirement
+
+**Minimum: Node.js 20** (LTS). Tested on Node 20 and 22 (marketplace CI uses 22).
+
+Consumers need **only** the `node` binary — no `npm ci`, `tsx`, or plugin `node_modules` at runtime.
 
 ---
 
@@ -23,7 +46,7 @@ Sources are [Cursor Plugins](https://cursor.com/docs/plugins), [Plugins referenc
 | --- | --- | --- |
 | Local development | `~/.cursor/plugins/local/<plugin-name>/` after “Test plugins locally” | **Unverified** on Cloud Agents |
 | Marketplace install | Customize → Plugins → Install (project or user scope) | **Unverified** exact filesystem path on desktop vs Cloud Agent |
-| Team marketplace | Git-backed plugin tree indexed from `multipliers-dev/cursor-team-marketplace` | **Verified**: marketplace ships `plugins/team-harness/` in git |
+| Team marketplace | Git-backed plugin tree indexed from `multipliers-dev/cursor-team-marketplace` | **Verified**: ships `plugins/team-harness/` including `dist/validate-plans.mjs` |
 | Project skills | `.cursor/skills/<name>/SKILL.md` in the repo | **Verified**: loaded from repo checkout |
 | User skills | `~/.cursor/skills/` | **Verified** in docs; **not** auto-synced to Cloud Agents without explicit sync |
 
@@ -31,24 +54,19 @@ Cursor docs state that a running Cloud Agent keeps plugin versions from when it 
 
 ### Skills vs bundled scripts
 
-- Skills are discovered from `skills/<skill-name>/SKILL.md` (Agent Plugins package layout) or paths declared in `.cursor-plugin/plugin.json` ([Plugins reference — Plugin structure](https://cursor.com/docs/reference/plugins)).
-- Cursor Plugins may include a top-level `scripts/` directory for hooks and utilities ([Plugins reference](https://cursor.com/docs/reference/plugins)). **team-harness** ships `scripts/validate-plans.ts` and `scripts/run-plan-validate.sh` there.
-- Agent Skills may include optional `scripts/` next to `SKILL.md` ([Agent Skills](https://cursor.com/docs/skills)). The planning-methodology skill does **not** duplicate the validator; it points agents at the plugin `scripts/` entrypoint.
+- Skills live under `skills/<skill-name>/SKILL.md` ([Plugins reference](https://cursor.com/docs/reference/plugins)).
+- **team-harness** ships `scripts/run-plan-validate.sh` and the committed **`dist/validate-plans.mjs`** bundle (validator logic is not duplicated under the skill folder).
+- Agents resolve the installed **team-harness** plugin root (same pattern as `/cloud-hooks-bootstrap`) and run the wrapper.
 
-**Can a skill reference its own bundled script path?** Yes for skills that colocate scripts under the skill folder. For team-harness, the validator lives in **plugin** `scripts/`, not under `skills/planning-methodology/scripts/`. Agents should resolve the installed **team-harness** plugin root (same pattern as `/cloud-hooks-bootstrap` and `/repo-bootstrap`) and run `scripts/run-plan-validate.sh` from that root.
-
-**`${CURSOR_PLUGIN_ROOT}` / `${PLUGIN_ROOT}`:** Cursor docs recommend `${CURSOR_PLUGIN_ROOT}` for MCP in Cursor Plugins; Agent Plugins `${PLUGIN_ROOT}` is **not** expanded in `mcp.json` ([Plugins — Agent Plugins standard](https://cursor.com/docs/plugins)). Whether Cloud Agent shells export `CURSOR_PLUGIN_ROOT` for hook scripts is **unverified**—the wrapper supports `TEAM_HARNESS_PLUGIN_ROOT` explicitly.
+**`${CURSOR_PLUGIN_ROOT}`:** documented for MCP ([Plugins](https://cursor.com/docs/plugins)); shell export on Cloud Agents is **unverified** — use `TEAM_HARNESS_PLUGIN_ROOT` when needed.
 
 ### Runtime on a consumer checkout
 
-| Requirement | Plugin wrapper path | Reusable workflow path |
+| Requirement | Plugin wrapper | Reusable workflow |
 | --- | --- | --- |
-| Node.js | Required (20+ typical) | Provided (`setup-node` 22) |
-| `tsx` | Fetched via `npx -p tsx` | From marketplace `npm ci` |
-| `yaml` | Fetched via `npx -p yaml` | From marketplace `npm ci` |
-| Consumer `npm ci` | **Not** required | **Not** required |
-
-The wrapper uses `npx --yes -p tsx -p yaml tsx …` so consumers do not need marketplace `node_modules` on disk.
+| Node.js 20+ | Required | `setup-node` 22 |
+| npm / tsx / yaml package | **Not** required | **Not** required |
+| Committed `.mjs` in plugin | Required at `dist/validate-plans.mjs` | Checked out from pinned `marketplace_ref` |
 
 ---
 
@@ -56,24 +74,26 @@ The wrapper uses `npx --yes -p tsx -p yaml tsx …` so consumers do not need mar
 
 ### Tell whether team-harness is installed
 
-1. **Customize → Plugins / Skills:** look for **team-harness** or skills `planning-methodology`, `repo-bootstrap`, `cloud-hooks-bootstrap`.
-2. **On disk:** locate `validate-plans.ts` under an installed plugin tree, or set `TEAM_HARNESS_PLUGIN_ROOT` manually.
+1. **Customize → Plugins / Skills:** **team-harness** (or planning-methodology / repo-bootstrap skills).
+2. **On disk:** `dist/validate-plans.mjs` under the plugin root, or set `TEAM_HARNESS_PLUGIN_ROOT`.
 
-If the plugin is **not** installed:
-
-- Install **team-harness** from the team marketplace (Customize), **or**
-- For CI only, skip the plugin and use the reusable workflow below, **or**
-- For a one-off agent run without the plugin, checkout `multipliers-dev/cursor-team-marketplace` at a pinned SHA in a **separate directory**, run `npm ci` there, and invoke `validate-plans.ts` with `--repo-root` pointing at the consumer repo—**do not** copy sources into the consumer.
+If the plugin is **not** installed: install from the team marketplace, or use the reusable workflow — do **not** copy validator source into the consumer.
 
 ### Command (consumer repo root)
 
-From the **consumer repository** root (prove with `pwd` and `git remote get-url origin` in the same shell as the command):
+From the **consumer repository** root (prove with `pwd` and `git remote get-url origin` in the same shell):
 
 ```bash
 sh /path/to/installed/team-harness/scripts/run-plan-validate.sh --repo-root "$(pwd)" --allow-empty
 ```
 
-Strict template profile (when the consumer maintains a template path):
+Or invoke the bundle directly:
+
+```bash
+node /path/to/installed/team-harness/dist/validate-plans.mjs --repo-root "$(pwd)" --allow-empty
+```
+
+Strict template profile (consumer template path):
 
 ```bash
 sh "$TEAM_HARNESS_PLUGIN_ROOT/scripts/run-plan-validate.sh" \
@@ -82,9 +102,7 @@ sh "$TEAM_HARNESS_PLUGIN_ROOT/scripts/run-plan-validate.sh" \
   .cursor/plans/_template.plan.md
 ```
 
-When the wrapper lives in a git clone of the marketplace (development), `run-plan-validate.sh` resolves the plugin root relative to itself.
-
-**Failure behavior:** missing plugin, missing Node/npx, or validator diagnostics → non-zero exit; stderr explains the failure. No silent fallback to copied validator source.
+**Failure behavior:** missing plugin, missing/outdated Node, missing bundle, or validator diagnostics → non-zero exit with stderr message. No silent fallback to copied source.
 
 ---
 
@@ -92,11 +110,11 @@ When the wrapper lives in a git clone of the marketplace (development), `run-pla
 
 **Path:** `.github/workflows/validate-plans.yml` in `multipliers-dev/cursor-team-marketplace`.
 
-**Permissions (caller job):** `contents: read` only. The reusable workflow does not mutate the caller repository.
+**Permissions (caller job):** `contents: read` only.
 
 ### Version pinning
 
-Pin the **same commit SHA** on both the `uses:` line and **`marketplace_ref`** (required):
+Pin the **same commit SHA** on `uses:` and **`marketplace_ref`** (required input):
 
 ```yaml
 permissions:
@@ -108,65 +126,59 @@ jobs:
     with:
       marketplace_ref: <FULL_COMMIT_SHA>
       allow_empty: true
-      # template_path: .cursor/plans/_template.plan.md   # optional strict template gate
+      # template_path: .cursor/plans/_template.plan.md
 ```
 
-Why both?
+- `@<sha>` selects the **workflow definition** ([Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)).
+- `marketplace_ref` selects the marketplace commit that contains the matching **`dist/validate-plans.mjs`**.
 
-- The `@<sha>` on `uses:` selects the **workflow definition** ([Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)).
-- `marketplace_ref` selects the **validator source tree** checked out to `marketplace-validator/`.
+**Do not omit `marketplace_ref`.** In reusable workflows, `github.workflow_ref` is the **caller** workflow ref — omitting `marketplace_ref` previously caused checkout of the caller branch against the marketplace repo ([resumes smoke run 39877373830](https://github.com/mastermichaelt/resumes/actions/runs/39877373830)).
 
-**Do not omit `marketplace_ref`.** In reusable workflows, `github.workflow_ref` refers to the **caller** workflow (owner/repo/path@caller-ref), not the marketplace pin on `uses:` — parsing it checks out the wrong repository ref ([smoke evidence on resumes](https://github.com/mastermichaelt/resumes/actions/runs/39877373830)).
+Same-repo marketplace CI must pass `marketplace_ref: ${{ github.sha }}`.
 
-Marketplace CI (same-repo `./` call) must still pass `marketplace_ref: ${{ github.sha }}`.
-
-Prefer **full 40-character commit SHA** (must equal the `uses:@` pin). Immutable protected tags are accepted; caller branches and `refs/heads/*` are rejected.
+Prefer **40-character commit SHA** equal to the `uses:@` pin. Simple immutable tags are accepted; `refs/heads/*` from the caller are rejected.
 
 ### Inputs
 
 | Input | Type | Required | Purpose |
 | --- | --- | --- | --- |
-| `marketplace_ref` | string | **yes** | Marketplace commit SHA or tag for validator checkout |
+| `marketplace_ref` | string | **yes** | Marketplace SHA/tag for checkout |
 | `template_path` | string | no | Optional `--profile template` on caller-relative path |
-| `allow_empty` | boolean | no (default `true`) | Pass `--allow-empty` for repos with no active plans |
+| `allow_empty` | boolean | no (default `true`) | `--allow-empty` when no active plans |
 
 ### What the workflow does
 
 1. Check out the **caller** repo to `${{ github.workspace }}/caller`.
-2. Check out **cursor-team-marketplace** at `marketplace_ref` to `marketplace-validator/`.
-3. Run guard steps so plan discovery uses `--repo-root` = caller, never the marketplace checkout alone.
-4. `npm ci` in `marketplace-validator/` only.
-5. Run `validate-plans.ts` against the caller root.
-
-### Updates
-
-Bump the SHA (and `marketplace_ref`) in consumer workflow files when adopting validator fixes. Document the pin in the consumer README or plan-status PR (see plan slice `consumer-adoption`).
+2. Check out **cursor-team-marketplace** at `marketplace_ref` to `marketplace-validator/` (no `npm ci`).
+3. Guard that `--repo-root` is the caller checkout.
+4. Run `node marketplace-validator/plugins/team-harness/dist/validate-plans.mjs` — same artifact as the plugin wrapper.
 
 ### Failure behavior
 
-- Misconfigured ref → workflow fails at checkout or ref resolution.
-- Plan issues → validator exit `1` with diagnostics on stderr.
-- No active plans with `allow_empty: true` → exit `0` with skip message (same as local CLI).
+- Invalid/missing `marketplace_ref` → fail before validation.
+- Plan issues → exit `1` with diagnostics.
+- No active plans with `allow_empty: true` → exit `0` with skip message.
 
 ---
 
 ## Permissions and cross-owner callers
 
-- Marketplace repository is **public**; `workflow_call` from `mastermichaelt/*` (and other owners) is supported subject to GitHub Actions policy.
-- Caller workflows should declare minimal permissions (`contents: read`).
-- No `GITHUB_TOKEN` write scopes are required for validation.
+- Public marketplace repo; `workflow_call` from other owners (e.g. `mastermichaelt/*`) is supported.
+- Caller workflows: `contents: read` only.
 
 ---
 
 ## Smoke evidence (resumes)
 
-Cross-repo reusable workflow smoke on `mastermichaelt/resumes` (pin `f1ca17c…`) is recorded in marketplace PR #63. Plugin-side smoke used simulated install only; wrapper behavior awaits a design decision — use the reusable workflow for CI until then.
+Reusable workflow smoke (pin `f1ca17c` era) is recorded in marketplace PR #63. **Plugin-side smoke** against the Node-only bundle should be re-run on a new head in a separate resumes session after this PR updates.
 
 ---
 
 ## Related
 
-- Validator CLI: `plugins/team-harness/scripts/validate-plans.ts`
+- Source CLI: `plugins/team-harness/scripts/validate-plans.ts`
+- Bundle: `plugins/team-harness/dist/validate-plans.mjs`
 - Wrapper: `plugins/team-harness/scripts/run-plan-validate.sh`
-- Planning skill: `plugins/team-harness/skills/planning-methodology/SKILL.md` (Plan validation subsection)
-- Version alignment when shipping consumption surfaces: [versioning.md](versioning.md)
+- Build: `npm run build:validator`; drift: `npm run check:validator-bundle-drift`
+- Planning skill: `plugins/team-harness/skills/planning-methodology/SKILL.md`
+- Versioning: [versioning.md](versioning.md) (1.13.0 consumption surfaces in this PR)

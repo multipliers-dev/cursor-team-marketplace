@@ -253,3 +253,14 @@ if ! sed -n '/^[[:space:]]*marketplace_ref:/,/^[[:space:]]*template_path:/p' "$V
   exit 1
 fi
 echo "ok validate-plans reusable workflow contract"
+
+BUNDLE="plugins/team-harness/dist/validate-plans.mjs"
+if [ ! -f "$BUNDLE" ]; then
+  echo "error: missing committed validator bundle at $BUNDLE (run npm run build:validator)" >&2
+  exit 1
+fi
+if ! head -n 5 "$BUNDLE" | rg -q 'GENERATED FILE'; then
+  echo "error: $BUNDLE missing GENERATED FILE banner" >&2
+  exit 1
+fi
+echo "ok validator bundle present"

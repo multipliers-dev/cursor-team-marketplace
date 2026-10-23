@@ -147,8 +147,8 @@ Run the **canonical** validator against the **active repository** (consumer chec
 
 | When | Command |
 | --- | --- |
-| Agent / local (team-harness installed) | From consumer repo root: `sh <team-harness-plugin>/scripts/run-plan-validate.sh --repo-root "$(pwd)" --allow-empty` |
-| CI | Reusable workflow — see [centralized-consumption.md](../../docs/centralized-consumption.md) |
+| Agent / local (team-harness installed) | From consumer repo root: `sh <team-harness-plugin>/scripts/run-plan-validate.sh --repo-root "$(pwd)" --allow-empty` (Node 20+; runs committed `dist/validate-plans.mjs`) |
+| CI | Reusable workflow — see [centralized-consumption.md](../../docs/centralized-consumption.md) (same `.mjs` artifact, no npm) |
 
 **Install check:** Customize → Plugins for **team-harness**, or set `TEAM_HARNESS_PLUGIN_ROOT`. If the plugin is missing, **stop** — install the plugin or use CI workflow; do **not** copy validator source into the consumer repo.
 
