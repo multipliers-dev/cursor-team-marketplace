@@ -96,7 +96,7 @@ When the wrapper lives in a git clone of the marketplace (development), `run-pla
 
 ### Version pinning
 
-Pin the **same commit SHA** on both the `uses:` line and (optionally) `marketplace_ref`:
+Pin the **same commit SHA** on both the `uses:` line and **`marketplace_ref`** (required):
 
 ```yaml
 permissions:
@@ -114,19 +114,21 @@ jobs:
 Why both?
 
 - The `@<sha>` on `uses:` selects the **workflow definition** ([Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)).
-- `marketplace_ref` selects the **validator source tree** checked out to `marketplace-validator/` (defaults by parsing `github.workflow_ref` after `@` when omitted).
+- `marketplace_ref` selects the **validator source tree** checked out to `marketplace-validator/`.
 
-For `./.github/workflows/validate-plans.yml` **same-repo** calls (marketplace CI), `github.workflow_ref` has no `@sha` suffix—pass `marketplace_ref: ${{ github.sha }}` explicitly.
+**Do not omit `marketplace_ref`.** In reusable workflows, `github.workflow_ref` refers to the **caller** workflow (owner/repo/path@caller-ref), not the marketplace pin on `uses:` — parsing it checks out the wrong repository ref ([smoke evidence on resumes](https://github.com/mastermichaelt/resumes/actions/runs/39877373830)).
 
-Prefer **full commit SHA** over floating branches. Protected tags are acceptable when your org treats them as immutable.
+Marketplace CI (same-repo `./` call) must still pass `marketplace_ref: ${{ github.sha }}`.
+
+Prefer **full 40-character commit SHA** (must equal the `uses:@` pin). Immutable protected tags are accepted; caller branches and `refs/heads/*` are rejected.
 
 ### Inputs
 
-| Input | Type | Default | Purpose |
+| Input | Type | Required | Purpose |
 | --- | --- | --- | --- |
-| `marketplace_ref` | string | (parse `workflow_ref`) | Validator git ref |
-| `template_path` | string | (empty) | Optional `--profile template` on caller-relative path |
-| `allow_empty` | boolean | `true` | Pass `--allow-empty` for repos with no active plans |
+| `marketplace_ref` | string | **yes** | Marketplace commit SHA or tag for validator checkout |
+| `template_path` | string | no | Optional `--profile template` on caller-relative path |
+| `allow_empty` | boolean | no (default `true`) | Pass `--allow-empty` for repos with no active plans |
 
 ### What the workflow does
 
@@ -158,7 +160,7 @@ Bump the SHA (and `marketplace_ref`) in consumer workflow files when adopting va
 
 ## Smoke evidence (resumes)
 
-Production smoke for plugin + reusable workflow on `mastermichaelt/resumes` runs in a **separate** Cloud Agent session after the marketplace PR is open. See the marketplace PR body section **Smoke evidence: pending (separate resumes session)**.
+Cross-repo reusable workflow smoke on `mastermichaelt/resumes` (pin `f1ca17c…`) is recorded in marketplace PR #63. Plugin-side smoke used simulated install only; wrapper behavior awaits a design decision — use the reusable workflow for CI until then.
 
 ---
 

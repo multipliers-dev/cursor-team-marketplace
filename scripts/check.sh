@@ -234,3 +234,22 @@ _stale_ref_check 'skills/interview-repo-bootstrap/'
 _stale_ref_check 'name: new-repo-bootstrap'
 _stale_ref_check 'name: interview-repo-bootstrap'
 echo "ok stale-reference guard"
+
+VALIDATE_PLANS_WORKFLOW=".github/workflows/validate-plans.yml"
+if [ ! -f "$VALIDATE_PLANS_WORKFLOW" ]; then
+  echo "error: missing $VALIDATE_PLANS_WORKFLOW" >&2
+  exit 1
+fi
+if rg -q '\$\{\{[[:space:]]*github\.workflow_ref[[:space:]]*\}\}' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW must not use github.workflow_ref (caller ref in reusable workflows)" >&2
+  exit 1
+fi
+if ! rg -q 'marketplace_ref:' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW missing marketplace_ref input" >&2
+  exit 1
+fi
+if ! sed -n '/^[[:space:]]*marketplace_ref:/,/^[[:space:]]*template_path:/p' "$VALIDATE_PLANS_WORKFLOW" | rg -q 'required:[[:space:]]*true'; then
+  echo "error: marketplace_ref must be required: true in $VALIDATE_PLANS_WORKFLOW" >&2
+  exit 1
+fi
+echo "ok validate-plans reusable workflow contract"

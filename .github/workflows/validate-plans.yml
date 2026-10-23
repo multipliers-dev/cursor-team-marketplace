@@ -5,11 +5,10 @@ on:
     inputs:
       marketplace_ref:
         description: >-
-          Git ref (commit SHA or tag) of multipliers-dev/cursor-team-marketplace for the
-          validator checkout. When omitted, parsed from github.workflow_ref after @ (the ref
-          pinned on the caller's uses: ...@<ref> line). For same-repo ./ uses without @ref,
-          pass github.sha explicitly.
-        required: false
+          Git commit SHA (40 hex chars, recommended) or immutable tag of
+          multipliers-dev/cursor-team-marketplace for the validator checkout.
+          Must match the ref pinned on the caller's uses: ...@<ref> line.
+        required: true
         type: string
       template_path:
         description: >-
@@ -35,23 +34,29 @@ jobs:
         with:
           path: caller
 
-      - name: Resolve marketplace ref
+      - name: Validate marketplace_ref input
         id: marketplace_ref
         env:
           INPUT_REF: ${{ inputs.marketplace_ref }}
-          WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -eu
-          ref="${INPUT_REF:-}"
+          ref=$(printf '%s' "$INPUT_REF" | tr -d '[:space:]')
           if [ -z "$ref" ]; then
-            case "$WORKFLOW_REF" in
-              *@*)
-                ref="${WORKFLOW_REF#*@}"
-                ;;
-            esac
+            echo "error: marketplace_ref is required (40-char commit SHA recommended; must match uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@<same-ref>)" >&2
+            exit 1
           fi
-          if [ -z "$ref" ]; then
-            echo "error: set marketplace_ref input or pin uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@<sha>" >&2
+          case "$ref" in
+            refs/heads/*|refs/pull/*)
+              echo "error: marketplace_ref must be a marketplace commit SHA or tag, not a caller branch (got: $ref). Reusable workflows resolve caller branch names from the calling workflow — always pass marketplace_ref explicitly." >&2
+              exit 1
+              ;;
+          esac
+          if printf '%s' "$ref" | grep -Eq '^[0-9a-fA-F]{40}$'; then
+            :
+          elif printf '%s' "$ref" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]*$'; then
+            :
+          else
+            echo "error: marketplace_ref must be a 40-character commit SHA or a simple tag name (got: $ref)" >&2
             exit 1
           fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
