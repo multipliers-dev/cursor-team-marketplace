@@ -9,13 +9,6 @@ on:
           Must match the version consumers intend to run; never use ranges or dist-tags.
         required: true
         type: string
-      pre_publish_tarball:
-        description: >-
-          Marketplace-internal testing only. When true, builds and installs the package
-          from this repository tarball instead of the npm registry (pre-publication CI).
-        required: false
-        type: boolean
-        default: false
       template_path:
         description: >-
           Optional path relative to the caller repository root for strict template profile
@@ -60,32 +53,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Checkout marketplace (pre-publish tarball build only)
-        if: inputs.pre_publish_tarball
-        uses: actions/checkout@v7
-        with:
-          path: marketplace-src
-
-      - name: Install validator from local tarball (pre-publish)
-        if: inputs.pre_publish_tarball
-        id: tarball_install
-        run: |
-          set -eu
-          cd marketplace-src
-          npm ci
-          npm run build --workspace @multipliers-dev/plan-validator
-          mkdir -p "$RUNNER_TEMP/plan-validator-pack"
-          pack_path=$(npm pack --workspace @multipliers-dev/plan-validator --pack-destination "$RUNNER_TEMP/plan-validator-pack" | tail -n 1)
-          install_root="$RUNNER_TEMP/plan-validator-install"
-          mkdir -p "$install_root"
-          npm install --prefix "$install_root" --no-save "$RUNNER_TEMP/plan-validator-pack/$pack_path"
-          bin="$install_root/node_modules/.bin/plan-validator"
-          if [ ! -x "$bin" ]; then
-            echo "error: plan-validator bin missing after tarball install" >&2
-            exit 1
-          fi
-          echo "bin=$bin" >> "$GITHUB_OUTPUT"
-
       - name: Guard validation target is caller checkout
         env:
           CALLER_ROOT: ${{ github.workspace }}/caller
@@ -102,18 +69,13 @@ jobs:
           CALLER_ROOT: ${{ github.workspace }}/caller
           ALLOW_EMPTY: ${{ inputs.allow_empty }}
           VERSION: ${{ inputs.validator_version }}
-          TARBALL_BIN: ${{ steps.tarball_install.outputs.bin }}
         run: |
           set -eu
           args=(--repo-root "$CALLER_ROOT")
           if [ "$ALLOW_EMPTY" = "true" ]; then
             args+=(--allow-empty)
           fi
-          if [ "${{ inputs.pre_publish_tarball }}" = "true" ]; then
-            "$TARBALL_BIN" "${args[@]}"
-          else
-            npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator "${args[@]}"
-          fi
+          npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator "${args[@]}"
 
       - name: Validate template (optional)
         if: inputs.template_path != ''
@@ -121,12 +83,9 @@ jobs:
           CALLER_ROOT: ${{ github.workspace }}/caller
           TEMPLATE_PATH: ${{ inputs.template_path }}
           VERSION: ${{ inputs.validator_version }}
-          TARBALL_BIN: ${{ steps.tarball_install.outputs.bin }}
         run: |
           set -eu
-          args=(--repo-root "$CALLER_ROOT" --profile template "$CALLER_ROOT/$TEMPLATE_PATH")
-          if [ "${{ inputs.pre_publish_tarball }}" = "true" ]; then
-            "$TARBALL_BIN" "${args[@]}"
-          else
-            npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator "${args[@]}"
-          fi
+          npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator \
+            --repo-root "$CALLER_ROOT" \
+            --profile template \
+            "$CALLER_ROOT/$TEMPLATE_PATH"

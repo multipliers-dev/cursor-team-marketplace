@@ -7,9 +7,6 @@ on:
         description: Must match packages/plan-validator/package.json version (e.g. 0.1.0)
         required: true
         type: string
-  push:
-    tags:
-      - "plan-validator-v*"
 
 permissions:
   contents: read
@@ -28,23 +25,21 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
+      - name: Install npm CLI with OIDC trusted publishing support
+        run: |
+          set -eu
+          npm install -g npm@11.15.0
+          npm --version
+
       - name: Verify manifest version
         env:
-          CONFIRM: ${{ github.event.inputs.confirm_version || github.ref_name }}
+          CONFIRM: ${{ github.event.inputs.confirm_version }}
         run: |
           set -eu
           manifest_version=$(node -p "require('./packages/plan-validator/package.json').version")
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ "$CONFIRM" != "$manifest_version" ]; then
-              echo "error: confirm_version ($CONFIRM) != package.json ($manifest_version)" >&2
-              exit 1
-            fi
-          else
-            tag="${GITHUB_REF_NAME#plan-validator-v}"
-            if [ "$tag" != "$manifest_version" ]; then
-              echo "error: tag plan-validator-v$tag != package.json ($manifest_version)" >&2
-              exit 1
-            fi
+          if [ "$CONFIRM" != "$manifest_version" ]; then
+            echo "error: confirm_version ($CONFIRM) != package.json ($manifest_version)" >&2
+            exit 1
           fi
           echo "ok version $manifest_version"
 

@@ -13,15 +13,23 @@ permissions:
   contents: read
 
 jobs:
-  validate-plans-reusable:
+  plan-validator-tarball-ci:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-    uses: ./.github/workflows/validate-plans.yml
-    with:
-      validator_version: "0.1.0"
-      pre_publish_tarball: true
-      template_path: plugins/team-harness/skills/planning-methodology/_template.plan.md
-      allow_empty: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tarball fixture smoke (isolated install)
+        run: sh scripts/plan-validator-package-smoke.sh
+
+      - name: Tarball gates (marketplace as caller)
+        run: sh scripts/plan-validator-marketplace-tarball-gates.sh
 
   test:
     runs-on: ubuntu-latest

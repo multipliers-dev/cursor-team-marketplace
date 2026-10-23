@@ -258,7 +258,7 @@ The team-harness **plugin** distributes methodology/skills; it does **not** repl
 **Deliverables:**
 
 - `@multipliers-dev/plan-validator@0.1.0` package (build from canonical TS; tarball verify; publish workflow defined, not executed).
-- Reusable workflow invoking pinned npm CLI; `pre_publish_tarball` for marketplace CI only.
+- Reusable workflow invoking pinned npm CLI (registry-only); marketplace tarball verification via CI job/scripts only (not callable from consumer repos).
 - [`centralized-consumption.md`](../../plugins/team-harness/docs/centralized-consumption.md) (npm model, abandoned plugin path, pinning, publish prerequisites).
 - Narrow planning-methodology SKILL invocation notes (npm exec; plugin ≠ npm package).
 - Mark `centralized-consumption` **completed** only after **published** CLI smoke on authorized consumer—**not** in this PR if publish has not happened.
@@ -279,7 +279,7 @@ The team-harness **plugin** distributes methodology/skills; it does **not** repl
 **Verification:**
 
 - Marketplace PR: `npm ci`; `typecheck`; `npm test`; `validate:plans`; `validate:plans:template`; `sh scripts/check.sh`; `npm run verify:plan-validator`; tarball smoke script.
-- Reusable workflow registry mode **not** fully testable until publish; marketplace CI uses `pre_publish_tarball: true`.
+- Reusable workflow registry mode **not** fully testable until publish; marketplace CI uses `plan-validator-tarball-ci` job + tarball scripts (not exposed via `workflow_call`).
 - Plan file passes `validate:plans`.
 
 **Prerequisites:**
@@ -532,9 +532,9 @@ Topology: marketplace implementation PR on latest origin/main (branch = this sli
 
 Repositories: multipliers-dev/cursor-team-marketplace (implementation, read/write); mastermichaelt/resumes (required smoke, read/write in the smoke session once Michael authorized)—verify access and real checkout with pwd and git remote get-url origin in the same command as smoke work; hard-stop and escalate to Michael if missing or identity-mismatched—do not substitute another repo. Do not assume App/API access equals checkout.
 
-Deliverables: packages/plan-validator (@multipliers-dev/plan-validator 0.1.0); reusable GHA workflow (validator_version pin; pre_publish_tarball for marketplace CI); publish workflow (manual/OIDC, not executed); centralized-consumption.md; narrow SKILL npm invocation notes. Do not npm-publish in this PR. Do not duplicate validator source or perform multi-repo rollout. Mark centralized-consumption completed only after published CLI + consumer smoke (separate authorized publish + resumes session).
+Deliverables: packages/plan-validator (@multipliers-dev/plan-validator 0.1.0); registry-only reusable GHA workflow (validator_version pin); marketplace tarball CI job/scripts; publish workflow (workflow_dispatch + OIDC only, not executed); centralized-consumption.md; narrow SKILL npm invocation notes. Do not npm-publish in this PR. Do not duplicate validator source or perform multi-repo rollout. Mark centralized-consumption completed only after published CLI + consumer smoke (separate authorized publish + resumes session).
 
-Verification: npm ci; typecheck; npm test; validate:plans; validate:plans:template; check.sh; verify:plan-validator; tarball smoke; plan validates; reusable workflow tarball path green in CI. Registry-mode consumer smoke after publish.
+Verification: npm ci; typecheck; npm test; validate:plans; validate:plans:template; check.sh; verify:plan-validator; tarball smoke + marketplace tarball gates; plan validates; plan-validator-tarball-ci job green. Registry-mode consumer smoke after publish.
 ```
 
 ### consumer-adoption

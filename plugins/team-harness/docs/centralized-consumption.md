@@ -72,7 +72,6 @@ Installing the **team-harness** Cursor plugin does **not** install this npm pack
 | Input | Required | Purpose |
 | --- | --- | --- |
 | `validator_version` | **yes** | Exact semver `x.y.z` of `@multipliers-dev/plan-validator` (no ranges/tags/latest) |
-| `pre_publish_tarball` | no | **Marketplace-internal:** build/install from repo tarball instead of registry (pre-publication CI) |
 | `template_path` | no | Optional `--profile template` on caller-relative path |
 | `allow_empty` | no (default true) | `--allow-empty` |
 
@@ -94,14 +93,22 @@ jobs:
 
 Pin **`validator_version`** to the published npm version. Pin the workflow **`uses:@<sha>`** to the marketplace commit that defines the workflow file you trust.
 
-**Not testable in registry mode until `0.1.0` is published.** Marketplace CI uses `pre_publish_tarball: true` to exercise the same CLI via `npm pack` + local install.
+**Registry mode is not testable in consumer CI until `0.1.0` is published.** External callers cannot enable tarball mode — the public reusable workflow has no tarball or marketplace-checkout inputs.
 
-### Behavior
+### Behavior (registry-only)
 
-1. Check out **caller** to `${{ github.workspace }}/caller`.
-2. Run `plan-validator --repo-root` against the caller only.
-3. Normal mode: `npm exec --package=@multipliers-dev/plan-validator@<version> -- plan-validator …`
-4. Pre-publish mode: build tarball from marketplace checkout, install, run bin.
+1. Check out **caller** to `${{ github.workspace }}/caller` (no marketplace checkout).
+2. `npm exec --package=@multipliers-dev/plan-validator@<exact-version> -- plan-validator --repo-root <caller> …`
+
+### Marketplace-only pre-publication CI (not reusable)
+
+Before publish, marketplace CI validates the tarball locally (not exposed to consumer repos):
+
+| Step | Script / job |
+| --- | --- |
+| Isolated tarball fixture smoke | `scripts/plan-validator-package-smoke.sh` |
+| Marketplace-as-caller gates | `scripts/plan-validator-marketplace-tarball-gates.sh` |
+| CI job | `plan-validator-tarball-ci` in `.github/workflows/ci.yml` |
 
 ---
 
@@ -111,17 +118,26 @@ Pin **`validator_version`** to the published npm version. Pin the workflow **`us
 | --- | --- |
 | `npm run build:plan-validator` | Marketplace root (workspace) |
 | `npm run verify:plan-validator` | build + `npm pack --dry-run` |
-| `sh scripts/plan-validator-package-smoke.sh` | Tarball install + fixture smoke (CI) |
+| `sh scripts/plan-validator-package-smoke.sh` | Tarball install + fixture smoke |
+| `sh scripts/plan-validator-marketplace-tarball-gates.sh` | Tarball + allow-empty/template on repo root |
 
-**Publish (not run in this slice):** `.github/workflows/publish-plan-validator.yml` — `workflow_dispatch` (confirm version) or tag `plan-validator-v*`, `id-token: write`, `npm publish --provenance --access public` ([npm trusted publishers](https://docs.npmjs.com/generating-provenance-statements#about-trusted-publishers)).
+**Publish (separate maintainer authorization; not run in the marketplace implementation PR):** `.github/workflows/publish-plan-validator.yml` — **`workflow_dispatch` only** (input `confirm_version` must match `package.json`); `id-token: write`; installs **`npm@11.15.0`** globally (OIDC trusted publishing requires npm CLI **≥ 11.5.1** per [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)); then `npm publish --provenance --access public`.
 
-### One-time npm prerequisites (maintainer)
+### First publish bootstrap (verified against npm docs)
 
-1. Create npm org **`@multipliers-dev`** (if it does not exist) and grant publish access to maintainers.
-2. Configure **trusted publisher** on npm for package `@multipliers-dev/plan-validator`: GitHub repo `multipliers-dev/cursor-team-marketplace`, workflow file `.github/workflows/publish-plan-validator.yml`, environment (if used).
-3. First publish may require org scope ownership; trusted publishing avoids long-lived `NPM_TOKEN` when OIDC is configured ([npm docs](https://docs.npmjs.com/trusted-publishers)).
+Trusted publisher settings live on **each package’s** npmjs.com **Settings** page ([trusted publishing — Step 1](https://docs.npmjs.com/trusted-publishers/)). That page does **not** exist until the package has been published at least once. **`npm trust` CLI likewise requires the package to already exist on the registry** ([`npm trust` prerequisites](https://docs.npmjs.com/cli/v11/commands/npm-trust/)).
 
-**Availability check (2026-10-23):** `npm view @multipliers-dev/plan-validator` → **404 Not Found** (name available). Could not verify org existence without npm login (`npm view @multipliers-dev` is not a valid query).
+**Order:**
+
+1. Create npm org **`@multipliers-dev`** if needed (unverified whether it already exists — requires npm login).
+2. **One-time manual first publish** by a maintainer with org access (typically `npm login` + 2FA, then from `packages/plan-validator/` after `npm run build`: `npm publish --access public`). Alternative: a **short-lived granular access token** with publish scope for this single bootstrap publish only — revoke after use. **Unverified:** exact org policy for scoped first publish.
+3. On npmjs.com → **Packages → `@multipliers-dev/plan-validator` → Settings → Trusted publishing**, add GitHub Actions publisher: org/user `multipliers-dev`, repository `cursor-team-marketplace`, workflow filename `publish-plan-validator.yml` ([trusted publishing](https://docs.npmjs.com/trusted-publishers/)).
+4. Complete a successful OIDC publish via `workflow_dispatch` within **2 days** of creating the trusted publisher config, or the config expires ([configuration expiry](https://docs.npmjs.com/trusted-publishers/#trusted-publisher-configuration-expiry)).
+5. Optional hardening: **Publishing access → disallow tokens** after trusted publishing works ([recommended restriction](https://docs.npmjs.com/trusted-publishers/#recommended-restrict-token-access-when-using-trusted-publishers)).
+
+Subsequent releases: bump `package.json` version → authorized `workflow_dispatch` with matching `confirm_version`.
+
+**Availability (2026-10-23):** `npm view @multipliers-dev/plan-validator` → **404** (name available).
 
 ---
 

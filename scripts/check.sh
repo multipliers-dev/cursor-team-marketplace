@@ -243,12 +243,16 @@ if ! rg -q 'validator_version:' "$VALIDATE_PLANS_WORKFLOW"; then
   echo "error: $VALIDATE_PLANS_WORKFLOW missing validator_version input" >&2
   exit 1
 fi
-if ! sed -n '/^[[:space:]]*validator_version:/,/^[[:space:]]*pre_publish_tarball:/p' "$VALIDATE_PLANS_WORKFLOW" | rg -q 'required:[[:space:]]*true'; then
+if ! sed -n '/^[[:space:]]*validator_version:/,/^[[:space:]]*template_path:/p' "$VALIDATE_PLANS_WORKFLOW" | rg -q 'required:[[:space:]]*true'; then
   echo "error: validator_version must be required: true in $VALIDATE_PLANS_WORKFLOW" >&2
   exit 1
 fi
 if rg -q 'marketplace_ref:' "$VALIDATE_PLANS_WORKFLOW"; then
   echo "error: $VALIDATE_PLANS_WORKFLOW must not use marketplace_ref (npm CLI pivot)" >&2
+  exit 1
+fi
+if rg -q 'pre_publish_tarball|marketplace-src|tarball_install' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW must not expose tarball/marketplace-checkout inputs (registry-only reusable workflow)" >&2
   exit 1
 fi
 echo "ok validate-plans reusable workflow contract"
