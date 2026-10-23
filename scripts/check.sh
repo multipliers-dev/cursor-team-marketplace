@@ -183,7 +183,6 @@ sh scripts/test-prepare-git-hooks-worktree-runtime.sh
 sh scripts/test-session-ensure-git-hooks-runtime.sh
 sh scripts/test-ensure-hooks-agent-hooks-runtime.sh
 sh scripts/test-format-after-edit-runtime.sh
-
 # Stale-reference guard: live docs/code must not contain old invoke paths or names.
 # Archived plans only are excluded.
 if ! command -v rg >/dev/null 2>&1; then
@@ -230,3 +229,41 @@ _stale_ref_check 'skills/interview-repo-bootstrap/'
 _stale_ref_check 'name: new-repo-bootstrap'
 _stale_ref_check 'name: interview-repo-bootstrap'
 echo "ok stale-reference guard"
+
+VALIDATE_PLANS_WORKFLOW=".github/workflows/validate-plans.yml"
+if [ ! -f "$VALIDATE_PLANS_WORKFLOW" ]; then
+  echo "error: missing $VALIDATE_PLANS_WORKFLOW" >&2
+  exit 1
+fi
+if rg -q '\$\{\{[[:space:]]*github\.workflow_ref[[:space:]]*\}\}' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW must not use github.workflow_ref (caller ref in reusable workflows)" >&2
+  exit 1
+fi
+if ! rg -q 'validator_version:' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW missing validator_version input" >&2
+  exit 1
+fi
+if ! sed -n '/^[[:space:]]*validator_version:/,/^[[:space:]]*template_path:/p' "$VALIDATE_PLANS_WORKFLOW" | rg -q 'required:[[:space:]]*true'; then
+  echo "error: validator_version must be required: true in $VALIDATE_PLANS_WORKFLOW" >&2
+  exit 1
+fi
+if rg -q 'marketplace_ref:' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW must not use marketplace_ref (npm CLI pivot)" >&2
+  exit 1
+fi
+if rg -q 'pre_publish_tarball|marketplace-src|tarball_install' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW must not expose tarball/marketplace-checkout inputs (registry-only reusable workflow)" >&2
+  exit 1
+fi
+echo "ok validate-plans reusable workflow contract"
+
+PKG="packages/plan-validator/package.json"
+if [ ! -f "$PKG" ]; then
+  echo "error: missing $PKG" >&2
+  exit 1
+fi
+if ! rg -q '"name"[[:space:]]*:[[:space:]]*"@multipliers-dev/plan-validator"' "$PKG"; then
+  echo "error: unexpected plan-validator package name in $PKG" >&2
+  exit 1
+fi
+echo "ok plan-validator package manifest"

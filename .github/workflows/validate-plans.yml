@@ -1,0 +1,93 @@
+name: Validate plans (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      validator_version:
+        description: >-
+          Exact published semver of @multipliers-dev/plan-validator (x.y.z only).
+          Must match the version consumers intend to run; never use ranges or dist-tags.
+        required: true
+        type: string
+      template_path:
+        description: >-
+          Optional path relative to the caller repository root for strict template profile
+          validation.
+        required: false
+        type: string
+      allow_empty:
+        description: Exit 0 when no active plans are discovered under the caller repo.
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout caller repository (plans source of truth)
+        uses: actions/checkout@v7
+        with:
+          path: caller
+
+      - name: Validate validator_version input
+        id: validator_version
+        env:
+          VERSION: ${{ inputs.validator_version }}
+        run: |
+          set -eu
+          v=$(printf '%s' "$VERSION" | tr -d '[:space:]')
+          if [ -z "$v" ]; then
+            echo "error: validator_version is required (exact x.y.z semver)" >&2
+            exit 1
+          fi
+          if ! printf '%s' "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "error: validator_version must be exact semver x.y.z (no ranges or tags); got: $v" >&2
+            exit 1
+          fi
+          echo "validated=$v" >> "$GITHUB_OUTPUT"
+          echo "ok validator_version=$v"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Guard validation target is caller checkout
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+        run: |
+          set -eu
+          if [ ! -d "$CALLER_ROOT/.git" ]; then
+            echo "error: caller checkout missing .git at $CALLER_ROOT" >&2
+            exit 1
+          fi
+          printf 'ok validation target caller=%s\n' "$CALLER_ROOT"
+
+      - name: Validate active plans (caller repo root)
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+          ALLOW_EMPTY: ${{ inputs.allow_empty }}
+          VERSION: ${{ steps.validator_version.outputs.validated }}
+        run: |
+          set -eu
+          args=(--repo-root "$CALLER_ROOT")
+          if [ "$ALLOW_EMPTY" = "true" ]; then
+            args+=(--allow-empty)
+          fi
+          npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator "${args[@]}"
+
+      - name: Validate template (optional)
+        if: inputs.template_path != ''
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+          TEMPLATE_PATH: ${{ inputs.template_path }}
+          VERSION: ${{ steps.validator_version.outputs.validated }}
+        run: |
+          set -eu
+          npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator \
+            --repo-root "$CALLER_ROOT" \
+            --profile template \
+            "$CALLER_ROOT/$TEMPLATE_PATH"

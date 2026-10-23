@@ -2,6 +2,7 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isCliEntry } from "./lib/cli-entry.js";
 import {
   formatPlanIssues,
   loadPlanValidatorConfig,
@@ -91,9 +92,7 @@ async function main(): Promise<void> {
   console.log(`ok plan validation (${count} file(s), profile=${profile})`);
 }
 
-const isMain =
-  process.argv[1] &&
-  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+const isMain = isCliEntry(process.argv[1], fileURLToPath(import.meta.url));
 
 if (isMain) {
   main().catch((err) => {

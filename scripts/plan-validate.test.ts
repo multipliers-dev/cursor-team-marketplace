@@ -220,6 +220,30 @@ describe("plan-validate fixture corpus (integration)", () => {
     expect(withArchive).not.toContain(cursorTemplatePath);
   });
 
+  it("CLI --repo-root validates caller tree, not a sibling marketplace checkout", () => {
+    const caller = mkdtempSync(join(tmpdir(), "plan-validate-caller-"));
+    const market = mkdtempSync(join(tmpdir(), "plan-validate-market-"));
+    const validSample = readFileSync(join(fixturesDir, "valid-minimal.plan.md"), "utf8");
+    const invalidSample = readFileSync(
+      join(fixturesDir, "invalid-prompts-missing.plan.md"),
+      "utf8",
+    );
+
+    const callerPlan = join(caller, ".cursor/plans/active/ok.plan.md");
+    const marketPlan = join(market, ".cursor/plans/active/bad.plan.md");
+    mkdirSync(dirname(callerPlan), { recursive: true });
+    mkdirSync(dirname(marketPlan), { recursive: true });
+    writeFileSync(callerPlan, validSample);
+    writeFileSync(marketPlan, invalidSample);
+
+    const callerResult = runValidatePlansCli(["--repo-root", caller, "--allow-empty"]);
+    expect(callerResult.status).toBe(0);
+
+    const marketResult = runValidatePlansCli(["--repo-root", market, "--allow-empty"]);
+    expect(marketResult.status).toBe(1);
+    expect(marketResult.stderr).toContain("[prompts.missing]");
+  });
+
   it("CLI smoke: valid corpus fixture exits 0; invalid fixture exits 1 with rule id", () => {
     const valid = runValidatePlansCli([
       "scripts/fixtures/plan-validate/valid-minimal.plan.md",

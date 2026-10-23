@@ -1,6 +1,6 @@
 ---
 name: Plan validator
-overview: Add a canonical TypeScript plan validator under team-harness, wire marketplace CI, establish centralized consumption (plugin + reusable workflow), roll out to applicable consumer repos without vendoring source, then document verified adoption—no npm publishing or duplicated validator source.
+overview: Add a canonical TypeScript plan validator under team-harness, wire marketplace CI, establish centralized consumption (@multipliers-dev/plan-validator npm CLI + reusable workflow), roll out to applicable consumer repos without vendoring source, then document verified adoption—no duplicated validator source; npm publish is a separate authorized step after the marketplace PR.
 todos:
   - id: plan-review
     content: "Plan-only PR: commit this plan under .cursor/plans/ and open for review; do not implement"
@@ -15,7 +15,7 @@ todos:
     content: "PR: validate:plans npm scripts, ci.yml/check.sh template gate, plugin/marketplace version bump (no new deps)"
     status: completed
   - id: centralized-consumption
-    content: "PR: plugin-side validator invocation + reusable GHA workflow; verify in authorized consumer repo; no npm or copy vendoring"
+    content: "PR: @multipliers-dev/plan-validator package + reusable GHA workflow; tarball verification; publish workflow (no publish in PR); consumer smoke after publication"
     status: pending
   - id: consumer-adoption
     content: "Cross-repo: inventory consumers, per-repo workflow PRs, adoption matrix; plan-status PR when rollout complete"
@@ -84,7 +84,7 @@ Both GitHub accounts (`mastermichaelt`, `multipliers-dev`) may be reachable via 
 | Area | Current state |
 | --- | --- |
 | Methodology | Canonical procedure in [`plugins/team-harness/skills/planning-methodology/SKILL.md`](../../plugins/team-harness/skills/planning-methodology/SKILL.md), skeleton in [`_template.plan.md`](../../plugins/team-harness/skills/planning-methodology/_template.plan.md) |
-| Consuming repos (planned, post-`centralized-consumption`) | Target: team-harness plugin for agent-side validation plus optional reusable workflow reference for CI—**no** validator source copy (not yet available on `main`) |
+| Consuming repos (planned, post-`centralized-consumption`) | Target: pinned `@multipliers-dev/plan-validator` npm CLI (agents/local) plus reusable workflow for CI—**no** validator source copy |
 | Marketplace CI | [`scripts/check.sh`](../../scripts/check.sh) + Vitest; `validate:plans` / `validate:plans:template` on `main` |
 | Prior art | Resumes `validate:lifecycle` pattern; plan validator shipped in `plan-validate-lib` through `ci-npm` |
 
@@ -93,15 +93,15 @@ flowchart LR
   canonical["plugins/team-harness/scripts/plan-validate"]
   marketplaceCI["cursor-team-marketplace CI"]
   fixtures["scripts/fixtures/plan-validate"]
-  pluginExec["Team-harness plugin agent execution"]
+  npmPkg["@multipliers-dev/plan-validator npm CLI"]
   reusableWF["Reusable GHA workflow in marketplace"]
   consumerPlans["Consuming repository .cursor/plans"]
 
   canonical --> marketplaceCI
   fixtures --> marketplaceCI
-  canonical --> pluginExec
+  canonical --> npmPkg
   canonical --> reusableWF
-  pluginExec --> consumerPlans
+  npmPkg --> consumerPlans
   reusableWF --> consumerPlans
 ```
 
@@ -113,14 +113,22 @@ flowchart LR
 
 ### 2026-10-23 — Centralized consumption (no copy vendoring)
 
-Copy-only vendoring of validator TypeScript is **no longer desired**. The validator and planning methodology stay centrally maintained in `cursor-team-marketplace`. Consumers must not copy validator source, maintain independent validator implementations, or depend on an npm package.
+Copy-only vendoring of validator TypeScript is **no longer desired**. The validator and planning methodology stay centrally maintained in `cursor-team-marketplace`. Consumers must not copy validator source or maintain independent validator implementations.
 
 Two consumption paths, both using the **same canonical validator implementation** in this repository:
 
-1. **Cursor plugin execution:** agents use the installed team-harness plugin to validate the **active** repository’s plans directly, without copying validator files into the consumer.
-2. **Centralized CI:** an optional reusable GitHub Actions workflow hosted in `cursor-team-marketplace`, invoked by consumers through a **version-pinned** workflow reference.
+1. **Published npm CLI:** `@multipliers-dev/plan-validator` (exact semver pin) for agents and local runs.
+2. **Centralized CI:** reusable GitHub Actions workflow in `cursor-team-marketplace`, invoking the same npm CLI version.
 
-Installing the Cursor plugin does **not** automatically configure consumer CI. Consumer-specific workflow references and permissions are rolled out in **`consumer-adoption`** and documented in **`docs-skill`** after verified rollout.
+The team-harness **plugin** distributes methodology/skills; it does **not** replace installing or pinning the npm CLI. Installing the plugin does **not** configure consumer CI. Rollout pins are **`consumer-adoption`**; **`docs-skill`** documents verified adoption (PR 61).
+
+#### 2026-10-23 (later) — npm package supersedes plugin-execution distribution
+
+**Supersedes** (historical): plugin-bundled `dist/validate-plans.mjs`, `run-plan-validate.sh`, plugin path heuristics, and reusable-workflow `marketplace_ref` checkout of TypeScript sources.
+
+**Reason:** unverified plugin install paths, unverified env vars, `npx`/yaml resolution failures, and duplicate artifact drift.
+
+**Current model:** `packages/plan-validator/` builds from `plugins/team-harness/scripts/`; consumers pin npm version + workflow `validator_version`. Publishing requires separate authorization (not in the marketplace implementation PR).
 
 ---
 
@@ -233,54 +241,50 @@ Installing the Cursor plugin does **not** automatically configure consumer CI. C
 
 **Agent instruction:** Do not merge. Open the marketplace PR only after required smoke evidence exists (see Completion recording)—smoke may be produced in a separate session before the PR is presented as ready. Stop after opening the PR.
 
-**Goal:** Establish and verify centralized validator execution without distributing source-code copies.
+**Goal:** Establish centralized validator execution via a published npm CLI (package + publish workflow in-repo; **no publish in this PR**) and a reusable GitHub Actions workflow—without distributing source-code copies.
 
 **Topology:**
 
-- **Implementation PR** in `multipliers-dev/cursor-team-marketplace`: reusable workflow, plugin-side invocation path, and marketplace-local verification.
-- **Required smoke verification** in **one consumer repository** explicitly authorized by Michael before the slice starts (see Prerequisites)—**smoke only**, not multi-repo rollout (`consumer-adoption`).
-- Marketplace implementation and consumer smoke verification **may use separate sessions or Cloud Agent launches**; do **not** assume one environment holds checkouts and credentials for both repositories.
+- **Implementation PR** in `multipliers-dev/cursor-team-marketplace`: `packages/plan-validator/`, reusable workflow (`validator_version` pin), tarball-based marketplace CI verification, manual publish workflow (OIDC).
+- **Post-publication smoke** on **`mastermichaelt/resumes`** (registry-mode CLI + reusable workflow)—separate session after Michael authorizes npm publish; not required to open the marketplace PR.
+- Do **not** assume one environment holds checkouts for marketplace and consumer repos.
 
-**Feasibility note (constraints to verify—not implemented):**
+**Feasibility note (verified in PR evolution):**
 
-- `cursor-team-marketplace` is **public**; consumers can call a reusable workflow via `uses: multipliers-dev/cursor-team-marketplace/.github/workflows/<file>@<sha-or-protected-tag>` (`workflow_call`), including cross-owner callers in `mastermichaelt/*`.
-- The **caller** workflow should set minimal `permissions` (e.g. `contents: read`).
-- The reusable workflow should check out the **caller repository** for plans and check out the validator at the pinned ref into a **separate path** (not the marketplace tree as the plan source of truth).
+- `cursor-team-marketplace` is **public**; consumers can call reusable workflows cross-owner (`mastermichaelt/*`).
+- Caller workflows use minimal `permissions` (`contents: read`).
+- **`marketplace_ref` / plugin install paths were abandoned** in favor of npm CLI pinning (see Architectural decisions).
 
 **Deliverables:**
 
-- Marketplace implementation (plugin path docs/behavior, reusable workflow, team-harness notes on permissions/runtime/pinning/failure).
-- **Smoke evidence** from `mastermichaelt/resumes` (plugin + reusable workflow) linked before the marketplace PR is ready for review—or, if the plugin path fails smoke, a documented limitation plus the proposed smallest centralized alternative (still no copy vendoring).
-- Mark `centralized-consumption` **completed** in plan frontmatter **only in the marketplace PR**, and **only when** smoke passed on `mastermichaelt/resumes` **or** the plugin limitation + smallest alternative is documented as above. If Michael has not authorized `mastermichaelt/resumes`, or access/checkout fails, **do not** mark completed—escalate to Michael.
+- `@multipliers-dev/plan-validator@0.1.0` package (build from canonical TS; tarball verify; publish workflow defined, not executed).
+- Reusable workflow invoking pinned npm CLI (registry-only); marketplace tarball verification via CI job/scripts only (not callable from consumer repos).
+- [`centralized-consumption.md`](../../plugins/team-harness/docs/centralized-consumption.md) (npm model, abandoned plugin path, pinning, publish prerequisites).
+- Narrow planning-methodology SKILL invocation notes (npm exec; plugin ≠ npm package).
+- Mark `centralized-consumption` **completed** only after **published** CLI smoke on authorized consumer—**not** in this PR if publish has not happened.
 
 **Required repositories:**
 
-- `multipliers-dev/cursor-team-marketplace` — canonical validator + reusable workflow host, read/write (implementation PR).
-- **`mastermichaelt/resumes`** — **proposed** smoke-test consumer (see Prerequisites); **required** for smoke verification of plugin invocation and reusable workflow call once Michael explicitly authorizes this repo for the slice. Read/write in the session that runs smoke. Hard-stop if checkout is missing, identity-mismatched, or not `mastermichaelt/resumes`. If access or checkout cannot be verified, **stop and escalate to Michael**—do **not** substitute another repository for smoke.
+- `multipliers-dev/cursor-team-marketplace` — implementation PR, read/write.
+- **`mastermichaelt/resumes`** — post-publish smoke (when authorized); historical reusable-workflow smoke at `f1ca17c` applies to superseded implementation only.
 
 **Acceptance:**
 
-- Investigate and document how Cursor exposes installed plugin files to agents and whether bundled TypeScript scripts can reliably execute against the active repository.
-- Implement and smoke-test plugin-side invocation from a consuming repository.
-- If direct plugin execution is unsupported or unreliable, document the limitation and propose the smallest viable centralized alternative. Do not silently fall back to copying source files.
-- Add a reusable GitHub Actions workflow to the marketplace that checks out the canonical validator at a pinned version and validates plans in the calling repository.
-- Ensure validation runs against the consumer repository, not accidentally against `cursor-team-marketplace`.
-- Preserve strict template validation and the existing `--allow-empty` behavior for repositories without active plans.
-- Document permissions, runtime dependencies, version pinning, updates and failure behavior (in-repo docs under team-harness; per-repo rollout matrix and exceptions recorded in **`consumer-adoption`**).
-- Verify the reusable workflow in the **authorized consumer repository** (**smoke only**—applicable-repo rollout is **`consumer-adoption`**).
-- No npm publishing and no duplicated validator source.
+- Single canonical TS source; npm package builds distributable CLI (esbuild; yaml bundled).
+- Reusable workflow: exact `validator_version` semver; caller checkout isolation; no `github.workflow_ref` / `marketplace_ref` parsing.
+- Tarball install smoke + parity tests without consumer `node_modules` on resolution path.
+- Preserve validator contract (`--repo-root`, `--profile template`, `--allow-empty`, exit codes).
+- Document publish prerequisites; do **not** publish in this slice.
 
 **Verification:**
 
-- Marketplace PR: `npm ci`; `npm run typecheck`; `npm test`; `npm run validate:plans`; `sh scripts/check.sh`
-- **Before PR ready:** smoke evidence exists (may be from a separate session)—reusable workflow run on `mastermichaelt/resumes` (link URL) and plugin invocation result (pass, or documented limitation + smallest alternative)
-- Consumer smoke environment (`mastermichaelt/resumes`): prove checkout identity in the **same command** as smoke work (`pwd`, `git remote get-url origin`); hard-stop on mismatch or missing checkout—escalate to Michael, do not substitute another repo; do not mark slice completed
-- Confirm validator checkout pin and working-directory defaults cannot validate marketplace paths when invoked from a consumer; verify `workflow_call` + cross-owner feasibility constraints during implementation
+- Marketplace PR: `npm ci`; `typecheck`; `npm test`; `validate:plans`; `validate:plans:template`; `sh scripts/check.sh`; `npm run verify:plan-validator`; tarball smoke script.
+- Reusable workflow registry mode **not** fully testable until publish; marketplace CI uses `plan-validator-tarball-ci` job + tarball scripts (not exposed via `workflow_call`).
+- Plan file passes `validate:plans`.
 
 **Prerequisites:**
 
 - `ci-npm` merged.
-- **Before implementation starts:** Michael explicitly authorizes **`mastermichaelt/resumes`** as the smoke-test consumer (record in the marketplace PR). Verify the smoke execution environment has required repository access and a **real checkout** of `mastermichaelt/resumes` before smoke work; if not, stop and escalate—do not pick a different repo.
 
 ---
 
@@ -317,10 +321,10 @@ Installing the Cursor plugin does **not** automatically configure consumer CI. C
 
 1. Inspect **all seven candidate consumers** from the Repository inventory to determine which actually use planning methodology / team-harness, their active-plan conventions (plan paths, `archive/`, template usage), GitHub Actions configuration, and whether centralized validation is appropriate.
 2. Produce an adoption matrix with a **decision and rationale per repository** (**adopt** / **defer** / **exclude**), plus pins and PR links once known. Do **not** automatically exclude a repository because it has no current active plans—the validator supports `--allow-empty` for that case.
-3. Confirm that centralized plugin execution and the reusable GitHub Actions workflow were implemented and verified in **`centralized-consumption`** before beginning adoption.
-4. Configure each **adopt** repository to invoke the centralized reusable workflow using an immutable commit SHA or appropriately protected version tag.
+3. Confirm that **`@multipliers-dev/plan-validator`** and the reusable GitHub Actions workflow were implemented and verified in **`centralized-consumption`** (including post-publish consumer smoke) before beginning adoption.
+4. Configure each **adopt** repository to invoke the reusable workflow with pinned **`validator_version`** (exact semver) and pinned workflow `uses:@sha`.
 5. Preserve existing repository-specific CI checks, permissions and branch protection.
-6. Do not copy validator TypeScript files, publish an npm package, or duplicate the planning methodology.
+6. Do not copy validator TypeScript files or duplicate the planning methodology (use published npm CLI pins).
 7. Test each **adopt** repository independently, covering valid plans, invalid plans, and repositories without active plans (`--allow-empty`).
 8. Open a **separate implementation PR for each adopt repository**. Do not merge automatically.
 9. Record adoption status, PR links, pinned validator versions, deferrals, and deliberate exclusions in the matrix.
@@ -413,10 +417,10 @@ These decisions are part of the validator contract; `plan-validate-lib` must imp
 - In-flight consumer plans may omit prompts for **completed** todos; actionable todos still validated.
 - Archived marketplace plans excluded from default CI (`--include-archive` for audits).
 - **Target consumption model (after centralized-consumption):**
-  - **(a) Plugin:** install/configure the team-harness Cursor plugin so agents can run the canonical validator against the **active** repository (no validator source copy)—delivered by **`centralized-consumption`** (plugin path) and verified in smoke before **`consumer-adoption`**.
-  - **(b) CI:** add a version-pinned reusable workflow reference in the consumer repo’s GitHub Actions (hosted in the marketplace); validation runs in the **caller’s** checkout—delivered by **`centralized-consumption`** (workflow) and rolled out in **`consumer-adoption`**.
-  - **(c) Configuration:** consumer-specific workflow inputs, permissions, and pins remain separate from plugin installation—rolled out in **`consumer-adoption`**, documented in **`docs-skill`** after verified adoption.
-- **Not recommended:** copy-only vendoring of `plugins/team-harness/scripts/plan-validate*` into consumer repos, standalone npm packages, or forked validator implementations.
+  - **(a) Agents/local:** `npm exec` with exact `@multipliers-dev/plan-validator` version pin.
+  - **(b) CI:** reusable workflow with exact `validator_version` and marketplace workflow `uses:@sha`; validation runs in the **caller’s** checkout.
+  - **(c) Methodology:** team-harness plugin for planning skills; does **not** install the npm CLI or CI.
+- **Not recommended:** copy-only vendoring of validator source, forked implementations, or unpinned `latest` npm versions.
 - Applicable-repo rollout is **`consumer-adoption`**; smoke verification in **`centralized-consumption`** is not a substitute for the adoption matrix.
 
 ---
@@ -528,9 +532,9 @@ Topology: marketplace implementation PR on latest origin/main (branch = this sli
 
 Repositories: multipliers-dev/cursor-team-marketplace (implementation, read/write); mastermichaelt/resumes (required smoke, read/write in the smoke session once Michael authorized)—verify access and real checkout with pwd and git remote get-url origin in the same command as smoke work; hard-stop and escalate to Michael if missing or identity-mismatched—do not substitute another repo. Do not assume App/API access equals checkout.
 
-Deliverables: document plugin file exposure and plugin-side invocation (or documented limitation + smallest centralized alternative without copy vendoring); reusable GHA workflow (workflow_call; public marketplace repo; caller permissions contents: read; caller checkout for plans + validator at pinned ref in separate path—verify constraints); permissions/runtime/pinning/failure notes. Smoke evidence from mastermichaelt/resumes must exist before marketplace PR is ready (separate session OK). Mark centralized-consumption completed in plan frontmatter only in marketplace PR and only if resumes smoke passed or plugin limitation + smallest alternative is documented; if Michael has not authorized resumes or checkout/access fails, escalate—do not mark completed. Do not npm-publish, duplicate validator source, or perform multi-repo rollout here.
+Deliverables: packages/plan-validator (@multipliers-dev/plan-validator 0.1.0); registry-only reusable GHA workflow (validator_version pin); marketplace tarball CI job/scripts; publish workflow (workflow_dispatch + OIDC only, not executed); centralized-consumption.md; narrow SKILL npm invocation notes. Do not npm-publish in this PR. Do not duplicate validator source or perform multi-repo rollout. Mark centralized-consumption completed only after published CLI + consumer smoke (separate authorized publish + resumes session).
 
-Verification: npm ci; npm run typecheck; npm test; npm run validate:plans; sh scripts/check.sh; linked consumer smoke for plugin and reusable workflow on mastermichaelt/resumes with checkout identity proved before PR ready; confirm validation targets consumer checkout not marketplace.
+Verification: npm ci; typecheck; npm test; validate:plans; validate:plans:template; check.sh; verify:plan-validator; tarball smoke + marketplace tarball gates; plan validates; plan-validator-tarball-ci job green. Registry-mode consumer smoke after publish.
 ```
 
 ### consumer-adoption
@@ -546,7 +550,7 @@ Topology: Phase A — one implementation PR per adopt repo on that repo’s main
 
 Repositories: multipliers-dev/cursor-team-marketplace (Phase B plan-status, read/write); all seven candidate consumers from Repository inventory (mastermichaelt/resumes, mastermichaelt/portfolio, mastermichaelt/mastermichaelt, multipliers-dev/editorial-workflow, multipliers-dev/renovate-workflow, multipliers-dev/codenames-ai-guesser, multipliers-dev/savepoints)—preflight each checkout inspected or edited (pwd, git remote get-url origin, role capability); hard-stop if missing or identity-mismatched. GitHub App/API access is not a checkout; Cloud Agents only get credentials for the repo they were launched against—launch per consumer repo.
 
-Deliverables: Phase A — inspect all seven candidates; draft matrix with adopt/defer/exclude + rationale (do not exclude solely for no active plans); open per-adopt-repo workflow PRs (immutable SHA or protected tag); test evidence in each PR (valid, invalid, --allow-empty); do not mark consumer-adoption completed. Phase B — after Michael merges adoption PRs, plan-status PR with final matrix and mark consumer-adoption completed in this repo only.
+Deliverables: Phase A — inspect all seven candidates; draft matrix with adopt/defer/exclude + rationale (do not exclude solely for no active plans); open per-adopt-repo workflow PRs (pinned validator_version semver + workflow uses:@sha); test evidence in each PR (valid, invalid, --allow-empty); do not mark consumer-adoption completed. Phase B — after Michael merges adoption PRs, plan-status PR with final matrix and mark consumer-adoption completed in this repo only.
 
 Verification: Phase A — preflight for every candidate inspected or edited; each opened adoption PR CI validates that repo’s plans. Phase B — plan-status PR after merges; matrix covers all seven candidates with decisions, links, and pins.
 ```
@@ -562,7 +566,7 @@ Authority: Open PR only — implement and open the PR; do not merge.
 
 Topology: start from latest origin/main; branch represents only this slice; PR base must be main.
 
-Deliverables: rebase/update open PR 61 work (keep, do not discard): plan-validation.md plus SKILL.md item 7 / Plan validation subsection / reference.md / _template.plan.md / README scripts row; extend adoption docs using verified consumer-adoption matrix for plugin execution and reusable workflow CI without copy vendoring or implying plugin install configures CI. Mark docs-skill completed in plan frontmatter in this PR.
+Deliverables: rebase/update open PR 61 work (keep, do not discard): plan-validation.md plus SKILL.md item 7 / Plan validation subsection / reference.md / _template.plan.md / README scripts row; extend adoption docs using verified consumer-adoption matrix for npm CLI + reusable workflow CI without copy vendoring or implying plugin install configures CI. Mark docs-skill completed in plan frontmatter in this PR.
 
 Verification: sh scripts/check.sh; npm test; read/grep confirms SKILL item 7 matches validator todo/prompt rules and both consumption paths are documented with real rollout examples where applicable.
 ```

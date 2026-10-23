@@ -141,6 +141,23 @@ For multi-PR plans under `.cursor/plans/`:
 9. **Native plan conversion:** When redrafting a Cursor-native plan (`~/.cursor/plans/`) into a committed `.cursor/plans/*.plan.md`, **wrap and slice; do not strip.** Add the required envelope (frontmatter todos, authority table, topology, per-slice blocks, agent prompts, `plan-closure`). Preserve mermaid/markdown diagrams and tables/checklists that encode the work (phased strategies, verification lists, capability models). Put those artifacts in the slice that will execute them, or in a `## Design` / `## Context` section implementation slices must follow — not only as a compressed appendix. A one-line summary may accompany a diagram; it must not replace it. "Redraft / align with this methodology" means add the envelope; it does not mean delete design artifacts to match the boilerplate skeleton. A pointer to `~/.cursor/plans/` is not enough — those files are local and not reviewable in the PR. Plan-review / conversion verification must include: source diagrams and implementation-critical structure preserved.
 10. Slices that need another repository checkout must list **Required repositories** (owner/name + role) in the slice body.
 
+## Plan validation
+
+Run the **canonical** validator against the **active repository** (consumer checkout), not against a marketplace-only tree.
+
+| When | Command |
+| --- | --- |
+| Agent / local | From consumer repo root (Node 22+): `npm exec --yes --package=@multipliers-dev/plan-validator@<exact-version> -- plan-validator --repo-root "$(pwd)" --allow-empty` (after that version is published; installing the team-harness plugin does **not** install this package) |
+| CI | Reusable workflow — see [centralized-consumption.md](../../docs/centralized-consumption.md) (pins `@multipliers-dev/plan-validator` version) |
+
+**Do not** copy validator TypeScript into the consumer repo. Use the published npm CLI (exact version pin) or the reusable CI workflow — not plugin install paths or env vars.
+
+**Deterministic vs semantic:** the validator enforces structural methodology (frontmatter, authority table, slice blocks, agent prompts, labeled prompt lines). Merge-safety semantics, verification sufficiency, and cross-repo completion correctness remain human / Bugbot review.
+
+Default discovery excludes `archive/**` and `_template.plan.md`. Use `--profile template` for template files. Repositories with no active plans should pass CI with `--allow-empty`.
+
+Full consumption model: [centralized-consumption.md](../../docs/centralized-consumption.md).
+
 ## Active vs archived
 
 - Active: `.cursor/plans/*.plan.md` excluding `archive/` and `_template.plan.md` (never execute the template).
