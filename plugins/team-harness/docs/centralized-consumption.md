@@ -45,17 +45,17 @@ Consuming repositories run the **canonical** plan validator without copying Type
 
 ## Local / agent usage
 
-From the **consumer repository** root (replace `1.2.3` with your pinned semver):
+From the **consumer repository** root. Runnable examples use **`0.1.0`**, a known published version on npm — check [npm](https://www.npmjs.com/package/@multipliers-dev/plan-validator) for newer releases, then pin the exact version you intend to run.
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
   plan-validator --repo-root "$(pwd)" --allow-empty
 ```
 
 Template profile:
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
   plan-validator --repo-root "$(pwd)" --profile template .cursor/plans/_template.plan.md
 ```
 
@@ -81,6 +81,8 @@ There is **no** `marketplace_ref` and **no** `github.workflow_ref` parsing.
 
 ### Caller snippet
 
+Example: protected version tag `plan-validator-workflow-v1.0.0` and **`validator_version: "0.1.0"`** (known published npm version — check npm for newer releases and pin exactly).
+
 ```yaml
 permissions:
   contents: read
@@ -89,11 +91,11 @@ jobs:
   validate-plans:
     uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
-      validator_version: "1.2.3"
+      validator_version: "0.1.0"
       allow_empty: true
 ```
 
-Pin **`validator_version`** to the exact npm semver you run locally (`x.y.z` only). Pin the workflow with an **immutable git tag** `plan-validator-workflow-vX.Y.Z` on `uses:` when the workflow file changes. Workflow tags and npm package versions are **independent**; update both when their respective surfaces change.
+Pin **`validator_version`** to the exact npm semver you run locally (`x.y.z` only). Pin the workflow with a **protected version tag** `plan-validator-workflow-vX.Y.Z` on `uses:` when the workflow file changes (tag ruleset blocks updates and deletions; never move a tag after adoption). Workflow tags and npm package versions are **independent**; update both when their respective surfaces change.
 
 See also [`packages/plan-validator/README.md`](../../../packages/plan-validator/README.md) and [plan-validation.md](plan-validation.md).
 

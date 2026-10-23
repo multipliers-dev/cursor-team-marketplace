@@ -8,19 +8,19 @@ The **team-harness** Cursor plugin distributes methodology skills only — it do
 
 **Requirements:** Node.js **≥ 22** (see `engines` in `package.json`).
 
-From your **repository** root, pin an **exact** published semver (never ranges or dist-tags):
+From your **repository** root, pin an **exact** published semver (never ranges or dist-tags). Runnable examples use **`0.1.0`**, a known published version on npm — check [npm](https://www.npmjs.com/package/@multipliers-dev/plan-validator) for newer releases, then pin the exact version you intend to run.
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
   plan-validator --repo-root "$(pwd)" --allow-empty
 ```
 
-Replace `1.2.3` with the version you intend to run (check [npm](https://www.npmjs.com/package/@multipliers-dev/plan-validator) or your lockfile). `npm exec` is the usual agent/CI pattern; a devDependency with the same pin works for a local binary.
+`npm exec` is the usual agent/CI pattern; a devDependency with the same pin works for a local binary.
 
 Template profile (strict structure, relaxed ellipsis placeholders):
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
   plan-validator --repo-root "$(pwd)" --profile template .cursor/plans/_template.plan.md
 ```
 
@@ -58,7 +58,7 @@ Pass explicit `.plan.md` paths to validate only those files (discovery rules do 
 
 ## GitHub Actions (reusable workflow)
 
-For CI, call the marketplace reusable workflow (validates the **caller** checkout only). Pin the workflow with an **immutable git tag** `plan-validator-workflow-vX.Y.Z` and pin **`validator_version`** to the same npm semver you use locally:
+For CI, call the marketplace reusable workflow (validates the **caller** checkout only). Pin the workflow with a **protected version tag** `plan-validator-workflow-vX.Y.Z` on `uses:` (tag ruleset blocks updates and deletions; never move a tag after adoption). Pin **`validator_version`** to the same npm semver you use locally. The YAML example uses **`0.1.0`** for `validator_version` (known published); check npm for newer releases and pin exactly.
 
 ```yaml
 permissions:
@@ -68,7 +68,7 @@ jobs:
   validate-plans:
     uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
-      validator_version: "1.2.3"
+      validator_version: "0.1.0"
       allow_empty: true
       # template_path: ".cursor/plans/_template.plan.md"  # optional
 ```
@@ -85,7 +85,7 @@ The **reusable workflow** and the **npm package** are versioned **independently*
 
 | Artifact | How to pin |
 | --- | --- |
-| Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` (immutable release tags in the marketplace repo; do not move tags after adoption) |
+| Reusable workflow | Protected version tag `plan-validator-workflow-vX.Y.Z` on `uses:` (ruleset prevents tag updates/deletions; never moved after adoption) |
 | npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` |
 
 When workflow YAML changes, adopt a new workflow tag. When validator rules or CLI behavior changes, bump the npm pin (and publish a new package version first). Update **both** when both surfaces change.

@@ -18,7 +18,7 @@ Quick start and npm package README: [`packages/plan-validator/README.md`](../../
 
 1. Add a job that **uses** the marketplace reusable workflow (see [GitHub CI](#github-ci-reusable-workflow) below).
 2. Pin **`validator_version`** to the exact npm semver you run locally (`x.y.z` only — no ranges).
-3. Pin the workflow **`uses:`** ref to an immutable **`plan-validator-workflow-vX.Y.Z`** tag when the workflow file changes.
+3. Pin the workflow **`uses:`** ref to a **protected version tag** `plan-validator-workflow-vX.Y.Z` when the workflow file changes (tag ruleset blocks updates and deletions; never move a tag after adoption).
 4. Grant the job **`contents: read`** only.
 5. Set **`allow_empty: true`** when the repo may have zero active plans (archive + template only). Add **`template_path`** when you validate a committed `_template.plan.md` under strict template profile.
 
@@ -28,24 +28,24 @@ Installing the team-harness plugin does **not** perform these steps.
 
 | Artifact | How consumers pin |
 | --- | --- |
-| Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` (immutable release tags; do not move after adoption) |
+| Reusable workflow | Protected version tag `plan-validator-workflow-vX.Y.Z` on `uses:` (ruleset prevents tag updates/deletions; never moved after adoption) |
 | npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` |
 
 Workflow tags and npm package versions are **not** the same number. Bump the workflow tag when workflow YAML changes; bump the npm pin when validator rules or CLI behavior changes (after publishing the new package version).
 
 ## Run the CLI (consumers)
 
-From the **consumer repository** root (Node **≥ 22**):
+From the **consumer repository** root (Node **≥ 22**). Examples use **`0.1.0`**, a known published version on npm — check [npm](https://www.npmjs.com/package/@multipliers-dev/plan-validator) for newer releases, then pin the exact version you intend to run.
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
   plan-validator --repo-root "$(pwd)" --allow-empty
 ```
 
-Replace `1.2.3` with your pinned semver. With no path arguments, the CLI **discovers** plan files (see [Discovery and excludes](#discovery-and-excludes)). Pass explicit paths to validate only those files:
+With no path arguments, the CLI **discovers** plan files (see [Discovery and excludes](#discovery-and-excludes)). Pass explicit paths to validate only those files:
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
   plan-validator --repo-root "$(pwd)" .cursor/plans/my-feature.plan.md
 ```
 
@@ -67,7 +67,7 @@ path/to/plan.plan.md:42: [prompts.missing] Actionable todo "slice-a" missing ###
 
 ## GitHub CI (reusable workflow)
 
-Caller job needs `contents: read` only. Example:
+Caller job needs `contents: read` only. Example uses protected version tag `plan-validator-workflow-v1.0.0` and **`validator_version: "0.1.0"`** (known published npm version — check npm for newer releases and pin exactly):
 
 ```yaml
 permissions:
@@ -77,7 +77,7 @@ jobs:
   validate-plans:
     uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
-      validator_version: "1.2.3"
+      validator_version: "0.1.0"
       allow_empty: true
       template_path: ".cursor/plans/_template.plan.md"  # optional
 ```
