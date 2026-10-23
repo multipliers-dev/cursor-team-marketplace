@@ -147,10 +147,10 @@ Run the **canonical** validator against the **active repository** (consumer chec
 
 | When | Command |
 | --- | --- |
-| Agent / local (team-harness installed) | From consumer repo root: `sh <team-harness-plugin>/scripts/run-plan-validate.sh --repo-root "$(pwd)" --allow-empty` (Node 20+; runs committed `dist/validate-plans.mjs`) |
-| CI | Reusable workflow — see [centralized-consumption.md](../../docs/centralized-consumption.md) (same `.mjs` artifact, no npm) |
+| Agent / local | From consumer repo root (Node 22+): `npm exec --yes --package=@multipliers-dev/plan-validator@<exact-version> -- plan-validator --repo-root "$(pwd)" --allow-empty` (after that version is published; installing the team-harness plugin does **not** install this package) |
+| CI | Reusable workflow — see [centralized-consumption.md](../../docs/centralized-consumption.md) (pins `@multipliers-dev/plan-validator` version) |
 
-**Install check:** Customize → Plugins for **team-harness**, or set `TEAM_HARNESS_PLUGIN_ROOT`. If the plugin is missing, **stop** — install the plugin or use CI workflow; do **not** copy validator source into the consumer repo.
+**Do not** copy validator TypeScript into the consumer repo. Use the published npm CLI (exact version pin) or the reusable CI workflow — not plugin install paths or env vars.
 
 **Deterministic vs semantic:** the validator enforces structural methodology (frontmatter, authority table, slice blocks, agent prompts, labeled prompt lines). Merge-safety semantics, verification sufficiency, and cross-repo completion correctness remain human / Bugbot review.
 

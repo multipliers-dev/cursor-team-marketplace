@@ -3,17 +3,23 @@ name: Validate plans (reusable)
 on:
   workflow_call:
     inputs:
-      marketplace_ref:
+      validator_version:
         description: >-
-          Git commit SHA (40 hex chars, recommended) or immutable tag of
-          multipliers-dev/cursor-team-marketplace for the validator checkout.
-          Must match the ref pinned on the caller's uses: ...@<ref> line.
+          Exact published semver of @multipliers-dev/plan-validator (x.y.z only).
+          Must match the version consumers intend to run; never use ranges or dist-tags.
         required: true
         type: string
+      pre_publish_tarball:
+        description: >-
+          Marketplace-internal testing only. When true, builds and installs the package
+          from this repository tarball instead of the npm registry (pre-publication CI).
+        required: false
+        type: boolean
+        default: false
       template_path:
         description: >-
           Optional path relative to the caller repository root for strict template profile
-          validation (e.g. .cursor/plans/_template.plan.md).
+          validation.
         required: false
         type: string
       allow_empty:
@@ -34,88 +40,93 @@ jobs:
         with:
           path: caller
 
-      - name: Validate marketplace_ref input
-        id: marketplace_ref
+      - name: Validate validator_version input
         env:
-          INPUT_REF: ${{ inputs.marketplace_ref }}
+          VERSION: ${{ inputs.validator_version }}
         run: |
           set -eu
-          ref=$(printf '%s' "$INPUT_REF" | tr -d '[:space:]')
-          if [ -z "$ref" ]; then
-            echo "error: marketplace_ref is required (40-char commit SHA recommended; must match uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@<same-ref>)" >&2
+          v=$(printf '%s' "$VERSION" | tr -d '[:space:]')
+          if [ -z "$v" ]; then
+            echo "error: validator_version is required (exact x.y.z semver)" >&2
             exit 1
           fi
-          case "$ref" in
-            refs/heads/*|refs/pull/*)
-              echo "error: marketplace_ref must be a marketplace commit SHA or tag, not a caller branch (got: $ref). Reusable workflows resolve caller branch names from the calling workflow — always pass marketplace_ref explicitly." >&2
-              exit 1
-              ;;
-          esac
-          if printf '%s' "$ref" | grep -Eq '^[0-9a-fA-F]{40}$'; then
-            :
-          elif printf '%s' "$ref" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]*$'; then
-            :
-          else
-            echo "error: marketplace_ref must be a 40-character commit SHA or a simple tag name (got: $ref)" >&2
+          if ! printf '%s' "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "error: validator_version must be exact semver x.y.z (no ranges or tags); got: $v" >&2
             exit 1
           fi
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-          echo "Using marketplace ref: $ref"
-
-      - name: Checkout marketplace (validator bundle only; no npm ci)
-        uses: actions/checkout@v7
-        with:
-          repository: multipliers-dev/cursor-team-marketplace
-          ref: ${{ steps.marketplace_ref.outputs.ref }}
-          path: marketplace-validator
-
-      - name: Guard validation target is caller checkout
-        env:
-          CALLER_ROOT: ${{ github.workspace }}/caller
-          MARKETPLACE_ROOT: ${{ github.workspace }}/marketplace-validator
-          BUNDLE: ${{ github.workspace }}/marketplace-validator/plugins/team-harness/dist/validate-plans.mjs
-        run: |
-          set -eu
-          if [ "$CALLER_ROOT" = "$MARKETPLACE_ROOT" ]; then
-            echo "error: caller and marketplace paths must differ" >&2
-            exit 1
-          fi
-          if [ ! -d "$CALLER_ROOT/.git" ]; then
-            echo "error: caller checkout missing .git at $CALLER_ROOT" >&2
-            exit 1
-          fi
-          if [ ! -f "$BUNDLE" ]; then
-            echo "error: missing committed validator bundle at $BUNDLE" >&2
-            exit 1
-          fi
-          printf 'ok validation target caller=%s bundle=%s\n' "$CALLER_ROOT" "$BUNDLE"
+          echo "ok validator_version=$v"
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
 
+      - name: Checkout marketplace (pre-publish tarball build only)
+        if: inputs.pre_publish_tarball
+        uses: actions/checkout@v7
+        with:
+          path: marketplace-src
+
+      - name: Install validator from local tarball (pre-publish)
+        if: inputs.pre_publish_tarball
+        id: tarball_install
+        run: |
+          set -eu
+          cd marketplace-src
+          npm ci
+          npm run build --workspace @multipliers-dev/plan-validator
+          mkdir -p "$RUNNER_TEMP/plan-validator-pack"
+          pack_path=$(npm pack --workspace @multipliers-dev/plan-validator --pack-destination "$RUNNER_TEMP/plan-validator-pack" | tail -n 1)
+          install_root="$RUNNER_TEMP/plan-validator-install"
+          mkdir -p "$install_root"
+          npm install --prefix "$install_root" --no-save "$RUNNER_TEMP/plan-validator-pack/$pack_path"
+          bin="$install_root/node_modules/.bin/plan-validator"
+          if [ ! -x "$bin" ]; then
+            echo "error: plan-validator bin missing after tarball install" >&2
+            exit 1
+          fi
+          echo "bin=$bin" >> "$GITHUB_OUTPUT"
+
+      - name: Guard validation target is caller checkout
+        env:
+          CALLER_ROOT: ${{ github.workspace }}/caller
+        run: |
+          set -eu
+          if [ ! -d "$CALLER_ROOT/.git" ]; then
+            echo "error: caller checkout missing .git at $CALLER_ROOT" >&2
+            exit 1
+          fi
+          printf 'ok validation target caller=%s\n' "$CALLER_ROOT"
+
       - name: Validate active plans (caller repo root)
         env:
           CALLER_ROOT: ${{ github.workspace }}/caller
-          BUNDLE: ${{ github.workspace }}/marketplace-validator/plugins/team-harness/dist/validate-plans.mjs
           ALLOW_EMPTY: ${{ inputs.allow_empty }}
+          VERSION: ${{ inputs.validator_version }}
+          TARBALL_BIN: ${{ steps.tarball_install.outputs.bin }}
         run: |
           set -eu
           args=(--repo-root "$CALLER_ROOT")
           if [ "$ALLOW_EMPTY" = "true" ]; then
             args+=(--allow-empty)
           fi
-          node "$BUNDLE" "${args[@]}"
+          if [ "${{ inputs.pre_publish_tarball }}" = "true" ]; then
+            "$TARBALL_BIN" "${args[@]}"
+          else
+            npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator "${args[@]}"
+          fi
 
       - name: Validate template (optional)
         if: inputs.template_path != ''
         env:
           CALLER_ROOT: ${{ github.workspace }}/caller
-          BUNDLE: ${{ github.workspace }}/marketplace-validator/plugins/team-harness/dist/validate-plans.mjs
           TEMPLATE_PATH: ${{ inputs.template_path }}
+          VERSION: ${{ inputs.validator_version }}
+          TARBALL_BIN: ${{ steps.tarball_install.outputs.bin }}
         run: |
           set -eu
-          node "$BUNDLE" \
-            --repo-root "$CALLER_ROOT" \
-            --profile template \
-            "$CALLER_ROOT/$TEMPLATE_PATH"
+          args=(--repo-root "$CALLER_ROOT" --profile template "$CALLER_ROOT/$TEMPLATE_PATH")
+          if [ "${{ inputs.pre_publish_tarball }}" = "true" ]; then
+            "$TARBALL_BIN" "${args[@]}"
+          else
+            npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator "${args[@]}"
+          fi

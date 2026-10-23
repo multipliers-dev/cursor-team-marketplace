@@ -30,10 +30,8 @@ Copy into a target repo during one-time bootstrap — locate scripts in the inst
 | `scripts/cloud-agent-session-path.sh` | Prepend `/usr/local/bin` on `PATH` (idempotent)                                                            |
 | `scripts/cloud-agent-install.sh`      | Node-from-`.nvmrc` major → full prefix under `/usr/local`; persist PATH; run declared dependency command |
 | `scripts/cloud-agent-start.sh`        | Session PATH + Node probe log + blocking `ensure-hooks` (wait mode, default 120s)                          |
-| `scripts/validate-plans.ts`           | Canonical plan validator CLI (run via `run-plan-validate.sh` or marketplace `npm run validate:plans`)   |
-| `scripts/run-plan-validate.sh`        | Consumer-side wrapper: resolve installed plugin, run `dist/validate-plans.mjs` with Node 20+ (no npm)   |
-| `dist/validate-plans.mjs`             | Committed esbuild bundle of the validator CLI (regenerate via `npm run build:validator`)                  |
+| `scripts/validate-plans.ts`           | Canonical plan validator source (marketplace dev/CI via `npm run validate:plans`)                         |
 
-Centralized consumption (plugin + reusable CI): [docs/centralized-consumption.md](docs/centralized-consumption.md).
+Published CLI for consumers: `@multipliers-dev/plan-validator` in [packages/plan-validator](../../../packages/plan-validator/). See [centralized-consumption.md](docs/centralized-consumption.md).
 
 **Plugin install alone does not wire `package.json` `prepare`, `.husky/` contents, or `.cursor/environment.json`.** When Cloud Agents are expected, wiring includes committed `environment.json` lifecycle and, when `.nvmrc` pins a newer major, Node-from-`.nvmrc` Build/session PATH — not only `prepare`. See `/cloud-hooks-bootstrap`.

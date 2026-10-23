@@ -1,0 +1,56 @@
+name: Publish plan-validator (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_version:
+        description: Must match packages/plan-validator/package.json version (e.g. 0.1.0)
+        required: true
+        type: string
+  push:
+    tags:
+      - "plan-validator-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Verify manifest version
+        env:
+          CONFIRM: ${{ github.event.inputs.confirm_version || github.ref_name }}
+        run: |
+          set -eu
+          manifest_version=$(node -p "require('./packages/plan-validator/package.json').version")
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "$CONFIRM" != "$manifest_version" ]; then
+              echo "error: confirm_version ($CONFIRM) != package.json ($manifest_version)" >&2
+              exit 1
+            fi
+          else
+            tag="${GITHUB_REF_NAME#plan-validator-v}"
+            if [ "$tag" != "$manifest_version" ]; then
+              echo "error: tag plan-validator-v$tag != package.json ($manifest_version)" >&2
+              exit 1
+            fi
+          fi
+          echo "ok version $manifest_version"
+
+      - name: Build package
+        run: npm ci && npm run build --workspace @multipliers-dev/plan-validator
+
+      - name: Publish to npm (trusted publishing / OIDC)
+        working-directory: packages/plan-validator
+        run: npm publish --provenance --access public

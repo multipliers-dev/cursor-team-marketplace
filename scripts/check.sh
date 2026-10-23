@@ -183,11 +183,6 @@ sh scripts/test-prepare-git-hooks-worktree-runtime.sh
 sh scripts/test-session-ensure-git-hooks-runtime.sh
 sh scripts/test-ensure-hooks-agent-hooks-runtime.sh
 sh scripts/test-format-after-edit-runtime.sh
-for script in plugins/team-harness/scripts/run-plan-validate.sh; do
-  sh -n "$script"
-  echo "ok script $script"
-done
-
 # Stale-reference guard: live docs/code must not contain old invoke paths or names.
 # Archived plans only are excluded.
 if ! command -v rg >/dev/null 2>&1; then
@@ -244,23 +239,27 @@ if rg -q '\$\{\{[[:space:]]*github\.workflow_ref[[:space:]]*\}\}' "$VALIDATE_PLA
   echo "error: $VALIDATE_PLANS_WORKFLOW must not use github.workflow_ref (caller ref in reusable workflows)" >&2
   exit 1
 fi
-if ! rg -q 'marketplace_ref:' "$VALIDATE_PLANS_WORKFLOW"; then
-  echo "error: $VALIDATE_PLANS_WORKFLOW missing marketplace_ref input" >&2
+if ! rg -q 'validator_version:' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW missing validator_version input" >&2
   exit 1
 fi
-if ! sed -n '/^[[:space:]]*marketplace_ref:/,/^[[:space:]]*template_path:/p' "$VALIDATE_PLANS_WORKFLOW" | rg -q 'required:[[:space:]]*true'; then
-  echo "error: marketplace_ref must be required: true in $VALIDATE_PLANS_WORKFLOW" >&2
+if ! sed -n '/^[[:space:]]*validator_version:/,/^[[:space:]]*pre_publish_tarball:/p' "$VALIDATE_PLANS_WORKFLOW" | rg -q 'required:[[:space:]]*true'; then
+  echo "error: validator_version must be required: true in $VALIDATE_PLANS_WORKFLOW" >&2
+  exit 1
+fi
+if rg -q 'marketplace_ref:' "$VALIDATE_PLANS_WORKFLOW"; then
+  echo "error: $VALIDATE_PLANS_WORKFLOW must not use marketplace_ref (npm CLI pivot)" >&2
   exit 1
 fi
 echo "ok validate-plans reusable workflow contract"
 
-BUNDLE="plugins/team-harness/dist/validate-plans.mjs"
-if [ ! -f "$BUNDLE" ]; then
-  echo "error: missing committed validator bundle at $BUNDLE (run npm run build:validator)" >&2
+PKG="packages/plan-validator/package.json"
+if [ ! -f "$PKG" ]; then
+  echo "error: missing $PKG" >&2
   exit 1
 fi
-if ! head -n 5 "$BUNDLE" | rg -q 'GENERATED FILE'; then
-  echo "error: $BUNDLE missing GENERATED FILE banner" >&2
+if ! rg -q '"name"[[:space:]]*:[[:space:]]*"@multipliers-dev/plan-validator"' "$PKG"; then
+  echo "error: unexpected plan-validator package name in $PKG" >&2
   exit 1
 fi
-echo "ok validator bundle present"
+echo "ok plan-validator package manifest"

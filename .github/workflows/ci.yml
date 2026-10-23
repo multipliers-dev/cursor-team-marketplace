@@ -18,7 +18,8 @@ jobs:
       contents: read
     uses: ./.github/workflows/validate-plans.yml
     with:
-      marketplace_ref: ${{ github.sha }}
+      validator_version: "0.1.0"
+      pre_publish_tarball: true
       template_path: plugins/team-harness/skills/planning-methodology/_template.plan.md
       allow_empty: true
 
@@ -40,7 +41,8 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run check:validator-bundle-drift
+      - run: npm run verify:plan-validator
+      - run: sh scripts/plan-validator-package-smoke.sh
       - run: npm run typecheck
       - run: npm test
       - run: npm run validate:plans:template

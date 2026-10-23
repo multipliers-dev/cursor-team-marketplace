@@ -4,14 +4,17 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "workspaces": [
+    "packages/plan-validator"
+  ],
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run build:plan-validator && vitest run",
     "typecheck": "tsc --noEmit -p scripts/tsconfig.json",
     "check:agent-plugins-spec-drift": "tsx scripts/check-agent-plugins-spec-drift.ts",
+    "build:plan-validator": "npm run build --workspace @multipliers-dev/plan-validator",
+    "verify:plan-validator": "npm run build:plan-validator && npm pack --dry-run --workspace @multipliers-dev/plan-validator",
     "validate:plans": "tsx plugins/team-harness/scripts/validate-plans.ts --allow-empty",
-    "validate:plans:template": "tsx plugins/team-harness/scripts/validate-plans.ts --profile template plugins/team-harness/skills/planning-methodology/_template.plan.md",
-    "build:validator": "tsx scripts/build-validator-bundle.ts",
-    "check:validator-bundle-drift": "sh scripts/check-validator-bundle-drift.sh"
+    "validate:plans:template": "tsx plugins/team-harness/scripts/validate-plans.ts --profile template plugins/team-harness/skills/planning-methodology/_template.plan.md"
   },
   "devDependencies": {
     "@types/node": "^24.13.4",
