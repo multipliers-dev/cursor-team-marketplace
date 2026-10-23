@@ -39,12 +39,17 @@ EOF
 cp "$ROOT/scripts/fixtures/plan-validate/valid-minimal.plan.md" \
   "$CALLER/.cursor/plans/active/ok.plan.md"
 
-if ! npx tsx "$CLI" --repo-root "$CALLER" --allow-empty >/dev/null 2>&1; then
+run_cli() {
+  npx --yes -p "tsx@^4.23.13" -p "yaml@^2.8.1" tsx "$CLI" "$@"
+}
+
+if ! run_cli --repo-root "$CALLER" --allow-empty >/dev/null 2>&1; then
   echo "error: expected caller-root validation to pass" >&2
+  run_cli --repo-root "$CALLER" --allow-empty >&2 || true
   exit 1
 fi
 
-if npx tsx "$CLI" --repo-root "$MARKET" --allow-empty >/dev/null 2>&1; then
+if run_cli --repo-root "$MARKET" --allow-empty >/dev/null 2>&1; then
   echo "error: expected marketplace-root validation to fail on invalid plan" >&2
   exit 1
 fi
