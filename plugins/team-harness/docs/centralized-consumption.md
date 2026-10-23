@@ -85,13 +85,15 @@ permissions:
 
 jobs:
   validate-plans:
-    uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@<WORKFLOW_SHA>
+    uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
       validator_version: "0.1.0"
       allow_empty: true
 ```
 
-Pin **`validator_version`** to the published npm version. Pin the workflow **`uses:@<sha>`** to the marketplace commit that defines the workflow file you trust.
+Pin **`validator_version`** to the **published** npm semver (`0.1.0` today). Pin the workflow with an **immutable git tag** `plan-validator-workflow-vX.Y.Z` (current: **`plan-validator-workflow-v1.0.0`**, protected by a tag ruleset — never moved). Workflow tags and npm versions are **independent**; update both when their respective surfaces change.
+
+See also [`packages/plan-validator/README.md`](../../../packages/plan-validator/README.md) and [plan-validation.md](plan-validation.md).
 
 **Registry mode is not testable in consumer CI until `0.1.0` is published.** External callers cannot enable tarball mode — the public reusable workflow has no tarball or marketplace-checkout inputs.
 
@@ -137,7 +139,7 @@ Trusted publisher settings live on **each package’s** npmjs.com **Settings** p
 
 Subsequent releases: bump `package.json` version → authorized `workflow_dispatch` with matching `confirm_version`.
 
-**Availability (2026-10-23):** `npm view @multipliers-dev/plan-validator` → **404** (name available).
+**Availability:** `@multipliers-dev/plan-validator@0.1.0` is published on npm. Repo version **`0.1.1`** adds package README only and is **not published** until a separate authorized publish step; consumer pins stay at **`0.1.0`**.
 
 ---
 

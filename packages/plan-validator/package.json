@@ -1,6 +1,6 @@
 {
   "name": "@multipliers-dev/plan-validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic structural validator for Cursor staged plan files (.cursor/plans)",
   "license": "MIT",
   "type": "module",
