@@ -1,10 +1,19 @@
-import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
+
+import { isCliEntry } from "../plugins/team-harness/scripts/lib/cli-entry.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..");
@@ -24,6 +33,19 @@ function runPackageCli(args: string[], cwd: string) {
   const isolated = mkdtempSync(join(tmpdir(), "plan-validator-bin-only-"));
   copyFileSync(bundlePath, join(isolated, "plan-validator.mjs"));
   return spawnSync(process.execPath, [join(isolated, "plan-validator.mjs"), ...args], {
+    cwd,
+    encoding: "utf8",
+    env: { ...process.env, NODE_PATH: "" },
+  });
+}
+
+function runPackageCliViaSymlink(args: string[], cwd: string) {
+  const isolated = mkdtempSync(join(tmpdir(), "plan-validator-symlink-"));
+  const target = join(isolated, "plan-validator.mjs");
+  const link = join(isolated, "plan-validator-bin");
+  copyFileSync(bundlePath, target);
+  symlinkSync(target, link);
+  return spawnSync(process.execPath, [link, ...args], {
     cwd,
     encoding: "utf8",
     env: { ...process.env, NODE_PATH: "" },
@@ -51,6 +73,28 @@ function expectParity(args: string[], cwd: string): void {
 }
 
 describe("@multipliers-dev/plan-validator dist parity", () => {
+  it("isCliEntry treats npm-style bin symlinks as the CLI entry", () => {
+    const isolated = mkdtempSync(join(tmpdir(), "plan-validator-isCliEntry-"));
+    const target = join(isolated, "plan-validator.mjs");
+    const link = join(isolated, "plan-validator-bin");
+    copyFileSync(bundlePath, target);
+    symlinkSync(target, link);
+    expect(isCliEntry(link, target)).toBe(true);
+    expect(isCliEntry(target, target)).toBe(true);
+    expect(isCliEntry(join(isolated, "other.mjs"), target)).toBe(false);
+  });
+
+  it("runs main when invoked via symlink (npm .bin path)", () => {
+    expect(runPackageCliViaSymlink(["--bad-flag"], repoRoot).status).toBe(2);
+    const invalid = join(fixturesDir, "invalid-prompts-missing.plan.md");
+    const bad = runPackageCliViaSymlink([invalid], repoRoot);
+    expect(bad.status).toBe(1);
+    expect(stripNpmNoise(bad.stderr ?? "")).toContain("[prompts.missing]");
+    expect(
+      runPackageCliViaSymlink([join(fixturesDir, "valid-minimal.plan.md")], repoRoot).status,
+    ).toBe(0);
+  });
+
   it("matches TS CLI for valid, invalid, template, and allow-empty cases", () => {
     expectParity([join(fixturesDir, "valid-minimal.plan.md")], repoRoot);
 

@@ -34,6 +34,7 @@ jobs:
           path: caller
 
       - name: Validate validator_version input
+        id: validator_version
         env:
           VERSION: ${{ inputs.validator_version }}
         run: |
@@ -47,6 +48,7 @@ jobs:
             echo "error: validator_version must be exact semver x.y.z (no ranges or tags); got: $v" >&2
             exit 1
           fi
+          echo "validated=$v" >> "$GITHUB_OUTPUT"
           echo "ok validator_version=$v"
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -68,7 +70,7 @@ jobs:
         env:
           CALLER_ROOT: ${{ github.workspace }}/caller
           ALLOW_EMPTY: ${{ inputs.allow_empty }}
-          VERSION: ${{ inputs.validator_version }}
+          VERSION: ${{ steps.validator_version.outputs.validated }}
         run: |
           set -eu
           args=(--repo-root "$CALLER_ROOT")
@@ -82,7 +84,7 @@ jobs:
         env:
           CALLER_ROOT: ${{ github.workspace }}/caller
           TEMPLATE_PATH: ${{ inputs.template_path }}
-          VERSION: ${{ inputs.validator_version }}
+          VERSION: ${{ steps.validator_version.outputs.validated }}
         run: |
           set -eu
           npm exec --yes --package="@multipliers-dev/plan-validator@${VERSION}" -- plan-validator \

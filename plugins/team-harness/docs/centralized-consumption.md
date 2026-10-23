@@ -71,7 +71,7 @@ Installing the **team-harness** Cursor plugin does **not** install this npm pack
 
 | Input | Required | Purpose |
 | --- | --- | --- |
-| `validator_version` | **yes** | Exact semver `x.y.z` of `@multipliers-dev/plan-validator` (no ranges/tags/latest) |
+| `validator_version` | **yes** | Exact release semver `x.y.z` only (intentionally **no** prerelease/build suffixes, ranges, or dist-tags) |
 | `template_path` | no | Optional `--profile template` on caller-relative path |
 | `allow_empty` | no (default true) | `--allow-empty` |
 
@@ -121,7 +121,7 @@ Before publish, marketplace CI validates the tarball locally (not exposed to con
 | `sh scripts/plan-validator-package-smoke.sh` | Tarball install + fixture smoke |
 | `sh scripts/plan-validator-marketplace-tarball-gates.sh` | Tarball + allow-empty/template on repo root |
 
-**Publish (separate maintainer authorization; not run in the marketplace implementation PR):** `.github/workflows/publish-plan-validator.yml` — **`workflow_dispatch` only** (input `confirm_version` must match `package.json`); `id-token: write`; installs **`npm@11.15.0`** globally (OIDC trusted publishing requires npm CLI **≥ 11.5.1** per [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)); then `npm publish --provenance --access public`.
+**Publish (separate maintainer authorization; not run in the marketplace implementation PR):** `.github/workflows/publish-plan-validator.yml` — **`workflow_dispatch` only** on **`main`** (`if: github.ref == 'refs/heads/main'`); input `confirm_version` (whitespace-trimmed) must match `package.json`; `id-token: write`; installs **`npm@11.15.0`** globally (OIDC trusted publishing requires npm CLI **≥ 11.5.1** per [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)); then `npm publish --provenance --access public`.
 
 ### First publish bootstrap (verified against npm docs)
 

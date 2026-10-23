@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -36,9 +37,10 @@ jobs:
           CONFIRM: ${{ github.event.inputs.confirm_version }}
         run: |
           set -eu
+          confirm=$(printf '%s' "$CONFIRM" | tr -d '[:space:]')
           manifest_version=$(node -p "require('./packages/plan-validator/package.json').version")
-          if [ "$CONFIRM" != "$manifest_version" ]; then
-            echo "error: confirm_version ($CONFIRM) != package.json ($manifest_version)" >&2
+          if [ "$confirm" != "$manifest_version" ]; then
+            echo "error: confirm_version ($confirm) != package.json ($manifest_version)" >&2
             exit 1
           fi
           echo "ok version $manifest_version"
