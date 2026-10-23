@@ -90,7 +90,7 @@ The **reusable workflow** and the **npm package** are versioned **independently*
 | Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` (immutable; protected by repo tag ruleset — never moved) | `plan-validator-workflow-v1.0.0` → commit `9b16a15` |
 | npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` | **`0.1.0`** published; **`0.1.1`** docs-only, unpublished |
 
-Update both pins when workflow logic or validator rules change. Verified consumer adoption examples (pins, PR links, smoke runs): see the plan-validator plan adoption matrix in [`.cursor/plans/2026-10-23-plan-validator.plan.md`](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/.cursor/plans/2026-10-23-plan-validator.plan.md).
+Update both pins when workflow logic or validator rules change. Verified consumer adoption examples (pins, PR links, smoke runs): see [Consumer adoption (verified)](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/plugins/team-harness/docs/plan-validation.md#consumer-adoption-verified) in the team-harness docs.
 
 ## Related
 
