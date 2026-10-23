@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: centralized-consumption
     content: "PR: @multipliers-dev/plan-validator package + reusable GHA workflow; tarball verification; publish workflow (no publish in PR); consumer smoke after publication"
-    status: pending
+    status: completed
   - id: consumer-adoption
     content: "Cross-repo: inventory consumers, per-repo workflow PRs, adoption matrix; plan-status PR when rollout complete"
     status: pending
@@ -286,6 +286,18 @@ The team-harness **plugin** distributes methodology/skills; it does **not** repl
 
 - `ci-npm` merged.
 
+**Status:** completed (2026-10-23 plan-status PR).
+
+**Evidence (2026-10-23):**
+
+- npm registry: `@multipliers-dev/plan-validator@0.1.0` is public. bin `{"plan-validator":"dist/plan-validator.mjs"}`, tarball https://registry.npmjs.org/@multipliers-dev/plan-validator/-/plan-validator-0.1.0.tgz, integrity `sha512-6+Zmg1zMkb6XgZiDnuHNA/7a293+dbAyXnmGdR9K9v+vw0bPlueUZhgTNMJ70KxUO1pTT4Wk4wqm0kBMWrQsTQ==`. Bootstrap publish was manual with --no-provenance (expected for the first release); later releases go through publish-plan-validator.yml with OIDC.
+- Published CLI via `npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- plan-validator`, run with a fresh npm cache on Node v22.23.4 / npm 10.9.9: valid plan exit 0 (`ok plan validation`); invalid plan exit 1 (`[prompts.section]`); `--bad-flag` exit 2 (`error: unknown option --bad-flag`); empty discovery with `--allow-empty` exit 0 (`skip plan validation`). The npx cache `.bin/plan-validator` symlinks to `dist/plan-validator.mjs`, and the lockfile integrity matches the registry dist.integrity.
+- Reusable workflow smoke test in mastermichaelt/resumes on the disposable branch `smoke/plan-validator-0.1.0` (no PR, main untouched). It calls `multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@9b16a15835bffec3f6e5e9d5bd071c99db74b188` with validator_version 0.1.0, allow_empty true, contents: read:
+  - No active plans: success, https://github.com/mastermichaelt/resumes/actions/runs/39883621444 (9e71667)
+  - Valid plan: success, https://github.com/mastermichaelt/resumes/actions/runs/39883735697 (9f2c7ba)
+  - Invalid plan: failure as expected with `[prompts.section]` on `/home/runner/work/resumes/resumes/caller/.cursor/plans/2026-10-23-plan-validator-smoke-valid.plan.md`, https://github.com/mastermichaelt/resumes/actions/runs/39883785379 (b3d0ca1)
+  - Logs show `CALLER_ROOT: /home/runner/work/resumes/resumes/caller` and only resumes plan paths, so it validated the caller checkout and not marketplace plans. One intermediate run (39883681181, fac3ff3) failed on a bad local edit (`[frontmatter.delimiter]`) and is excluded.
+
 ---
 
 ## Slice — consumer-adoption
@@ -336,6 +348,11 @@ The team-harness **plugin** distributes methodology/skills; it does **not** repl
 - Phase A: each opened adoption PR runs reusable workflow against **that** repo’s checkout; evidence for valid-plan pass, invalid-plan fail, and `--allow-empty` / no-active-plans behavior where applicable; plan file **not** edited in consumer repos
 - Phase B: plan-status PR only after adoption PR merges; frontmatter marks `consumer-adoption` completed; matrix lists **all seven** candidates with decision, rationale, pins, and PR links (or documented defer/exclude)
 
+**Notes (deferred from centralized-consumption smoke, 2026-10-23):**
+
+- resumes `_template.plan.md` was not validated (`template_path` omitted) because it fails strict template rules, which is consumer-adoption work.
+- Delete the smoke branch `smoke/plan-validator-0.1.0` once it's no longer needed.
+
 **Prerequisite:** `centralized-consumption` merged.
 
 ---
@@ -371,6 +388,10 @@ The team-harness **plugin** distributes methodology/skills; it does **not** repl
 - Read/grep confirms SKILL item 7 matches validator todo/prompt rules and docs describe both consumption paths without implying plugin install configures CI automatically
 
 **Prerequisite:** `consumer-adoption` merged (consumer PRs merged and plan-status PR recorded completion).
+
+**Notes (deferred from centralized-consumption, 2026-10-23):**
+
+- The npm package has no README; docs-skill adds one with 0.1.1 or later.
 
 ---
 
