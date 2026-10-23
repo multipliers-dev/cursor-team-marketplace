@@ -44,7 +44,7 @@ When a multi-repo slice lists a source repository as read-only authority, launch
 
 ## Example prompts
 
-Present each prompt as `### <todo-id>` plus a fenced `text` block. Frontmatter todo ids are authoritative; headings are copied from them. Every default todo has exactly one matching heading. Full skeleton: [_template.plan.md](_template.plan.md).
+Present each prompt as `### <todo-id>` plus a fenced `text` block. Frontmatter todo ids are authoritative; headings are copied from them. Every **actionable** todo (`pending`, `in_progress`) has exactly one matching heading; **completed** and **cancelled** todos may omit prompts. Any `###` under Agent prompts must match a frontmatter id (orphan and duplicate prompt headings fail validation). Full skeleton: [_template.plan.md](_template.plan.md). CLI and rule ids: [plan-validation.md](../../docs/plan-validation.md).
 
 Same-repo slice (plan file and code in the same repo → mark the todo in the same PR):
 

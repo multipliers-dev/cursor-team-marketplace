@@ -1,6 +1,6 @@
 {
   "name": "@multipliers-dev/plan-validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic structural validator for Cursor staged plan files (.cursor/plans)",
   "license": "MIT",
   "type": "module",
@@ -12,6 +12,10 @@
     "type": "git",
     "url": "git+https://github.com/multipliers-dev/cursor-team-marketplace.git",
     "directory": "packages/plan-validator"
+  },
+  "homepage": "https://github.com/multipliers-dev/cursor-team-marketplace/tree/main/packages/plan-validator",
+  "bugs": {
+    "url": "https://github.com/multipliers-dev/cursor-team-marketplace/issues"
   },
   "publishConfig": {
     "access": "public",

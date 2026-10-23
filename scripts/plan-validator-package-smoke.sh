@@ -21,6 +21,10 @@ trap cleanup EXIT INT TERM
 
 pack_file=$(npm pack --workspace @multipliers-dev/plan-validator --pack-destination "$PACK_DIR" | tail -n 1)
 pack_path="$PACK_DIR/$pack_file"
+if ! tar -tzf "$pack_path" | grep -Fq 'package/README.md'; then
+  echo "error: packed tarball missing package/README.md" >&2
+  exit 1
+fi
 npm install --prefix "$INSTALL_PREFIX" --no-save "$pack_path"
 
 BIN="$INSTALL_PREFIX/node_modules/.bin/plan-validator"

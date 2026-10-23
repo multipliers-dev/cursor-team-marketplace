@@ -1,7 +1,7 @@
 {
   "name": "team-harness",
   "description": "Merge-safe planning methodology (cross-client) plus Cursor repo bootstrap and Cloud-hooks bootstrap skills (Cursor-dependent).",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "author": {
     "name": "Michael Truong",
     "email": "michael@multipliers.dev"
