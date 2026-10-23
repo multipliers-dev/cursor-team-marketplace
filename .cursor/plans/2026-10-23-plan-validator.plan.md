@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: consumer-adoption
     content: "Cross-repo: inventory consumers, per-repo workflow PRs, adoption matrix; plan-status PR when rollout complete"
-    status: pending
+    status: completed
   - id: docs-skill
     content: "PR: plan-validation.md; align SKILL.md item 7 todo/prompt rule with validator; README scripts table; adoption docs for both consumption paths"
     status: pending
@@ -350,10 +350,48 @@ The team-harness **plugin** distributes methodology/skills; it does **not** repl
 
 **Notes (deferred from centralized-consumption smoke, 2026-10-23):**
 
-- resumes `_template.plan.md` was not validated (`template_path` omitted) because it fails strict template rules, which is consumer-adoption work.
 - Delete the smoke branch `smoke/plan-validator-0.1.0` once it's no longer needed.
 
 **Prerequisite:** `centralized-consumption` merged.
+
+**Status:** completed (2026-10-23 plan-status PR).
+
+**Evidence (2026-10-23):**
+
+- **Consumer pins (all adopt repositories):** `validator_version: "0.1.0"` (`@multipliers-dev/plan-validator@0.1.0`). Reusable workflow `uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@refs/tags/plan-validator-workflow-v1.0.0`. Workflow tags and npm versions are versioned independently.
+- **Seven-repository adoption matrix (Phase A):**
+
+| Repository | Methodology / plans | Active plans / template | CI / tooling | Decision | Rationale | Template / plan fixes | Adoption PR | Phase A smoke runs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| mastermichaelt/mastermichaelt | No | None, no `.cursor/plans` | No workflows, no Node tooling | EXCLUDE | Profile README only repo, no methodology use or plausible future use | N/A | N/A | N/A (local CLI with `--allow-empty`, exit 0) |
+| multipliers-dev/renovate-workflow | Yes, `.cursor/plans` with 6 archived plans and team-harness hooks | No active plans, no template | npm, Node 22.22.1, Husky; ci/release/renovate/validate-renovate-config/agent-plugins-spec-drift | ADOPT | Past methodology use; `--allow-empty` covers zero active plans | None | [PR 56](https://github.com/multipliers-dev/renovate-workflow/pull/56) | empty pass [39891836112](https://github.com/multipliers-dev/renovate-workflow/actions/runs/39891836112), invalid fail [39891932607](https://github.com/multipliers-dev/renovate-workflow/actions/runs/39891932607) `[prompts.section]`, valid pass [39891976475](https://github.com/multipliers-dev/renovate-workflow/actions/runs/39891976475) (workflow_dispatch 403, so smoke branches used push triggers) |
+| multipliers-dev/editorial-workflow | Yes, methodology-shaped plans and team-harness hooks | No active plans, 4 archived, no template | ci.yml, Node 22, npm ci/test/typecheck, Husky | ADOPT | Uses the methodology plan layout; allow_empty covers the empty set | None | [PR 27](https://github.com/multipliers-dev/editorial-workflow/pull/27) | empty pass [39891868111](https://github.com/multipliers-dev/editorial-workflow/actions/runs/39891868111), invalid fail [39891938591](https://github.com/multipliers-dev/editorial-workflow/actions/runs/39891938591) `[prompts.section]`, valid pass [39891998030](https://github.com/multipliers-dev/editorial-workflow/actions/runs/39891998030) (dispatch 403, so push on smoke branches) |
+| multipliers-dev/codenames-ai-guesser | Yes, planning-standards, big archive, team-harness refs | No active plans; `.cursor/plans/_template.plan.md` | npm workspaces, Node 24, path-aware Husky plus ci.yml | ADOPT | Staged planning is established here; an empty active set is normal between initiatives | Template failed strict profile; minimal fix (Slice headings; removed a nested fenced Merge-granted example that caused authority.mismatch) | [PR 633](https://github.com/multipliers-dev/codenames-ai-guesser/pull/633) | empty+template pass [39891914856](https://github.com/multipliers-dev/codenames-ai-guesser/actions/runs/39891914856), invalid fail [39891968950](https://github.com/multipliers-dev/codenames-ai-guesser/actions/runs/39891968950) `[prompts.section]`, valid pass [39892026965](https://github.com/multipliers-dev/codenames-ai-guesser/actions/runs/39892026965) |
+| mastermichaelt/portfolio | Yes, active plan plus archive, template, planning-standards, merge-safe rule | Active: `2026-10-08-assistant-grounded-rag-generation.plan.md`; `_template.plan.md` | npm, Node 24, Husky; ci.yml and Renovate | ADOPT | Staged planning in active use | Template: slice headings and nested fence. ACTIVE PLAN edited mechanically (slice headings, plan-closure Rationale, operational-acceptance Verification line) | [PR 83](https://github.com/mastermichaelt/portfolio/pull/83) | valid pass [39891932142](https://github.com/mastermichaelt/portfolio/actions/runs/39891932142), invalid fail [39892016529](https://github.com/mastermichaelt/portfolio/actions/runs/39892016529) (temporary commit on the PR branch, then reverted), post-revert pass [39892063341](https://github.com/mastermichaelt/portfolio/actions/runs/39892063341), empty via local CLI only |
+| mastermichaelt/resumes | Yes, archive plus template, merge-safe, planning-standards, AGENTS.md | No active plans; `_template.plan.md` | Node 24; ci.yml (npm run check plus visual regression); Husky | ADOPT | Known methodology consumer; allow_empty | Template failed strict profile: slice headings fixed, HTML examples moved before Agent prompts (fixes authority.mismatch) | [PR 217](https://github.com/mastermichaelt/resumes/pull/217) | empty+template pass [39891925647](https://github.com/mastermichaelt/resumes/actions/runs/39891925647), invalid fail [39892084356](https://github.com/mastermichaelt/resumes/actions/runs/39892084356) `[prompts.section]`, valid pass [39892141663](https://github.com/mastermichaelt/resumes/actions/runs/39892141663) |
+| multipliers-dev/savepoints | Yes, methodology-shaped plans and team-harness hooks | No active plans; no template | npm, Node, Husky; ci.yml | ADOPT | Past methodology use; empty active set between initiatives | Archived plans use legacy slice headings (all todos completed, so not validated under strict profile) | [PR 87](https://github.com/multipliers-dev/savepoints/pull/87) | Phase A smoke on PR branch; post-merge validate run recorded below |
+
+- **Resumes template deferral (from centralized-consumption):** resolved in [resumes PR 217](https://github.com/mastermichaelt/resumes/pull/217) (strict template profile now passes with slice headings and HTML examples moved before Agent prompts).
+- **Six merged adoption PRs** (merge commits on each repo’s `main`, merged 2026-10-23 by Michael’s authorization). Post-retag validate runs use `Uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@refs/tags/plan-validator-workflow-v1.0.0 (6dcfe2a462ebfacc9825df3ecf95886961748802)`:
+  - resumes [217](https://github.com/mastermichaelt/resumes/pull/217): merge `e3e456053eeb2373daf89115e0eea9084994a523` (head `7d24d1e`), run [39894344869](https://github.com/mastermichaelt/resumes/actions/runs/39894344869)
+  - portfolio [83](https://github.com/mastermichaelt/portfolio/pull/83): merge `e27f22ee825314ebeafc9ee0d0018253fe58db47` (head `cb0c27d`), run [39894350131](https://github.com/mastermichaelt/portfolio/actions/runs/39894350131)
+  - editorial-workflow [27](https://github.com/multipliers-dev/editorial-workflow/pull/27): merge `f2a9b74e781060f1339ef7252eac8bd50d416320` (head `e523253`), run [39894334086](https://github.com/multipliers-dev/editorial-workflow/actions/runs/39894334086)
+  - renovate-workflow [56](https://github.com/multipliers-dev/renovate-workflow/pull/56): merge `5fa7b90683dd2ad220825718bc0418ac5b6ce56a` (head `cfcc53c`), run [39894341982](https://github.com/multipliers-dev/renovate-workflow/actions/runs/39894341982)
+  - codenames-ai-guesser [633](https://github.com/multipliers-dev/codenames-ai-guesser/pull/633): merge `b17df54d447880f5e78ade7b30d93d4ef3eeabf2` (head `907b6c3`), run [39894373000](https://github.com/multipliers-dev/codenames-ai-guesser/actions/runs/39894373000)
+  - savepoints [87](https://github.com/multipliers-dev/savepoints/pull/87): merge `f15888ed487079b03246138e4ecaddcac739c7ef` (head `ae30b5b`), run [39894360531](https://github.com/multipliers-dev/savepoints/actions/runs/39894360531)
+- **Post-merge Validate plans on `main` (API):** this agent token could confirm `multipliers-dev/renovate-workflow` run [39895210275](https://github.com/multipliers-dev/renovate-workflow/actions/runs/39895210275) (`conclusion: success`, `head_sha: 5fa7b90683dd2ad220825718bc0418ac5b6ce56a`) on the merge commit. Check runs / workflow-run APIs returned **404** for `mastermichaelt/*` repos and for several other consumer repos from this credential scope—could not independently confirm each merge-commit run via API here; post-retag run URLs above are the recorded evidence from Phase A merges.
+- **Workflow tag `plan-validator-workflow-v1.0.0`:** annotated tag object `6dcfe2a462ebfacc9825df3ecf95886961748802`, peels to commit `9b16a15835bffec3f6e5e9d5bd071c99db74b188` ([PR 63](https://github.com/multipliers-dev/cursor-team-marketplace/pull/63) merge). Re-verified:
+
+```text
+$ git ls-remote origin 'refs/tags/plan-validator-workflow-v1.0.0*'
+6dcfe2a462ebfacc9825df3ecf95886961748802	refs/tags/plan-validator-workflow-v1.0.0
+9b16a15835bffec3f6e5e9d5bd071c99db74b188	refs/tags/plan-validator-workflow-v1.0.0^{}
+$ git rev-parse 'plan-validator-workflow-v1.0.0:.github/workflows/validate-plans.yml'
+9b931cd15e52bdecb9e3fd213ba863a587d095b4
+```
+
+  - `validate-plans.yml` at tag: git blob `9b931cd15e52bdecb9e3fd213ba863a587d095b4`, sha256 `b0bf1b673c095a5fd75ec64ab404494dd59f05ebb68b52af9efd51458f652c4e`.
+- **Tag protection:** active ruleset **Protect plan-validator workflow releases** (id `25695885`), target `tag`, `refs/tags/plan-validator-workflow-v*`, rules `deletion`, `non_fast_forward`, `update` (restrict updates and deletions); `current_user_can_bypass: never`. Immutable releases not enabled.
 
 ---
 
