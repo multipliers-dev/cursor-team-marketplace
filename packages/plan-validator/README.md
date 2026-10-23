@@ -2,29 +2,27 @@
 
 Deterministic structural validator for committed Cursor staged plan files (`.cursor/plans/*.plan.md`). It enforces the [planning-methodology](https://github.com/multipliers-dev/cursor-team-marketplace/tree/main/plugins/team-harness/skills/planning-methodology) **envelope** (frontmatter, authority table, slice blocks, agent prompts). It does **not** judge merge-safety semantics, verification sufficiency, or cross-repo completion — those stay with humans and review tools.
 
-**Canonical TypeScript source** lives in the marketplace repo under `plugins/team-harness/scripts/`; this package is a bundled CLI built from that source. The **team-harness** Cursor plugin distributes methodology skills only — it does **not** install this npm package or configure consumer CI.
+The **team-harness** Cursor plugin distributes methodology skills only — it does **not** install this npm package or configure consumer CI.
 
 ## Quick start
 
 **Requirements:** Node.js **≥ 22** (see `engines` in `package.json`).
 
-From your **consumer repository** root:
+From your **repository** root, pin an **exact** published semver (never ranges or dist-tags):
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
   plan-validator --repo-root "$(pwd)" --allow-empty
 ```
 
-Install globally or as a devDependency with the same **exact semver pin** if you prefer a fixed local binary; `npm exec` is the usual agent/CI pattern.
+Replace `1.2.3` with the version you intend to run (check [npm](https://www.npmjs.com/package/@multipliers-dev/plan-validator) or your lockfile). `npm exec` is the usual agent/CI pattern; a devDependency with the same pin works for a local binary.
 
 Template profile (strict structure, relaxed ellipsis placeholders):
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
   plan-validator --repo-root "$(pwd)" --profile template .cursor/plans/_template.plan.md
 ```
-
-**Published versions:** consumers currently pin **`0.1.0`** on npm. Version **`0.1.1`** in this repo adds this README only and is **not published yet** — bump consumer pins after a separate authorized publish step.
 
 ## What it validates
 
@@ -34,9 +32,9 @@ npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
 - **Agent prompts** section: `### <todo-id>` headings, fences, and labeled lines for actionable todos only
 - Authority alignment across table, slice, and prompt
 
-Default discovery skips `.cursor/plans/archive/**` and `**/_template.plan.md`. Optional `.cursor/plan-validator.json` overrides globs and repo-default hints.
+Default discovery skips `.cursor/plans/archive/**`, `**/_template.plan.md`, and `**/planning-methodology/_template.plan.md`. Optional `.cursor/plan-validator.json` overrides globs and repo-default hints. See [Discovery and excludes](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/plugins/team-harness/docs/plan-validation.md#discovery-and-excludes).
 
-Full rule ids, profiles, and configuration: [plan-validation.md](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/plugins/team-harness/docs/plan-validation.md) in the team-harness plugin docs.
+Full rule ids, profiles, and configuration: [plan-validation.md](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/plugins/team-harness/docs/plan-validation.md).
 
 ## CLI flags
 
@@ -60,7 +58,7 @@ Pass explicit `.plan.md` paths to validate only those files (discovery rules do 
 
 ## GitHub Actions (reusable workflow)
 
-For CI, call the marketplace reusable workflow (validates the **caller** checkout only):
+For CI, call the marketplace reusable workflow (validates the **caller** checkout only). Pin the workflow with an **immutable git tag** `plan-validator-workflow-vX.Y.Z` and pin **`validator_version`** to the same npm semver you use locally:
 
 ```yaml
 permissions:
@@ -70,7 +68,7 @@ jobs:
   validate-plans:
     uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
-      validator_version: "0.1.0"
+      validator_version: "1.2.3"
       allow_empty: true
       # template_path: ".cursor/plans/_template.plan.md"  # optional
 ```
@@ -85,12 +83,12 @@ jobs:
 
 The **reusable workflow** and the **npm package** are versioned **independently**:
 
-| Artifact | Pin | Current pair |
-| --- | --- | --- |
-| Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` (immutable; protected by repo tag ruleset — never moved) | `plan-validator-workflow-v1.0.0` → commit `9b16a15` |
-| npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` | **`0.1.0`** published; **`0.1.1`** docs-only, unpublished |
+| Artifact | How to pin |
+| --- | --- |
+| Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` (immutable release tags in the marketplace repo; do not move tags after adoption) |
+| npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` |
 
-Update both pins when workflow logic or validator rules change. Verified consumer adoption examples (pins, PR links, smoke runs): see [Consumer adoption (verified)](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/plugins/team-harness/docs/plan-validation.md#consumer-adoption-verified) in the team-harness docs.
+When workflow YAML changes, adopt a new workflow tag. When validator rules or CLI behavior changes, bump the npm pin (and publish a new package version first). Update **both** when both surfaces change.
 
 ## Related
 

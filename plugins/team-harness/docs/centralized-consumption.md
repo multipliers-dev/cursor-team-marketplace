@@ -12,16 +12,18 @@ Consuming repositories run the **canonical** plan validator without copying Type
 
 ## Architectural decision (2026-10-23): npm CLI supersedes plugin execution
 
+**Historical context** from the initial centralized-consumption rollout. The **durable rule** today: consumers use the published npm CLI (exact semver pin) and/or the reusable workflow — not plugin install paths, env vars, or copy vendoring.
+
 **Supersedes:** plugin-installed bundles (`dist/validate-plans.mjs`), `run-plan-validate.sh`, filesystem discovery heuristics, and `TEAM_HARNESS_PLUGIN_ROOT` / `CURSOR_PLUGIN_ROOT` assumptions.
 
-**Why abandoned:**
+**Why those paths were abandoned:**
 
 - Cursor plugin install paths on disk remain **unverified** for Cloud Agents ([Cursor Plugins](https://cursor.com/docs/plugins)).
 - Env-based plugin root (`CURSOR_PLUGIN_ROOT`) is **unverified** in agent shells.
 - `npx -p tsx -p yaml` failed to resolve `yaml` for bundled TS in CI/resumes smoke (dynamic `require("process")` / module resolution).
 - A committed plugin `.mjs` duplicate added **artifact drift** burden separate from source.
 
-**Replacement:** one npm package (`@multipliers-dev/plan-validator@0.1.0`, not published in the marketplace PR slice) built with esbuild from the same TS source; consumers pin an **exact semver**.
+**Replacement:** one npm package (`@multipliers-dev/plan-validator`) built with esbuild from the same TS source; consumers pin an **exact published semver**.
 
 ---
 
@@ -41,19 +43,19 @@ Consuming repositories run the **canonical** plan validator without copying Type
 
 ---
 
-## Local / agent usage (after publish)
+## Local / agent usage
 
-From the **consumer repository** root:
+From the **consumer repository** root (replace `1.2.3` with your pinned semver):
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
   plan-validator --repo-root "$(pwd)" --allow-empty
 ```
 
 Template profile:
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
   plan-validator --repo-root "$(pwd)" --profile template .cursor/plans/_template.plan.md
 ```
 
@@ -77,7 +79,7 @@ Installing the **team-harness** Cursor plugin does **not** install this npm pack
 
 There is **no** `marketplace_ref` and **no** `github.workflow_ref` parsing.
 
-### Caller snippet (post-publication)
+### Caller snippet
 
 ```yaml
 permissions:
@@ -87,24 +89,24 @@ jobs:
   validate-plans:
     uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
-      validator_version: "0.1.0"
+      validator_version: "1.2.3"
       allow_empty: true
 ```
 
-Pin **`validator_version`** to the **published** npm semver (`0.1.0` today). Pin the workflow with an **immutable git tag** `plan-validator-workflow-vX.Y.Z` (current: **`plan-validator-workflow-v1.0.0`**, protected by a tag ruleset — never moved). Workflow tags and npm versions are **independent**; update both when their respective surfaces change.
+Pin **`validator_version`** to the exact npm semver you run locally (`x.y.z` only). Pin the workflow with an **immutable git tag** `plan-validator-workflow-vX.Y.Z` on `uses:` when the workflow file changes. Workflow tags and npm package versions are **independent**; update both when their respective surfaces change.
 
 See also [`packages/plan-validator/README.md`](../../../packages/plan-validator/README.md) and [plan-validation.md](plan-validation.md).
 
-**Registry mode is not testable in consumer CI until `0.1.0` is published.** External callers cannot enable tarball mode — the public reusable workflow has no tarball or marketplace-checkout inputs.
+The public reusable workflow installs the CLI from the **npm registry** only. External callers cannot enable tarball mode or checkout marketplace source — there are no tarball or marketplace-checkout inputs on `workflow_call`.
 
 ### Behavior (registry-only)
 
 1. Check out **caller** to `${{ github.workspace }}/caller` (no marketplace checkout).
 2. `npm exec --package=@multipliers-dev/plan-validator@<exact-version> -- plan-validator --repo-root <caller> …`
 
-### Marketplace-only pre-publication CI (not reusable)
+### Marketplace-only tarball CI (not reusable)
 
-Before publish, marketplace CI validates the tarball locally (not exposed to consumer repos):
+Marketplace CI validates the pack tarball locally (not exposed to consumer repos):
 
 | Step | Script / job |
 | --- | --- |
@@ -139,23 +141,17 @@ Trusted publisher settings live on **each package’s** npmjs.com **Settings** p
 
 Subsequent releases: bump `package.json` version → authorized `workflow_dispatch` with matching `confirm_version`.
 
-**Availability:** `@multipliers-dev/plan-validator@0.1.0` is published on npm. Repo version **`0.1.1`** adds package README only and is **not published** until a separate authorized publish step; consumer pins stay at **`0.1.0`**.
-
 ---
 
 ## Version updates
 
-Bump `packages/plan-validator/package.json` version, publish via authorized workflow, then update consumer `validator_version` pins and reusable workflow `uses:@sha` when workflow logic changes.
+Bump `packages/plan-validator/package.json` version, publish via authorized workflow, then update consumer `validator_version` pins and the reusable workflow **`plan-validator-workflow-vX.Y.Z`** tag when workflow logic changes.
 
 ---
 
-## Smoke evidence (historical)
+## Superseded consumption paths
 
-**Superseded marketplace-checkout reusable workflow** (pin `f1ca17c`, `marketplace_ref` + committed plugin `.mjs`): [39877373830](https://github.com/mastermichaelt/resumes/actions/runs/39877373830) valid pass, [39877507980](https://github.com/mastermichaelt/resumes/actions/runs/39877507980) invalid `[authority.table.missing-row]`, [39877627036](https://github.com/mastermichaelt/resumes/actions/runs/39877627036) allow-empty skip — caller paths under `/home/runner/work/resumes/resumes/caller/`. **Does not validate the npm-backed workflow.**
-
-**Plugin wrapper:** abandoned (yaml resolution / install-path uncertainty).
-
-**Remaining:** publish `0.1.0` + consumer smoke of **published** CLI and registry-mode reusable workflow.
+Do **not** use marketplace checkout (`marketplace_ref`), committed plugin `.mjs` bundles, or copy-only TypeScript vendoring. The supported model is **npm CLI + reusable workflow** only (see architectural decision above).
 
 ---
 

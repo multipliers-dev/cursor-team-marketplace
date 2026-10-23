@@ -14,39 +14,38 @@ Deterministic structural checks for committed `.cursor/plans/*.plan.md` files. C
 
 Quick start and npm package README: [`packages/plan-validator/README.md`](../../../packages/plan-validator/README.md).
 
-## Consumer adoption (verified)
+## Consumer CI setup
 
-After **consumer-adoption** rollout (2026-10-23), six repositories **adopt** pinned CI:
+1. Add a job that **uses** the marketplace reusable workflow (see [GitHub CI](#github-ci-reusable-workflow) below).
+2. Pin **`validator_version`** to the exact npm semver you run locally (`x.y.z` only — no ranges).
+3. Pin the workflow **`uses:`** ref to an immutable **`plan-validator-workflow-vX.Y.Z`** tag when the workflow file changes.
+4. Grant the job **`contents: read`** only.
+5. Set **`allow_empty: true`** when the repo may have zero active plans (archive + template only). Add **`template_path`** when you validate a committed `_template.plan.md` under strict template profile.
 
-- **npm:** `@multipliers-dev/plan-validator@0.1.0` via workflow input `validator_version: "0.1.0"`
-- **Workflow:** `uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0`
-
-Examples: [mastermichaelt/resumes PR 217](https://github.com/mastermichaelt/resumes/pull/217), [mastermichaelt/portfolio PR 83](https://github.com/mastermichaelt/portfolio/pull/83), [multipliers-dev/editorial-workflow PR 27](https://github.com/multipliers-dev/editorial-workflow/pull/27), [multipliers-dev/renovate-workflow PR 56](https://github.com/multipliers-dev/renovate-workflow/pull/56), [multipliers-dev/codenames-ai-guesser PR 633](https://github.com/multipliers-dev/codenames-ai-guesser/pull/633), [multipliers-dev/savepoints PR 87](https://github.com/multipliers-dev/savepoints/pull/87). **Excluded:** `mastermichaelt/mastermichaelt` (no methodology use). Full seven-repo matrix (decisions, pins, smoke runs): [plan-validation.md on `main`](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/plugins/team-harness/docs/plan-validation.md#consumer-adoption-verified) (this section).
-
-Package **`0.1.1`** adds npm README only and is **unpublished**; keep consumer pins at **`0.1.0`** until publish.
+Installing the team-harness plugin does **not** perform these steps.
 
 ## Version pinning (independent)
 
-| Artifact | How consumers pin | Current |
-| --- | --- | --- |
-| Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` | `plan-validator-workflow-v1.0.0` (immutable tag; ruleset blocks moves/deletes) |
-| npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` | **`0.1.0`** on registry |
+| Artifact | How consumers pin |
+| --- | --- |
+| Reusable workflow | Git tag `plan-validator-workflow-vX.Y.Z` on `uses:` (immutable release tags; do not move after adoption) |
+| npm CLI | Exact `validator_version` / `@multipliers-dev/plan-validator@x.y.z` |
 
-Bump workflow tag when workflow YAML changes; bump npm version when validator rules/CLI change. They are **not** the same version number.
+Workflow tags and npm package versions are **not** the same number. Bump the workflow tag when workflow YAML changes; bump the npm pin when validator rules or CLI behavior changes (after publishing the new package version).
 
 ## Run the CLI (consumers)
 
 From the **consumer repository** root (Node **≥ 22**):
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
   plan-validator --repo-root "$(pwd)" --allow-empty
 ```
 
-With no path arguments, the CLI **discovers** plan files (see [Discovery and excludes](#discovery-and-excludes)). Pass explicit paths to validate only those files:
+Replace `1.2.3` with your pinned semver. With no path arguments, the CLI **discovers** plan files (see [Discovery and excludes](#discovery-and-excludes)). Pass explicit paths to validate only those files:
 
 ```bash
-npm exec --yes --package=@multipliers-dev/plan-validator@0.1.0 -- \
+npm exec --yes --package=@multipliers-dev/plan-validator@1.2.3 -- \
   plan-validator --repo-root "$(pwd)" .cursor/plans/my-feature.plan.md
 ```
 
@@ -78,7 +77,7 @@ jobs:
   validate-plans:
     uses: multipliers-dev/cursor-team-marketplace/.github/workflows/validate-plans.yml@plan-validator-workflow-v1.0.0
     with:
-      validator_version: "0.1.0"
+      validator_version: "1.2.3"
       allow_empty: true
       template_path: ".cursor/plans/_template.plan.md"  # optional
 ```
@@ -125,7 +124,11 @@ Optional file: `.cursor/plan-validator.json`
 {
   "integrationBranch": "main",
   "plansGlobs": [".cursor/plans/**/*.plan.md"],
-  "excludeGlobs": [".cursor/plans/archive/**", "**/_template.plan.md"],
+  "excludeGlobs": [
+    ".cursor/plans/archive/**",
+    "**/_template.plan.md",
+    "**/planning-methodology/_template.plan.md"
+  ],
   "requireRepoDefaultLine": true,
   "repoDefaultHint": "Open PR only"
 }
@@ -134,7 +137,7 @@ Optional file: `.cursor/plan-validator.json`
 | Field | Purpose |
 | --- | --- |
 | `plansGlobs` | Glob patterns for automatic discovery (default: `.cursor/plans/**/*.plan.md`). |
-| `excludeGlobs` | Paths to skip after discovery (defaults include archive and template paths above). |
+| `excludeGlobs` | Paths to skip after discovery (defaults: archive, `_template.plan.md`, and `planning-methodology/_template.plan.md` — see [Discovery and excludes](#discovery-and-excludes)). |
 | `requireRepoDefaultLine` | When not `false`, require a plan-level `Repo default:` line. |
 | `repoDefaultHint` | Documentation-only hint for authors; not validated as an exact string match. |
 | `integrationBranch` | Reserved for future checks; documented for consuming repos. |
