@@ -29,6 +29,19 @@ function runTsCli(args: string[], cwd: string): { status: number | null; stderr:
   };
 }
 
+function stripNpmCliNoise(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      if (trimmed.startsWith("npm warn")) return false;
+      if (trimmed.startsWith("npm notice")) return false;
+      return true;
+    })
+    .join("\n");
+}
+
 function runBundledCli(args: string[], cwd: string): { status: number | null; stderr: string; stdout: string } {
   const isolated = mkdtempSync(join(tmpdir(), "plan-validate-bundle-only-"));
   const bundlePath = join(isolated, "validate-plans.mjs");
@@ -54,7 +67,7 @@ function expectParity(args: string[], cwd: string): void {
   const bundle = runBundledCli(args, cwd);
   expect(bundle.status).toBe(ts.status);
   expect(bundle.stdout).toBe(ts.stdout);
-  expect(bundle.stderr).toBe(ts.stderr);
+  expect(stripNpmCliNoise(bundle.stderr)).toBe(stripNpmCliNoise(ts.stderr));
 }
 
 describe("validate-plans bundled CLI parity (isolated .mjs, no node_modules)", () => {
@@ -69,7 +82,7 @@ describe("validate-plans bundled CLI parity (isolated .mjs, no node_modules)", (
     const bundle = runBundledCli([fixture], repoRoot);
     expect(bundle.status).toBe(1);
     expect(ts.status).toBe(1);
-    expect(bundle.stderr).toBe(ts.stderr);
+    expect(stripNpmCliNoise(bundle.stderr)).toBe(stripNpmCliNoise(ts.stderr));
     expect(bundle.stderr).toContain("[prompts.missing]");
   });
 
@@ -90,6 +103,6 @@ describe("validate-plans bundled CLI parity (isolated .mjs, no node_modules)", (
     const ts = runTsCli(["--repo-root", root, "--allow-empty"], root);
     const bundle = runBundledCli(["--repo-root", root, "--allow-empty"], root);
     expect(bundle.status).toBe(ts.status);
-    expect(bundle.stderr).toBe(ts.stderr);
+    expect(stripNpmCliNoise(bundle.stderr)).toBe(stripNpmCliNoise(ts.stderr));
   });
 });
