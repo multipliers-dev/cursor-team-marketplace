@@ -39,6 +39,18 @@ Installing `team-harness` does **not** install Cursor rules. Rules are a separat
 
 Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
 
+## Plan validator
+
+[![npm version](https://img.shields.io/npm/v/@multipliers-dev/plan-validator)](https://www.npmjs.com/package/@multipliers-dev/plan-validator)
+
+**Optional plan validation:** `@multipliers-dev/plan-validator` is a separately installed CLI for checking the structural conformance of Cursor plan files. It is not required to use team-harness and is not installed automatically with the plugin.
+
+```bash
+npm install -D @multipliers-dev/plan-validator
+```
+
+Consumption patterns (exact version pins, reusable GitHub Actions workflow): [plugins/team-harness/docs/centralized-consumption.md](plugins/team-harness/docs/centralized-consumption.md). Package wrapper and build: [packages/plan-validator/](packages/plan-validator/).
+
 ## Documentation
 
 - [Plugin skills and scripts](plugins/team-harness/README.md) — capabilities and implementation reference
