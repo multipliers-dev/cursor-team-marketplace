@@ -43,7 +43,7 @@ Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/eng
 
 [![npm version](https://img.shields.io/npm/v/@multipliers-dev/plan-validator)](https://www.npmjs.com/package/@multipliers-dev/plan-validator)
 
-**Optional plan validation:** `@multipliers-dev/plan-validator` is a separately installed CLI for checking the structural conformance of Cursor plan files. It is not required to use team-harness and is not installed automatically with the plugin. GitHub Actions CI integration is also opt-in and configured by each consuming repository.
+**Optional plan validation:** `@multipliers-dev/plan-validator` is a separately installed CLI for checking the structural conformance of Cursor plan files. It is not required to use team-harness and is not installed automatically with the plugin.
 
 ```bash
 npm install -D @multipliers-dev/plan-validator
