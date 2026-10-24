@@ -43,7 +43,7 @@ Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/eng
 
 [![npm version](https://img.shields.io/npm/v/@multipliers-dev/plan-validator)](https://www.npmjs.com/package/@multipliers-dev/plan-validator)
 
-Published on [npm](https://www.npmjs.com/package/@multipliers-dev/plan-validator) as **`@multipliers-dev/plan-validator`**: a deterministic structural validator for staged Cursor plan files under `.cursor/plans/` (frontmatter, slice todos, agent prompts, and related rules). Installing the team-harness plugin does **not** install this CLI — pin it in consumer repos for agents, local checks, or CI.
+**Optional plan validation:** `@multipliers-dev/plan-validator` is a separately installed CLI for checking the structural conformance of Cursor plan files. It is not required to use team-harness and is not installed automatically with the plugin. GitHub Actions CI integration is also opt-in and configured by each consuming repository.
 
 ```bash
 npm install -D @multipliers-dev/plan-validator
