@@ -9,10 +9,10 @@ todos:
     content: "cursor-team-marketplace PR: vendor sync/verify, savepoints wrapper skill, engineering invariants, docs, version 1.15.0; mark completed in same PR; Open PR only"
     status: pending
   - id: gate-consumer-prereqs
-    content: "Operator: confirm marketplace merged, team-harness plugin refreshed, engineering invariants in User Rules, vendored skills readable, end-to-end Savepoint persistence via installed plugin"
+    content: "Manual gate: read-only verification + pass/fail report (no commits/PRs/plan edits); todo reconciled at plan-closure from recorded evidence"
     status: pending
   - id: consumer-cleanup
-    content: "Per-repo inventory; one Open PR only per repo needing changes; record no-change repos; preserve marketplace build-time savepoints-lite devDep"
+    content: "Per-repo Open PR only where needed; each PR touches only that repo; preserve marketplace build-time savepoints-lite devDep; inventory recorded at plan-closure"
     status: pending
   - id: plan-closure
     content: "Docs-only PR after last slice: # Shipped note, move plan to .cursor/plans/archive/2026-10-27-savepoints-marketplace-distribution.plan.md"
@@ -28,9 +28,9 @@ isProject: false
 | --- | --- | --- |
 | plan-review | Plan-only PR | Do not implement slices. Stop after opening the plan-only PR. |
 | marketplace-distribution | Open PR only | Marketplace repo only. Mark `marketplace-distribution` completed in plan frontmatter in the **same** implementation PR. Stop after opening the PR. |
-| gate-consumer-prereqs | Manual verification gate | Confirm prerequisites for consumer cleanup; no consumer edits. Stop with pass/fail report. |
-| consumer-cleanup | Open PR only | **Prerequisite:** `gate-consumer-prereqs` passed. One repo per PR. Record inventory in marketplace plan when opening `plan-closure` (or a short progress note in the consumer-cleanup PR description). |
-| plan-closure | Open PR only | Docs-only archive PR. Do not merge. |
+| gate-consumer-prereqs | Manual verification gate | Read-only verification; pass/fail report with evidence. No commit, no PR, no tracked plan edits. Stop after the report. |
+| consumer-cleanup | Open PR only | **Prerequisite:** `gate-consumer-prereqs` **passed** (per gate report evidence). One repo per PR; each PR modifies **only** that repository. Do not edit this marketplace plan. |
+| plan-closure | Open PR only | Docs-only archive PR after merge verification (§ plan-closure). Reconcile gate + slice todos; `# Shipped` evidence; archive. Do not merge. |
 
 Repo default: **Open PR only** (plan-review for plan artifact only).
 
@@ -52,12 +52,12 @@ This file lives in **`multipliers-dev/cursor-team-marketplace`** and is the **si
 
 | Event | Where to record progress |
 | --- | --- |
-| Marketplace implementation PR opened/merged | Mark `marketplace-distribution` `completed` and link the PR in **the same implementation PR** (frontmatter + optional `# Progress` note in plan body). |
-| Operator / integration gates | Mark `gate-consumer-prereqs` `completed` when confirming prerequisites (marketplace plan update in the same session or a follow-up docs-only commit on `main` — no separate plan-status PR required). |
-| Consumer cleanup PRs opened | Record repo → PR link or “no change” in plan body or `plan-closure` PR; mark `consumer-cleanup` `completed` when opening `plan-closure` or in the last consumer PR batch. |
-| Initiative complete | `plan-closure` docs-only PR: archive plan, mark `plan-closure` completed. |
+| Marketplace implementation PR opened/merged | Mark `marketplace-distribution` `completed` and link the merged PR in **the same implementation PR** (frontmatter + optional `# Progress` note in plan body). |
+| `gate-consumer-prereqs` | **Not** in tracked files during the gate. Operator/agent keeps a pass/fail report with evidence (chat, operator notes, or allowed gitignored artifacts only). `gate-consumer-prereqs` → `completed` is reconciled in the **`plan-closure`** PR from that evidence. |
+| Consumer cleanup | Each consumer repo: its own Open PR only (merge to that repo’s `main` before closure). **Never** edit this marketplace plan from consumer repos. Inventory (repo → merged PR link or “no change”) is recorded in the **`plan-closure`** PR (`# Shipped` + plan body). `consumer-cleanup` → `completed` in frontmatter during **`plan-closure`** only. |
+| Initiative complete | `plan-closure` docs-only PR: verify merges and gate evidence (§ plan-closure); reconcile todos; `# Shipped`; archive; mark `plan-closure` completed. |
 
-Implementation PRs in **other** repositories must not edit this plan unless the slice explicitly authorizes it (consumer cleanup does not).
+Implementation PRs in **other** repositories **must not** edit this marketplace plan. No separate `plan-status-*` PRs.
 
 Run `npm run validate:plans` on any commit that changes this plan file.
 
@@ -89,7 +89,7 @@ flowchart TD
   e2e --> phase5 --> consumerPRs
 ```
 
-- **Hard gate (consumer cleanup):** Do not start `consumer-cleanup` until marketplace implementation is **merged**, team-harness plugin is installed/refreshed, vendored canonical skills are readable in the installed plugin, engineering invariants are installed in global Cursor User Rules, and **end-to-end Savepoint persistence** is verified through the installed plugin (not only `node_modules` in a dev checkout).
+- **Hard gate (consumer cleanup):** Do not start `consumer-cleanup` until `gate-consumer-prereqs` **passes** (documented pass/fail report with evidence — not inferred from plan todo status). Prerequisites: marketplace implementation **merged** to `main`; team-harness plugin installed/refreshed; vendored canonical skills readable in the installed plugin; engineering invariants in global Cursor User Rules; **end-to-end Savepoint persistence** through the installed plugin (not only `node_modules` in a dev checkout).
 - **Target semver:** `2.0.0` (breaking: packaged Notion destination removed; explicit-integration tier added).
 
 ### Relationship to savepoints-lite OSS work
@@ -142,14 +142,16 @@ This plan supersedes the archived OSS plan’s **pre-2.0.0 seven-consumer `.agen
 
 **Rationale:** Consumer cleanup must not run before global integration is live and proven.
 
-**Agent instruction:** Verify prerequisites only; no consumer repo edits. Stop with pass/fail report. Mark `gate-consumer-prereqs` `completed` in plan frontmatter when all checks pass (same session docs commit acceptable).
+**Agent instruction:** Read-only verification only. Produce a **pass/fail report** with supporting evidence (commands run, paths inspected, Notion write outcome, links to merged marketplace PR on GitHub). **Do not** commit, open a PR, or modify tracked plan frontmatter or other tracked files. Allowed outputs: chat report and gitignored operator artifacts if the slice names them. Stop after the report. Reconcile `gate-consumer-prereqs` → `completed` in frontmatter during **`plan-closure`** when evidence proves pass.
 
-**Acceptance:**
+**Acceptance (report must evidence each item):**
 
-- Marketplace `marketplace-distribution` merged to `main`.
-- Team-harness plugin refreshed in Cursor; vendored `vendor/savepoints-lite/skills/` readable under installed plugin cache.
-- Engineering invariants Savepoints section present in **global Cursor User Rules**.
-- End-to-end Savepoint write confirmed via installed plugin path (Notion MCP + wrapper → vendored router/provider).
+- Marketplace `marketplace-distribution` implementation PR **merged** to `cursor-team-marketplace` `main` (GitHub merge status / `gh pr view`).
+- Team-harness plugin refreshed in Cursor; vendored `vendor/savepoints-lite/skills/` readable under installed plugin cache (path cited in report).
+- Engineering invariants Savepoints section present in **global Cursor User Rules** (summary in report).
+- End-to-end Savepoint write confirmed via installed plugin path (Notion MCP + wrapper → vendored router/provider; Savepoint URL or id in report).
+
+**Verdict:** `pass` only if all items evidenced; otherwise `fail` — do not start `consumer-cleanup`.
 
 ---
 
@@ -157,19 +159,19 @@ This plan supersedes the archived OSS plan’s **pre-2.0.0 seven-consumer `.agen
 
 **Recommended authority:** Open PR only
 
-**Prerequisite:** `gate-consumer-prereqs` passed.
+**Prerequisite:** `gate-consumer-prereqs` **passed** per gate report evidence (not plan todo status alone).
 
-**Repositories (inventory):** `multipliers-dev/savepoints-lite`, `multipliers-dev/cursor-team-marketplace`, `multipliers-dev/editorial-workflow`, `multipliers-dev/renovate-workflow`, `multipliers-dev/codenames-ai-guesser`, `mastermichaelt/resumes`, `mastermichaelt/portfolio` — extend if grep finds more.
+**Repositories (inventory):** `multipliers-dev/savepoints-lite`, `multipliers-dev/cursor-team-marketplace`, `multipliers-dev/editorial-workflow`, `multipliers-dev/renovate-workflow`, `multipliers-dev/codenames-ai-guesser`, `mastermichaelt/resumes`, `mastermichaelt/portfolio` — extend if grep finds more. Final inventory table is recorded in **`plan-closure`**.
 
 **Rationale:** Redundant per-repo npm deps, `.agents` Savepoints config, and `AGENTS.md` activation are obsolete once team-harness + User Rules provide global Savepoints.
 
-**Agent instruction:** One repo per PR; do not merge. Stop after opening required PRs. Do not remove savepoints-lite canonical package files or the marketplace root build-time devDependency.
+**Agent instruction:** One repo per PR; each PR touches **only** that repository. Do not merge. Do not edit `cursor-team-marketplace` plan files or frontmatter. Do not remove savepoints-lite canonical package files or the marketplace root build-time devDependency. Stop after opening required PRs (or documenting no-change repos in operator notes for later `plan-closure`).
 
-**Goal:** Remove redundant consumer `savepoints-lite` npm dependencies, `AGENTS.md` Savepoints Lite activation sections, and obsolete `.agents` Savepoints YAML where appropriate. Record no-change repos.
+**Goal:** Remove redundant consumer `savepoints-lite` npm dependencies, `AGENTS.md` Savepoints Lite activation sections, and obsolete `.agents` Savepoints YAML where appropriate. Repos with no required edits: record “no change” for `plan-closure` (not in this plan file during consumer work).
 
 **Exclusions:** No hooks, monitoring, or reliability improvements.
 
-**Acceptance:** Per-repo verification; PRs opened (Open PR only). Mark `consumer-cleanup` `completed` when inventory is recorded (typically in `plan-closure` prep).
+**Acceptance:** Per-repo verification; PRs opened (Open PR only). Completion is proven by **merged** consumer PRs (or documented no-change) verified again at `plan-closure` — not by opened PRs alone.
 
 ---
 
@@ -179,9 +181,18 @@ This plan supersedes the archived OSS plan’s **pre-2.0.0 seven-consumer `.agen
 
 **Rationale:** Archive completed multi-slice plan per repository planning standards.
 
-**Agent instruction:** Docs-only PR; do not merge. Stop after opening the PR.
+**Agent instruction:** Docs-only PR in `cursor-team-marketplace` only. **Before** editing the plan to archive: verify prerequisites with GitHub and repository state (`gh pr view`, merged commits on each repo’s `main`). If any check fails, **stop** with a blocker report — do not archive. When all pass: reconcile frontmatter (`marketplace-distribution`, `gate-consumer-prereqs`, `consumer-cleanup`, `plan-closure` → `completed` as applicable), add `# Shipped` with evidence (merged PR links, gate report summary, consumer inventory), move plan to `.cursor/plans/archive/`. Do not merge the closure PR.
 
-**Acceptance:** Plan moved to `.cursor/plans/archive/` with `# Shipped` note; `plan-closure` todo completed; consumer inventory links captured if not already in plan body.
+**Pre-archive verification (all required):**
+
+1. **Marketplace distribution** — implementation PR **merged** into `multipliers-dev/cursor-team-marketplace` `main` (not open/draft).
+2. **Gate** — `gate-consumer-prereqs` **passed**; cite evidence: installed plugin path, User Rules, readable vendored skills, successful E2E Savepoint persistence (from gate report).
+3. **Consumer cleanup** — every inventory repo either has a cleanup PR **merged** to that repo’s `main` or is documented **no change**; no required cleanup PR still open.
+4. **No open implementation work** — no remaining required slices or unmerged PRs for this initiative.
+
+Do not infer completion from opened PRs or previously pending todos alone.
+
+**Acceptance:** Blocker report if any prerequisite unmet. Otherwise: archive path correct; `# Shipped` includes cross-repo merged PR links + gate + inventory; frontmatter todos reconciled; `npm run validate:plans` passes; closure PR opened (Open PR only).
 
 ---
 
@@ -199,13 +210,10 @@ This plan supersedes the archived OSS plan’s **pre-2.0.0 seven-consumer `.agen
 
 ## Final completion checklist
 
-- [ ] `marketplace-distribution` merged; team-harness **1.15.0** available; vendor sync/verify in CI
-- [ ] Plugin refreshed; vendored skills readable; wrapper skill on discovery path
-- [ ] User Rules include engineering invariants Savepoints destination
-- [ ] E2E Savepoint persistence verified through installed plugin
-- [ ] `gate-consumer-prereqs` marked completed
-- [ ] Consumer cleanup PRs opened (or no-change recorded) per inventory
-- [ ] `plan-closure` archive PR opened with `# Shipped` note
+- [ ] `marketplace-distribution` PR **merged** to marketplace `main`; team-harness **1.15.0**; vendor sync/verify in CI
+- [ ] `gate-consumer-prereqs` **pass** report with evidence (no tracked plan edit during gate)
+- [ ] Consumer cleanup: required PRs **merged** per repo (or **no change** documented)
+- [ ] `plan-closure` verifies merges + gate evidence; reconciles todos; `# Shipped`; archive PR opened
 
 ---
 
@@ -254,13 +262,13 @@ Verification: npm run verify:savepoints-vendor (or slice script), npm test, npm 
 
 Implement slice gate-consumer-prereqs only.
 
-Authority: Manual verification gate — no consumer repo edits.
+Authority: Manual verification gate — read-only. No commit, no PR, no tracked plan or repo edits. No consumer repo implementation.
 
 Topology: N/A (operator + filesystem + Notion checks).
 
-Deliverables: pass/fail report for marketplace merge, plugin refresh, vendored skills readable, User Rules engineering invariants, end-to-end Savepoint persistence via installed plugin.
+Deliverables: pass/fail report with evidence for: marketplace distribution PR merged to main (gh pr view); plugin refreshed; vendored skills readable under ~/.cursor/plugins/cache/.../team-harness; User Rules engineering invariants; end-to-end Savepoint persistence via installed plugin.
 
-Verification: git log origin/main for marketplace merge; inspect ~/.cursor/plugins/cache/.../team-harness for vendor skills; confirm User Rules; one successful Savepoint write through plugin path. Mark gate-consumer-prereqs completed in plan frontmatter when all pass. Stop before consumer-cleanup if any fail.
+Verification: cite commands/paths/URLs in the report. Do not update plan frontmatter. Stop before consumer-cleanup on fail. Todo reconciliation happens in plan-closure when evidence is archived in # Shipped.
 ```
 
 ### consumer-cleanup
@@ -278,9 +286,9 @@ Repositories: inventory in plan; prove checkout identity per repo.
 
 Topology: each consumer repo branches from origin/main; PR base main; one slice per PR.
 
-Deliverables: remove redundant savepoints-lite consumer deps, AGENTS.md Savepoints activation, obsolete .agents Savepoints YAML; preserve marketplace build-time devDep and savepoints-lite canonical package/skills; record no-change repos.
+Deliverables: remove redundant savepoints-lite consumer deps, AGENTS.md Savepoints activation, obsolete .agents Savepoints YAML; preserve marketplace build-time devDep and savepoints-lite canonical package/skills. Note no-change repos for plan-closure (operator notes only — not marketplace plan edits).
 
-Verification: per-repo npm test/check as documented. Do not edit this marketplace plan from consumer repos unless marking consumer-cleanup completed in a marketplace follow-up.
+Verification: per-repo npm test/check as documented. Do not edit cursor-team-marketplace or this plan file from consumer repos.
 ```
 
 ### plan-closure
@@ -294,7 +302,7 @@ Authority: Open PR only — docs-only. Do not merge.
 
 Topology: branch from origin/main in cursor-team-marketplace; PR base main.
 
-Deliverables: verify slice todos, add # Shipped closure note, consumer inventory if missing, move plan to .cursor/plans/archive/2026-10-27-savepoints-marketplace-distribution.plan.md, mark plan-closure completed.
+Deliverables: If prerequisites unmet, blocker report only — do not archive. If met: reconcile frontmatter (marketplace-distribution, gate-consumer-prereqs, consumer-cleanup, plan-closure completed); # Shipped with merged PR links, gate evidence summary, consumer inventory (merged PR or no change per repo); move plan to .cursor/plans/archive/2026-10-27-savepoints-marketplace-distribution.plan.md.
 
-Verification: npm run validate:plans. No production code changes.
+Verification: gh pr view (merged) for marketplace distribution PR and each required consumer cleanup PR; confirm gate pass evidence; confirm no open required PRs. npm run validate:plans. No production code changes.
 ```
