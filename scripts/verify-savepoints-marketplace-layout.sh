@@ -82,26 +82,38 @@ CACHE_ANY_WRAPPER=0
 CACHE_EXPECTED_MATCH=0
 CACHE_VERIFIED=0
 CACHE_VERIFIED_PATH=""
+CACHE_DISCOVERY_FAILED=0
 
-if command -v rg >/dev/null 2>&1 && [ -d "$CACHE_ROOT" ]; then
-  while IFS= read -r cache_wrapper; do
-    [ -z "$cache_wrapper" ] && continue
-    [ ! -f "$cache_wrapper" ] && continue
-    CACHE_ANY_WRAPPER=1
-    cache_plugin="$(cd "$(dirname "$cache_wrapper")/../.." && pwd)"
-    cache_version="$(read_team_harness_version "$cache_plugin")"
-    if [ "$cache_version" != "$EXPECTED_VERSION" ]; then
-      continue
-    fi
-    CACHE_EXPECTED_MATCH=1
-    if ! verify_plugin_savepoints_layout "$cache_plugin" "installed-cache v$EXPECTED_VERSION"; then
-      exit 1
-    fi
-    CACHE_VERIFIED=1
-    CACHE_VERIFIED_PATH="$cache_plugin"
-  done <<EOF
-$(rg --files -g '**/team-harness/*/skills/savepoints/SKILL.md' "$CACHE_ROOT" 2>/dev/null || true)
-EOF
+if [ -d "$CACHE_ROOT" ]; then
+  find_list="$(mktemp)"
+  find_err="$(mktemp)"
+  if find "$CACHE_ROOT" -type f -path '*/team-harness/*/skills/savepoints/SKILL.md' >"$find_list" 2>"$find_err"; then
+    while IFS= read -r cache_wrapper || [ -n "$cache_wrapper" ]; do
+      [ -z "$cache_wrapper" ] && continue
+      [ ! -f "$cache_wrapper" ] && continue
+      CACHE_ANY_WRAPPER=1
+      cache_plugin="$(cd "$(dirname "$cache_wrapper")/../.." && pwd)"
+      cache_version="$(read_team_harness_version "$cache_plugin")"
+      if [ "$cache_version" != "$EXPECTED_VERSION" ]; then
+        continue
+      fi
+      CACHE_EXPECTED_MATCH=1
+      if ! verify_plugin_savepoints_layout "$cache_plugin" "installed-cache v$EXPECTED_VERSION"; then
+        rm -f "$find_list" "$find_err"
+        exit 1
+      fi
+      CACHE_VERIFIED=1
+      CACHE_VERIFIED_PATH="$cache_plugin"
+    done <"$find_list"
+  else
+    CACHE_DISCOVERY_FAILED=1
+    echo "verify-savepoints-marketplace-layout: installed-cache discovery failed under $CACHE_ROOT ($(tr '\n' ' ' <"$find_err" | sed 's/  */ /g'))" >&2
+  fi
+  rm -f "$find_list" "$find_err"
+fi
+
+if [ "$CACHE_DISCOVERY_FAILED" -eq 1 ]; then
+  exit 1
 fi
 
 if [ "$CACHE_VERIFIED" -eq 1 ]; then
