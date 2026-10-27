@@ -8,13 +8,32 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 const REPO_ROOT = join(import.meta.dirname, "..");
 const SCRIPT = join(REPO_ROOT, "scripts/verify-savepoints-marketplace-layout.sh");
 const REPO_PLUGIN = join(REPO_ROOT, "plugins/team-harness");
+
+const cleanupPaths = new Set<string>();
+
+afterEach(() => {
+  for (const path of cleanupPaths) {
+    try {
+      chmodSync(path, 0o700);
+    } catch {
+      // Ignore — path may already be removed or inaccessible.
+    }
+    try {
+      rmSync(path, { recursive: true, force: true });
+    } catch {
+      // Best-effort cleanup; failing tests should not mask assertion failures.
+    }
+  }
+  cleanupPaths.clear();
+});
 
 function runLayoutVerify(options: {
   cacheRoot?: string;
@@ -67,37 +86,35 @@ function installCacheCopy(cacheRoot: string, hash: string, mutate?: (pluginRoot:
   return pluginRoot;
 }
 
-function tempCacheRoot(prefix: string): string {
-  return mkdtempSync(join(REPO_ROOT, `.vitest-${prefix}`));
+function tempDir(prefix: string): string {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  cleanupPaths.add(dir);
+  return dir;
 }
 
 describe("verify-savepoints-marketplace-layout installed-cache discovery", () => {
   it("verifies a valid nested cache installation at the expected version", () => {
-    const cacheRoot = tempCacheRoot("savepoints-cache-valid-");
+    const cacheRoot = tempDir("savepoints-cache-valid-");
     const pluginRoot = installCacheCopy(cacheRoot, "abc123deadbeef");
 
     const result = runLayoutVerify({ cacheRoot });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain(`ok (repo + installed cache`);
     expect(result.stdout).toContain(pluginRoot);
-
-    rmSync(cacheRoot, { recursive: true, force: true });
   });
 
   it("reports no installation when the cache root is empty", () => {
-    const cacheRoot = tempCacheRoot("savepoints-cache-missing-");
+    const cacheRoot = tempDir("savepoints-cache-missing-");
 
     const result = runLayoutVerify({ cacheRoot });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("ok (repo layout)");
     expect(result.stdout).toContain("installed-cache verification not run");
     expect(result.stdout).toContain("no team-harness savepoints wrapper");
-
-    rmSync(cacheRoot, { recursive: true, force: true });
   });
 
   it("ignores outdated installations and reports refresh guidance", () => {
-    const cacheRoot = tempCacheRoot("savepoints-cache-outdated-");
+    const cacheRoot = tempDir("savepoints-cache-outdated-");
     installCacheCopy(cacheRoot, "oldhash111111111111111111111111", (pluginRoot) => {
       const overlay = join(pluginRoot, ".cursor-plugin", "plugin.json");
       const pkg = JSON.parse(readFileSync(overlay, "utf8")) as { version: string };
@@ -109,12 +126,10 @@ describe("verify-savepoints-marketplace-layout installed-cache discovery", () =>
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("ok (repo layout)");
     expect(result.stdout).toContain("team-harness cache found but none at version");
-
-    rmSync(cacheRoot, { recursive: true, force: true });
   });
 
   it("fails when a matching-version cache installation is incomplete", () => {
-    const cacheRoot = tempCacheRoot("savepoints-cache-invalid-");
+    const cacheRoot = tempDir("savepoints-cache-invalid-");
     installCacheCopy(cacheRoot, "badhash222222222222222222222222", (pluginRoot) => {
       const wrapper = join(pluginRoot, "skills/savepoints/SKILL.md");
       writeFileSync(wrapper, "# broken wrapper\n", "utf8");
@@ -123,15 +138,13 @@ describe("verify-savepoints-marketplace-layout installed-cache discovery", () =>
     const result = runLayoutVerify({ cacheRoot });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("installed-cache");
-
-    rmSync(cacheRoot, { recursive: true, force: true });
   });
 
   it("discovers installations without ripgrep on PATH", () => {
-    const cacheRoot = tempCacheRoot("savepoints-cache-no-rg-");
+    const cacheRoot = tempDir("savepoints-cache-no-rg-");
     const pluginRoot = installCacheCopy(cacheRoot, "norghash3333333333333333333333");
 
-    const fakeBin = tempCacheRoot("savepoints-fake-bin-");
+    const fakeBin = tempDir("savepoints-fake-bin-");
     writeFileSync(
       join(fakeBin, "rg"),
       "#!/bin/sh\necho 'verify-savepoints-marketplace-layout: rg must not be used' >&2\nexit 99\n",
@@ -154,24 +167,15 @@ describe("verify-savepoints-marketplace-layout installed-cache discovery", () =>
     expect(result.status).toBe(0);
     expect(result.stdout).toContain(`ok (repo + installed cache`);
     expect(result.stdout).toContain(pluginRoot);
-
-    rmSync(cacheRoot, { recursive: true, force: true });
-    rmSync(fakeBin, { recursive: true, force: true });
   });
 
   it("fails discovery when the cache root is not searchable", () => {
-    const cacheRoot = tempCacheRoot("savepoints-cache-unreadable-");
-    try {
-      // chmod after creating so cleanup can still remove the directory.
-      mkdirSync(join(cacheRoot, "placeholder"));
-      chmodSync(cacheRoot, 0o000);
+    const cacheRoot = tempDir("savepoints-cache-unreadable-");
+    mkdirSync(join(cacheRoot, "placeholder"));
+    chmodSync(cacheRoot, 0o000);
 
-      const result = runLayoutVerify({ cacheRoot });
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("installed-cache discovery failed");
-    } finally {
-      chmodSync(cacheRoot, 0o700);
-      rmSync(cacheRoot, { recursive: true, force: true });
-    }
+    const result = runLayoutVerify({ cacheRoot });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("installed-cache discovery failed");
   });
 });
