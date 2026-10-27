@@ -6,7 +6,10 @@ todos:
     content: "Plan-only PR — commit this plan; do not implement slices"
     status: completed
   - id: sl-phase1-contract
-    content: "savepoints-lite PR: explicit-integration tier, empty shipped defaults, router/provider/docs/templates, 2.0.0 package.json, tests + verify; supersede PR #13 consumer-migration slices in PR body"
+    content: "savepoints-lite PR: 2.0.0 config contract + OSS public-package readiness (docs, privacy, reliability, maintenance, release verification); do not publish"
+    status: pending
+  - id: plan-status-sl-phase1
+    content: "cursor-team-marketplace plan-only PR: mark sl-phase1-contract completed + link savepoints-lite implementation PR after it merges"
     status: pending
   - id: gate-publish
     content: "Operator: publish @multipliers-dev/savepoints-lite@2.0.0 to npm before marketplace vendor sync"
@@ -14,11 +17,17 @@ todos:
   - id: marketplace-distribution
     content: "cursor-team-marketplace PR: vendor sync/verify, savepoints wrapper skill, engineering invariants, docs, version 1.15.0; Open PR only"
     status: pending
+  - id: plan-status-marketplace
+    content: "cursor-team-marketplace plan-only PR: mark marketplace-distribution completed + link implementation PR after it merges"
+    status: pending
   - id: gate-consumer-prereqs
     content: "Operator: confirm 2.0.0 published, marketplace merged, team-harness plugin refreshed, engineering invariants in User Rules, vendored skills readable in installed plugin"
     status: pending
   - id: consumer-cleanup
     content: "Per-repo inventory; one Open PR only per repo needing changes; record no-change repos; preserve marketplace build-time savepoints-lite devDep"
+    status: pending
+  - id: plan-status-consumer-cleanup
+    content: "cursor-team-marketplace plan-only PR: mark consumer-cleanup completed + inventory/PR links after consumer PRs opened"
     status: pending
   - id: plan-closure
     content: "Docs-only PR after last slice: # Shipped note, move plan to .cursor/plans/archive/2026-10-27-savepoints-marketplace-distribution.plan.md"
@@ -33,11 +42,14 @@ isProject: false
 | Slice | Recommended authority | Agent instruction |
 | --- | --- | --- |
 | plan-review | Plan-only PR | Do not implement slices. Stop after opening the plan-only PR. |
-| sl-phase1-contract | Open PR only | `multipliers-dev/savepoints-lite` only. Do not publish npm. Do not start marketplace work. Stop after opening the PR. |
-| gate-publish | Manual verification gate | Operator publishes `@2.0.0`; agent confirms registry version only if asked. No implementation PR. |
-| marketplace-distribution | Open PR only | **Prerequisite:** `gate-publish` satisfied. Do not vendor unpublished source. Stop after opening the PR. |
+| sl-phase1-contract | Open PR only | `multipliers-dev/savepoints-lite` only. Do not edit this marketplace plan file. Do not publish npm. Stop after opening the PR. |
+| plan-status-sl-phase1 | Plan-only PR | `cursor-team-marketplace` only — frontmatter/links after savepoints-lite PR merges. Do not implement product code. |
+| gate-publish | Manual verification gate | **Prerequisite:** `sl-phase1-contract` merged with full OSS acceptance. Operator publishes `@2.0.0`. No implementation PR. |
+| marketplace-distribution | Open PR only | **Prerequisite:** `gate-publish` satisfied. Do not edit plan frontmatter in implementation PR. Stop after opening the PR. |
+| plan-status-marketplace | Plan-only PR | Marketplace only — update plan after marketplace implementation PR merges. |
 | gate-consumer-prereqs | Manual verification gate | Confirm prerequisites for Phase 5; no consumer edits. Stop with pass/fail report. |
-| consumer-cleanup | Open PR only | **Prerequisite:** `gate-consumer-prereqs` passed. One repo per PR. Do not merge. |
+| consumer-cleanup | Open PR only | **Prerequisite:** `gate-consumer-prereqs` passed. Do not edit marketplace plan from consumer repos. One repo per PR. |
+| plan-status-consumer-cleanup | Plan-only PR | Marketplace only — update plan after consumer PRs opened. |
 | plan-closure | Open PR only | Docs-only archive PR. Do not merge. |
 
 Repo default: **Open PR only** (plan-review for plan artifact only).
@@ -53,6 +65,19 @@ Multi-slice plans stack execution order, not Git branches. Integration branch is
 **After opening the PR:** GitHub base is `main`; diff excludes prior-slice work except through merged `main`.
 
 **Cross-repo:** Phase 1 → `savepoints-lite`. Phases 2–4 → `cursor-team-marketplace`. Phase 5 → each consumer repo (separate PRs).
+
+## Plan coordination (cross-repository)
+
+This file lives in **`multipliers-dev/cursor-team-marketplace`** and is the **single coordination record** for the initiative. Implementation PRs in other repositories **must not** modify this plan or its frontmatter.
+
+| Event | Where to record progress |
+| --- | --- |
+| savepoints-lite implementation PR opened/merged | Optional link in PR description only; **plan todo `sl-phase1-contract` → `completed`** in a **separate** `cursor-team-marketplace` plan-status PR (`plan-status-sl-phase1`) after merge |
+| Marketplace implementation PR merged | `plan-status-marketplace` plan-only PR |
+| Consumer cleanup PRs opened | `plan-status-consumer-cleanup` plan-only PR (inventory + links) |
+| Operator publish / manual gates | `gate-publish` / `gate-consumer-prereqs` marked completed in marketplace plan-status PR or operator-noted commit when confirming |
+
+Plan-status PRs are **docs-only** (this plan file ± short `# Progress` notes). Run `npm run validate:plans` on the changed plan path.
 
 ## Context and gates
 
@@ -79,7 +104,9 @@ flowchart TD
 
 ### Relationship to savepoints-lite PR #13
 
-[PR #13](https://github.com/multipliers-dev/savepoints-lite/pull/13) merged plan-only ([`2026-10-27-oss-readiness-cleanup.plan.md`](https://github.com/multipliers-dev/savepoints-lite/blob/main/.cursor/plans/2026-10-27-oss-readiness-cleanup.plan.md)). Do not reopen PR #13. This plan supersedes that plan’s **pre-2.0.0 seven-consumer `.agents` migration** with **Phase 5 cleanup after marketplace + User Rules**, while preserving public-package cleanup (no maintainer `data_source_id` in shipped defaults).
+[PR #13](https://github.com/multipliers-dev/savepoints-lite/pull/13) merged plan-only ([`2026-10-27-oss-readiness-cleanup.plan.md`](https://github.com/multipliers-dev/savepoints-lite/blob/main/.cursor/plans/2026-10-27-oss-readiness-cleanup.plan.md)). Do not reopen PR #13. This plan supersedes that plan’s **pre-2.0.0 seven-consumer `.agents` migration** with **Phase 5 cleanup after marketplace + User Rules**.
+
+**OSS readiness (from PR #13 plan, still required before `gate-publish`):** `sl-phase1-contract` must deliver configuration changes **and** public-package readiness below — not configuration alone. Reference savepoints-lite OSS plan phases 2–4 scope (consolidated into one savepoints-lite PR).
 
 ---
 
@@ -89,9 +116,9 @@ flowchart TD
 
 **Repositories:** `multipliers-dev/savepoints-lite` (read/write)
 
-**Rationale:** Marketplace global Savepoints distribution requires a provider-neutral explicit-integration tier before vendoring `@2.0.0` skills.
+**Rationale:** Marketplace distribution requires a publishable `@2.0.0` with explicit-integration config **and** OSS-ready public docs/tests — avoiding a registry release that only partially completes PR #13’s hub work.
 
-**Agent instruction:** Hub repo only; do not publish npm or start marketplace work. Stop after opening the PR.
+**Agent instruction:** savepoints-lite repo only; **do not** edit `cursor-team-marketplace` plan files; do not publish npm or start marketplace work. Stop after opening the PR. Plan frontmatter is updated later via `plan-status-sl-phase1` in the marketplace repo.
 
 **Goal:** Provider-neutral configuration contract for `destination.data_source_id`:
 
@@ -103,7 +130,30 @@ flowchart TD
 
 Router carries explicit destination to Notion provider in **instruction context** (no programmatic API). Provider **adds** tier 1; **preserves** `.agents` > defaults for tiers 2–3. Fail open on missing/invalid destination. Bump `package.json` to `2.0.0`; do not publish.
 
-**Acceptance:** `npm test`, `npm run verify`; PR opened (Open PR only).
+**Acceptance:**
+
+- **Configuration contract:** explicit integration tier for `destination.data_source_id`; `.agents` > packaged default preserved; fail open on missing/invalid destination; no maintainer `data_source_id` in shipped defaults or generic provider instructions; `templates/consumer/savepoints-notion.yml.example`; external-integration handoff documented (provider-neutral); `"version": "2.0.0"` in `package.json`; **do not** `npm publish`
+- **Documentation accuracy (OSS):** README, `docs/adopt.md`, `docs/architecture.md`, `docs/publishing.md`, skills/README reflect `@2.0.0`, explicit-integration precedence, generic external-integration example only
+- **Privacy disclosure (OSS):** what is written to Notion, host-owned Notion MCP auth, no credentials or personal destination IDs in the package
+- **Reliability limitations (OSS):** best-effort fail-open, no retry queue, instruction-only, bounded async confirmation documented
+- **Maintenance and support (OSS):** public npm / GitHub issues; no implied SLA; preserve maintainer `docs/adoption-verification-record.md` history (not in tarball)
+- **Release verification (OSS):** `npm test`, `npm run verify`, pack layout vs `expected-package-paths.txt`; split workspace 2.0.0 candidate vs registry dogfood tests if pin lags pre-publish (no gate weakening)
+- **Scope guard:** no new CONTRIBUTING/SECURITY/issue-template governance infra
+- One savepoints-lite PR opened (Open PR only); **`gate-publish` blocked** until merged with criteria above
+
+---
+
+## Slice — plan-status-sl-phase1
+
+**Recommended authority:** Plan-only PR
+
+**Repositories:** `multipliers-dev/cursor-team-marketplace` (read/write) only
+
+**Rationale:** Coordination record must stay in the marketplace repo; implementation PRs in savepoints-lite cannot update this file.
+
+**Agent instruction:** After savepoints-lite `sl-phase1-contract` PR merges, open a **docs-only** marketplace PR that marks `sl-phase1-contract` `completed` in this plan’s frontmatter and links the merged implementation PR. Do not implement product code.
+
+**Acceptance:** Frontmatter updated; `npm run validate:plans` passes; PR opened (Open PR only).
 
 ---
 
@@ -139,7 +189,21 @@ Router carries explicit destination to Notion provider in **instruction context*
 - Docs + team-harness version `1.15.0`.
 - Root `devDependency` on `@multipliers-dev/savepoints-lite@2.0.0` for build-time sync only.
 
-**Acceptance:** `verify:savepoints-vendor`, `npm test`, `validate:plans`, `scripts/check.sh`; PR opened (Open PR only).
+**Acceptance:** `verify:savepoints-vendor`, `npm test`, `validate:plans`, `scripts/check.sh`; PR opened (Open PR only). **Do not** mark `marketplace-distribution` completed in this plan file — use `plan-status-marketplace` after merge.
+
+---
+
+## Slice — plan-status-marketplace
+
+**Recommended authority:** Plan-only PR
+
+**Repositories:** `multipliers-dev/cursor-team-marketplace` only
+
+**Rationale:** Same cross-repo plan tracking rule as `plan-status-sl-phase1`.
+
+**Agent instruction:** After marketplace implementation PR merges, open docs-only PR: mark `marketplace-distribution` completed, link merged PR. No product code.
+
+**Acceptance:** Frontmatter + link; `npm run validate:plans`; PR opened (Open PR only).
 
 ---
 
@@ -171,7 +235,21 @@ Router carries explicit destination to Notion provider in **instruction context*
 
 **Exclusions:** No hooks, monitoring, or reliability improvements.
 
-**Acceptance:** Per-repo verification; PRs opened (Open PR only).
+**Acceptance:** Per-repo verification; PRs opened (Open PR only). **Do not** update this marketplace plan from consumer repos.
+
+---
+
+## Slice — plan-status-consumer-cleanup
+
+**Recommended authority:** Plan-only PR
+
+**Repositories:** `multipliers-dev/cursor-team-marketplace` only
+
+**Rationale:** Record consumer cleanup inventory and PR links in the coordination plan after cross-repo work completes.
+
+**Agent instruction:** After required consumer PRs are opened (and no-change repos recorded), open docs-only marketplace PR: mark `consumer-cleanup` completed; add short inventory table (repo → PR link or “no change”). No product code.
+
+**Acceptance:** Frontmatter + inventory; `npm run validate:plans`; PR opened (Open PR only).
 
 ---
 
@@ -238,7 +316,25 @@ Topology: branch from origin/main; PR base main; slice-only diff.
 
 Deliverables: explicit-integration contract, 2.0.0 package.json bump, tests/docs; PR body notes supersession of savepoints-lite OSS readiness consumer-migration slices.
 
-Verification: npm test && npm run verify. Do not start marketplace-distribution. Mark sl-phase1-contract completed in plan frontmatter in the same PR as the code.
+Verification: npm test && npm run verify && npm run validate:plans (savepoints-lite). Meet all sl-phase1-contract acceptance criteria (configuration + OSS readiness). Do not edit cursor-team-marketplace plan files. Do not start marketplace-distribution.
+```
+
+### plan-status-sl-phase1
+
+```text
+@.cursor/plans/2026-10-27-savepoints-marketplace-distribution.plan.md
+
+Implement slice plan-status-sl-phase1 only.
+
+Authority: Plan-only PR — do not implement product slices.
+
+Repositories: multipliers-dev/cursor-team-marketplace only.
+
+Topology: branch from origin/main; PR base main; this plan file only.
+
+Deliverables: mark sl-phase1-contract completed in frontmatter; link merged savepoints-lite implementation PR in plan body or PR description.
+
+Verification: npm run validate:plans -- .cursor/plans/2026-10-27-savepoints-marketplace-distribution.plan.md
 ```
 
 ### gate-publish
@@ -254,7 +350,7 @@ Topology: N/A (registry check only).
 
 Deliverables: pass/fail report that @multipliers-dev/savepoints-lite@2.0.0 exists on npm.
 
-Verification: npm view @multipliers-dev/savepoints-lite@2.0.0 version. Mark gate-publish completed when operator confirms publish.
+Verification: npm view @multipliers-dev/savepoints-lite@2.0.0 version. Record gate-publish completion in a marketplace plan-status PR when operator confirms publish (not in savepoints-lite).
 ```
 
 ### marketplace-distribution
@@ -274,7 +370,25 @@ Topology: branch from origin/main; PR base main.
 
 Deliverables: vendor sync/verify scripts, committed vendor/savepoints-lite, savepoints wrapper skill (carry User Rules destination through router/provider context), engineering invariants, docs, version 1.15.0. Do not implement consumer-cleanup.
 
-Verification: npm run verify:savepoints-vendor, npm test, npm run validate:plans, sh scripts/check.sh. Mark marketplace-distribution completed in plan frontmatter in the same PR.
+Verification: npm run verify:savepoints-vendor, npm test, npm run validate:plans, sh scripts/check.sh. Do not update this plan frontmatter in the implementation PR.
+```
+
+### plan-status-marketplace
+
+```text
+@.cursor/plans/2026-10-27-savepoints-marketplace-distribution.plan.md
+
+Implement slice plan-status-marketplace only.
+
+Authority: Plan-only PR.
+
+Repositories: multipliers-dev/cursor-team-marketplace only.
+
+Topology: origin/main; PR base main; plan file only.
+
+Deliverables: mark marketplace-distribution completed; link merged marketplace implementation PR.
+
+Verification: npm run validate:plans -- .cursor/plans/2026-10-27-savepoints-marketplace-distribution.plan.md
 ```
 
 ### gate-consumer-prereqs
@@ -310,7 +424,25 @@ Topology: each consumer repo branches from origin/main; PR base main; one slice 
 
 Deliverables: remove redundant savepoints-lite consumer deps and AGENTS.md activation; preserve marketplace build-time devDep and savepoints-lite canonical package; record no-change repos.
 
-Verification: per-repo npm test/check as documented. Mark consumer-cleanup completed when all required PRs are opened.
+Verification: per-repo npm test/check as documented. Do not edit this marketplace plan from consumer repos.
+```
+
+### plan-status-consumer-cleanup
+
+```text
+@.cursor/plans/2026-10-27-savepoints-marketplace-distribution.plan.md
+
+Implement slice plan-status-consumer-cleanup only.
+
+Authority: Plan-only PR.
+
+Repositories: multipliers-dev/cursor-team-marketplace only.
+
+Topology: origin/main; PR base main; plan file only.
+
+Deliverables: mark consumer-cleanup completed; inventory table (repo → PR URL or no change).
+
+Verification: npm run validate:plans -- .cursor/plans/2026-10-27-savepoints-marketplace-distribution.plan.md
 ```
 
 ### plan-closure
