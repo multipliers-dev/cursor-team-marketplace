@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "team-harness",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Merge-safe planning methodology for staged multi-PR work: authority ladder, repository topology, and merge-safe acceptance criteria.",
   "author": {
     "name": "Michael Truong",
