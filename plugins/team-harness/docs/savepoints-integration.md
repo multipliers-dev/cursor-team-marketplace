@@ -6,9 +6,33 @@ Distribute **instruction-only** session Savepoints through the team-harness Curs
 | --- | --- | --- |
 | **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver for sync/verify against npm |
 | **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills at plugin install |
-| **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules destination → tier-1 instruction context |
-| **Personal destination** | Global Cursor **User Rules** ([`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) Savepoints section) | `data_source_id` only here — not in vendor, not in canonical npm defaults (`@2.0.0`) |
+| **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` handoff |
+| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) Savepoints section) | `savepoints_lite.destination.data_source_id` only — not in vendor or npm defaults (`@2.0.0`) |
 | **Persistence** | Consumer Notion MCP | Provider skill performs `notion-create-pages` |
+
+## User Rules → tier-1 destination mapping
+
+Operators configure the Notion data source in **User Rules** (engineering invariants), nested under `savepoints_lite`:
+
+```yaml
+savepoints_lite:
+  destination:
+    data_source_id: "<NOTION_DATA_SOURCE_ID>"
+```
+
+The [`/savepoints` wrapper](../skills/savepoints/SKILL.md) **unwraps** `savepoints_lite.destination` and passes **only** the inner block to the canonical router as tier-1 integration context:
+
+```yaml
+destination:
+  data_source_id: "<same value as in User Rules>"
+```
+
+Rules:
+
+- Preserve the configured `data_source_id` value; do not invent or hardcode ids in the plugin or vendor tree.
+- Do **not** pass the outer `savepoints_lite` namespace to the canonical router or provider.
+- Do **not** change canonical configuration precedence inside vendored skills.
+- If User Rules omit `savepoints_lite`, omit `destination`, or `data_source_id` is missing/empty/unusable → **no** tier-1 block, **no** Notion persistence attempt for that Savepoint (fail open).
 
 ## Maintainer workflow (this repository)
 
@@ -18,14 +42,14 @@ npm run sync:savepoints-vendor    # after bumping the devDependency pin
 npm run verify:savepoints-vendor  # CI + pre-merge check
 ```
 
-`verify:savepoints-vendor` requires the **full** `skills/` file inventory under vendor to match the pinned npm package (no missing or extra files) and byte-compares every manifest path. Drift fails CI until `sync:savepoints-vendor` is run and committed.
+`verify:savepoints-vendor` requires the **full** `skills/` file inventory under vendor to match the pinned npm package (no missing or extra files), asserts every path in the independent manifest exists, and **byte-compares every file** in the matched inventory. Drift fails CI until `sync:savepoints-vendor` is run and committed.
 
-`sh scripts/verify-savepoints-marketplace-layout.sh` checks wrapper → vendor path resolution and the marketplace install-root contract (and optionally an installed plugin under `~/.cursor/plugins/cache/.../team-harness/` after refresh).
+`sh scripts/verify-savepoints-marketplace-layout.sh` verifies the repo plugin tree (wrapper, vendored router/provider, wrapper-relative paths, install-root and destination-handoff contract). When a refreshed team-harness install exists under `~/.cursor/plugins/cache/.../team-harness/<sha>/`, the same checks run against that cache; otherwise the script reports **installed-cache verification not run** while repo structural checks still pass.
 
 ## Operator workflow (consumers)
 
 1. Install or refresh the **team-harness** plugin from this marketplace.
-2. Paste [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md) into Cursor **User Rules**; set your Notion Savepoints `data_source_id` in that Savepoints section.
+2. Paste [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) into Cursor **User Rules**; set `savepoints_lite.destination.data_source_id`.
 3. Connect Notion MCP.
 4. Invoke `/savepoints` (or follow wrapper delegation when User Rules require ongoing session logging).
 

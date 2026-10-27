@@ -82,7 +82,7 @@ savepoints_lite:
     data_source_id: "YOUR_NOTION_DATA_SOURCE_ID"
 ```
 
-The team-harness `/savepoints` wrapper reads this block from User Rules and passes tier-1 `destination` into the vendored router → Notion provider instruction context. The provider skill does **not** read User Rules.
+The team-harness `/savepoints` wrapper reads `savepoints_lite.destination` from User Rules, unwraps it to tier-1 `destination` (inner block only — not the `savepoints_lite` namespace), and passes that into the vendored router → Notion provider instruction context. If `savepoints_lite`, `destination`, or `data_source_id` is missing or unusable, do not attempt Notion persistence. The provider skill does **not** read User Rules.
 
 ### Ongoing logging authorization
 

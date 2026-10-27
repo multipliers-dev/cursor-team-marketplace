@@ -35,28 +35,38 @@ Load and follow canonical router/provider **behavior** from the vendored paths a
 
 ## Activation and authorization
 
-- **Global User Rules:** paste and maintain [`docs/engineering-invariants.md`](../../../../docs/engineering-invariants.md) (repo root) in Cursor **User Rules**, including the Savepoints Lite section and your personal Notion `data_source_id`.
-- **Notion MCP:** must be connected with permission to create pages in that data source.
+- **Global User Rules:** paste and maintain [Engineering invariants (Savepoints section)](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) in Cursor **User Rules**, including your personal Notion `data_source_id` under `savepoints_lite.destination`.
+- **Notion MCP:** must be connected with permission to create pages in that data source when a valid destination is configured.
 - **Opt-in:** session logging runs when engineering invariants (User Rules) authorize ongoing logging — not from installing the plugin alone.
 
 ## Tier-1 destination handoff (wrapper only)
 
-Before delegating to the vendored router, read the Savepoints Lite section in **global Cursor User Rules** (engineering invariants). When it defines a Notion destination for session Savepoints, pass this block **unchanged** in the router’s instruction/delegation context:
+Read the Savepoints Lite section in **global Cursor User Rules** (engineering invariants). Operators store the Notion destination under the `savepoints_lite` namespace:
+
+```yaml
+savepoints_lite:
+  destination:
+    data_source_id: "<NOTION_DATA_SOURCE_ID>"
+```
+
+**Mapping (required):** extract only the inner `destination` object from `savepoints_lite.destination`. Pass **that** block to the vendored router as tier-1 integration context. **Do not** pass the outer `savepoints_lite` key to the canonical router or provider.
+
+Tier-1 block passed to the router (use the **actual** `data_source_id` from User Rules — never invent, hardcode, or substitute a placeholder):
 
 ```yaml
 destination:
-  data_source_id: "<YOUR_NOTION_DATA_SOURCE_ID from User Rules>"
+  data_source_id: "<NOTION_DATA_SOURCE_ID from savepoints_lite.destination>"
 ```
 
-Substitute the actual id from User Rules — never invent or hardcode maintainer ids in repo files, vendor trees, or this skill.
+**Missing or invalid configuration:** if User Rules omit `savepoints_lite`, omit `destination`, or `data_source_id` is empty or unusable, **do not** synthesize a destination and **do not** delegate a Notion write for persistence. Continue primary work (fail open). Canonical router/provider precedence is unchanged — without a valid tier-1 block, the provider must not claim persistence.
 
-The **Notion provider skill does not read User Rules.** Only this wrapper (and other integration layers) may lift `data_source_id` from User Rules into tier-1 instruction context.
+The **Notion provider skill does not read User Rules.** Only this wrapper may read User Rules and perform the `savepoints_lite` → tier-1 `destination` mapping.
 
 ## Delegation
 
 1. Follow activation/authorization and the **package-equivalent install root** table above.
-2. Load and follow the vendored **router** skill for when to Savepoint, schema, `storage.provider` resolution, and provider delegation (vendor paths only).
-3. Include the tier-1 `destination` block when User Rules supply `data_source_id`.
+2. Map `savepoints_lite.destination` → tier-1 `destination` when valid; otherwise skip Notion persistence for that Savepoint.
+3. Load and follow the vendored **router** skill for when to Savepoint, schema, `storage.provider` resolution, and provider delegation (vendor paths only).
 4. When `storage.provider` is `notion`, load the vendored **Notion provider** from the vendor tree (not consumer `node_modules`).
 
 Do not duplicate router/provider logic here. Do not add marketplace-specific Notion property mapping or MCP call sequences.

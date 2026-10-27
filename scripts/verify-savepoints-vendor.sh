@@ -50,21 +50,28 @@ fi
 
 while IFS= read -r rel || [ -n "$rel" ]; do
   [ -z "$rel" ] && continue
-  src="$PKG_ROOT/$rel"
-  dst="$VENDOR_ROOT/$rel"
-  if [ ! -f "$src" ]; then
-    echo "verify-savepoints-vendor: npm package missing $rel" >&2
+  if [ ! -f "$PKG_ROOT/$rel" ]; then
+    echo "verify-savepoints-vendor: manifest path missing in npm package: $rel" >&2
     exit 1
   fi
-  if [ ! -f "$dst" ]; then
-    echo "verify-savepoints-vendor: vendor missing $rel — run npm run sync:savepoints-vendor" >&2
-    exit 1
-  fi
-  if ! cmp -s "$src" "$dst"; then
-    echo "verify-savepoints-vendor: drift at $rel (vendor ≠ pinned npm) — run npm run sync:savepoints-vendor" >&2
+  if [ ! -f "$VENDOR_ROOT/$rel" ]; then
+    echo "verify-savepoints-vendor: manifest path missing in vendor: $rel" >&2
     exit 1
   fi
 done < "$EXPECTED"
 
+while IFS= read -r rel || [ -n "$rel" ]; do
+  [ -z "$rel" ] && continue
+  src="$PKG_ROOT/$rel"
+  dst="$VENDOR_ROOT/$rel"
+  if ! cmp -s "$src" "$dst"; then
+    echo "verify-savepoints-vendor: drift at $rel (vendor ≠ pinned npm) — run npm run sync:savepoints-vendor" >&2
+    exit 1
+  fi
+done <<EOF
+$NPM_FILES
+EOF
+
 FILE_COUNT="$(printf '%s\n' "$NPM_FILES" | grep -c . || true)"
-echo "verify-savepoints-vendor: ok ($INSTALLED, $FILE_COUNT skills files, manifest $(wc -l < "$EXPECTED" | tr -d ' ') paths)"
+MANIFEST_COUNT="$(grep -cve '^[[:space:]]*$' "$EXPECTED" || true)"
+echo "verify-savepoints-vendor: ok ($INSTALLED, $FILE_COUNT skills files byte-checked, manifest $MANIFEST_COUNT paths)"
