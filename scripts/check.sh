@@ -169,6 +169,14 @@ for plugin in plugins:
             die(f"missing template: {path}")
     print(f"ok templates repo ({len(required_templates)} files)")
 
+    vendor_skills = plugin_dir / "vendor" / "savepoints-lite" / "skills" / "savepoints" / "SKILL.md"
+    if not vendor_skills.is_file():
+        die(f"missing vendored savepoints router: {vendor_skills}")
+    wrapper_skill = skills_dir / "savepoints" / "SKILL.md"
+    if not wrapper_skill.is_file():
+        die(f"missing savepoints wrapper skill: {wrapper_skill}")
+    print("ok savepoints vendor + wrapper skill")
+
 print("ok marketplace plugin")
 PY
 

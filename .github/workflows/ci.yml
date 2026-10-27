@@ -49,6 +49,7 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm run verify:savepoints-vendor
       - run: npm run verify:plan-validator
       - run: sh scripts/plan-validator-package-smoke.sh
       - run: npm run typecheck

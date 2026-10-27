@@ -14,10 +14,12 @@
     "build:plan-validator": "npm run build --workspace @multipliers-dev/plan-validator",
     "verify:plan-validator": "npm run build:plan-validator && npm pack --dry-run --workspace @multipliers-dev/plan-validator",
     "validate:plans": "tsx plugins/team-harness/scripts/validate-plans.ts --allow-empty",
-    "validate:plans:template": "tsx plugins/team-harness/scripts/validate-plans.ts --profile template plugins/team-harness/skills/planning-methodology/_template.plan.md"
+    "validate:plans:template": "tsx plugins/team-harness/scripts/validate-plans.ts --profile template plugins/team-harness/skills/planning-methodology/_template.plan.md",
+    "sync:savepoints-vendor": "sh scripts/sync-savepoints-vendor.sh",
+    "verify:savepoints-vendor": "sh scripts/verify-savepoints-vendor.sh"
   },
   "devDependencies": {
-    "@multipliers-dev/savepoints-lite": "1.1.0",
+    "@multipliers-dev/savepoints-lite": "2.0.0",
     "@types/node": "^24.13.4",
     "esbuild": "0.28.2",
     "tsx": "^4.23.13",

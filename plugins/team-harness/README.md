@@ -11,6 +11,7 @@ Package surface vs per-skill portability: [docs/layers.md](docs/layers.md). Vers
 | `planning-methodology` | `/planning-methodology` | **Cross-client** | Full staged-plan / merge-safe procedure (canonical copy) |
 | `repo-bootstrap` | `/repo-bootstrap` | **Cursor-dependent** | One-shot empty-directory → pre-wired greenfield repo (tsx run/dev + Vitest + hooks + CI + GitHub) |
 | `cloud-hooks-bootstrap` | `/cloud-hooks-bootstrap` | **Cursor-dependent** | One-time Husky Cloud wiring + `environment.json` lifecycle using scripts in `scripts/` |
+| `savepoints` | `/savepoints` | **Cursor-dependent** | Session Savepoints via vendored Savepoints Lite router + Notion provider; destination from User Rules |
 
 Agent Plugins discovery exposes all three skills under `skills/`. That does **not** make `repo-bootstrap` or `cloud-hooks-bootstrap` cross-client portable — see [layers.md](docs/layers.md).
 
@@ -33,5 +34,7 @@ Copy into a target repo during one-time bootstrap — locate scripts in the inst
 | `scripts/validate-plans.ts` + `scripts/lib/plan-validate.ts` | Canonical validator source (marketplace dev/CI via `npm run validate:plans`; consumers use npm package — see [docs/plan-validation.md](docs/plan-validation.md)) |
 
 Published CLI for consumers: `@multipliers-dev/plan-validator` in [packages/plan-validator](../../../packages/plan-validator/). See [centralized-consumption.md](docs/centralized-consumption.md) and [plan-validation.md](docs/plan-validation.md).
+
+Savepoints Lite distribution: [savepoints-integration.md](docs/savepoints-integration.md). Canonical skills are vendored under `vendor/savepoints-lite/` (synced from the root devDependency pin).
 
 **Plugin install alone does not wire `package.json` `prepare`, `.husky/` contents, or `.cursor/environment.json`.** When Cloud Agents are expected, wiring includes committed `environment.json` lifecycle and, when `.nvmrc` pins a newer major, Node-from-`.nvmrc` Build/session PATH — not only `prepare`. See `/cloud-hooks-bootstrap`.

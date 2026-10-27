@@ -24,6 +24,7 @@ Unlike [`renovate-workflow`](https://github.com/multipliers-dev/renovate-workflo
 | `planning-methodology` | **Cross-client** | Primary capability named in package manifest `description`. Merge-safe PR doctrine, authority ladder, topology, and `gh` workflows transfer. `.cursor/plans/` paths are Cursor conventions other clients would rewrite — not runtime deps. |
 | `repo-bootstrap` | **Cursor-dependent** | Stays in `skills/` per spec. Procedure assumes Cursor plugin install; output wires `.cursor/hooks.json`, `.cursor/environment.json`. |
 | `cloud-hooks-bootstrap` | **Cursor-dependent** | Entire design targets Cursor Cloud: `~/.cursor/agent-hooks`, `~/.cursor/husky-bridge`, committed `.cursor/environment.json`, Cloud VM install/start lifecycle. |
+| `savepoints` | **Cursor-dependent** | Wrapper over vendored `@multipliers-dev/savepoints-lite` skills; tier-1 Notion `data_source_id` from global User Rules; Notion MCP at runtime. |
 
 **Important:** Agent Plugins 1.0 fixed discovery is `skills/` — there is no supported way to hide Cursor-only skills from other clients without duplicating trees. The boundary is **semantic and documentary**, not a second skill directory. Do **not** duplicate skills under `.cursor/skills/` or `.cursor-plugin/skills/`.
 

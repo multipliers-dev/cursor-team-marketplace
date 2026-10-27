@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: marketplace-distribution
     content: "cursor-team-marketplace PR: vendor sync/verify, savepoints wrapper skill, engineering invariants, docs, version 1.15.0; mark completed in same PR; Open PR only"
-    status: pending
+    status: completed
   - id: gate-consumer-prereqs
     content: "Manual gate: read-only verification + pass/fail report (no commits/PRs/plan edits); todo reconciled at plan-closure from recorded evidence"
     status: pending
