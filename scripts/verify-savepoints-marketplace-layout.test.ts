@@ -39,7 +39,7 @@ function runLayoutVerify(options: {
   cacheRoot?: string;
   env?: Record<string, string>;
 }): { stdout: string; stderr: string; status: number } {
-  const env: Record<string, string> = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     ...options.env,
   };
