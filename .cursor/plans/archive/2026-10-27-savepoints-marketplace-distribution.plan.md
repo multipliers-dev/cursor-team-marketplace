@@ -10,14 +10,58 @@ todos:
     status: completed
   - id: gate-consumer-prereqs
     content: "Manual gate: read-only verification + pass/fail report (no commits/PRs/plan edits); todo reconciled at plan-closure from recorded evidence"
-    status: pending
+    status: completed
   - id: consumer-cleanup
     content: "Seven-repo inventory incl. savepoints-lite hub: remove redundant activation; hub keeps package verify + registry artifact checks; marketplace keeps build-time devDep + vendor; inventory at plan-closure"
-    status: pending
+    status: completed
   - id: plan-closure
     content: "Docs-only PR after last slice: # Shipped note, move plan to .cursor/plans/archive/2026-10-27-savepoints-marketplace-distribution.plan.md"
-    status: pending
+    status: completed
 isProject: false
+---
+
+# Shipped
+
+**Date:** 28 Oct 2026
+
+Centralized Savepoints Lite via team-harness marketplace — distribution, manual gate, and seven-repo consumer activation cleanup merged. Session logging activation is global (team-harness plugin + Cursor User Rules engineering invariants); per-repo `AGENTS.md` Savepoints sections and activation-only npm deps removed.
+
+### Marketplace PRs
+
+| Slice | PR |
+| --- | --- |
+| plan-review | [#70](https://github.com/multipliers-dev/cursor-team-marketplace/pull/70) |
+| marketplace-distribution | [#71](https://github.com/multipliers-dev/cursor-team-marketplace/pull/71) (team-harness **1.15.0**, vendored `@multipliers-dev/savepoints-lite@2.0.0`, wrapper skill, engineering invariants) |
+| post-distribution fix | [#72](https://github.com/multipliers-dev/cursor-team-marketplace/pull/72) (installed-plugin cache discovery without ripgrep) |
+| consumer-cleanup (marketplace) | [#73](https://github.com/multipliers-dev/cursor-team-marketplace/pull/73) (`AGENTS.md` activation only; preserved root devDependency + `vendor/savepoints-lite/`) |
+| plan-closure | (this PR) |
+
+### `gate-consumer-prereqs` (manual verification gate — **pass**)
+
+Recorded during gate slice (chat report; no tracked plan edit during gate):
+
+| Check | Evidence |
+| --- | --- |
+| Distribution merged | [#71](https://github.com/multipliers-dev/cursor-team-marketplace/pull/71) `MERGED` to `main` (`mergeCommit` `2f75daa…`; `origin/main` later includes [#72](https://github.com/multipliers-dev/cursor-team-marketplace/pull/72)) |
+| Plugin refreshed | Installed cache `~/.cursor/plugins/cache/multipliers-dev-cursor-team-marketplace/team-harness/5c5ebcc2a6e9184b26ada241f0f37c4a599ba6a1/`; `plugin.json` version **1.15.0** |
+| Vendored skills readable | `skills/savepoints/SKILL.md` wrapper + `vendor/savepoints-lite/skills/{savepoints,savepoints-notion}/SKILL.md` under that cache path |
+| User Rules | Engineering invariants Savepoints Lite section + `savepoints_lite.destination.data_source_id` (tier-1 handoff) |
+| E2E persistence | Notion Savepoint via wrapper → vendored router/provider — [verification row](https://app.notion.com/p/4066cffaff9c81eab4e7e1e8303d8284) (`4066cffa-ff9c-81ea-b4e7-e1e8303d8284`) |
+
+### Consumer cleanup inventory (seven repos — all merged)
+
+| Repository | PR | Notes |
+| --- | --- | --- |
+| `multipliers-dev/cursor-team-marketplace` | [#73](https://github.com/multipliers-dev/cursor-team-marketplace/pull/73) | Activation removed; vendor pin + sync/verify unchanged |
+| `multipliers-dev/savepoints-lite` | [#18](https://github.com/multipliers-dev/savepoints-lite/pull/18) | Hub activation removed; **kept** registry dogfood `devDependency@2.0.0`; `npm test` + `npm run verify` on `main` verified at closure (`25` tests; 16-file pack layout) |
+| `multipliers-dev/editorial-workflow` | [#30](https://github.com/multipliers-dev/editorial-workflow/pull/30) | `AGENTS.md` + dep removed |
+| `multipliers-dev/renovate-workflow` | [#64](https://github.com/multipliers-dev/renovate-workflow/pull/64) | `AGENTS.md` + dep removed |
+| `multipliers-dev/codenames-ai-guesser` | [#638](https://github.com/multipliers-dev/codenames-ai-guesser/pull/638) | `AGENTS.md` + dep removed; lockfile scoped to savepoints removal only (follow-up commits on branch) |
+| `mastermichaelt/resumes` | [#225](https://github.com/mastermichaelt/resumes/pull/225) | `AGENTS.md` + dep removed |
+| `mastermichaelt/portfolio` | [#96](https://github.com/mastermichaelt/portfolio/pull/96) | `AGENTS.md` + dep removed |
+
+No **no-change** repos. No open required PRs for this initiative at closure verification (`gh pr view` all `MERGED`).
+
 ---
 
 # Centralized Savepoints Lite via Team Marketplace
@@ -245,10 +289,10 @@ Do not infer completion from opened PRs or previously pending todos alone.
 
 ## Final completion checklist
 
-- [ ] `marketplace-distribution` PR **merged** to marketplace `main`; team-harness **1.15.0**; vendor sync/verify in CI
-- [ ] `gate-consumer-prereqs` **pass** report with evidence (no tracked plan edit during gate)
-- [ ] Consumer cleanup: all **seven** repos — merged PRs (incl. savepoints-lite hub activation migration + verification preserved) or **no change** documented
-- [ ] `plan-closure` verifies merges + gate evidence; reconciles todos; `# Shipped`; archive PR opened
+- [x] `marketplace-distribution` PR **merged** to marketplace `main`; team-harness **1.15.0**; vendor sync/verify in CI
+- [x] `gate-consumer-prereqs` **pass** report with evidence (no tracked plan edit during gate)
+- [x] Consumer cleanup: all **seven** repos — merged PRs (incl. savepoints-lite hub activation migration + verification preserved) or **no change** documented
+- [x] `plan-closure` verifies merges + gate evidence; reconciles todos; `# Shipped`; archive PR opened
 
 ---
 
