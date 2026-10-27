@@ -275,3 +275,5 @@ if ! rg -q '"name"[[:space:]]*:[[:space:]]*"@multipliers-dev/plan-validator"' "$
   exit 1
 fi
 echo "ok plan-validator package manifest"
+
+sh scripts/verify-savepoints-marketplace-layout.sh

@@ -31,6 +31,23 @@ if [ "$VENDOR_VER" != "$INSTALLED" ]; then
   exit 1
 fi
 
+list_skills_files() {
+  find "$1/skills" -type f | sed "s|^$1/||" | LC_ALL=C sort
+}
+
+NPM_FILES="$(list_skills_files "$PKG_ROOT")"
+VENDOR_FILES="$(list_skills_files "$VENDOR_ROOT")"
+if [ "$NPM_FILES" != "$VENDOR_FILES" ]; then
+  echo "verify-savepoints-vendor: skills/ file inventory mismatch (npm vs vendor)" >&2
+  inv_a="$(mktemp)"
+  inv_b="$(mktemp)"
+  printf '%s\n' "$NPM_FILES" > "$inv_a"
+  printf '%s\n' "$VENDOR_FILES" > "$inv_b"
+  comm -3 "$inv_a" "$inv_b" | sed 's/^/  /' >&2
+  rm -f "$inv_a" "$inv_b"
+  exit 1
+fi
+
 while IFS= read -r rel || [ -n "$rel" ]; do
   [ -z "$rel" ] && continue
   src="$PKG_ROOT/$rel"
@@ -49,4 +66,5 @@ while IFS= read -r rel || [ -n "$rel" ]; do
   fi
 done < "$EXPECTED"
 
-echo "verify-savepoints-vendor: ok ($INSTALLED, $(wc -l < "$EXPECTED" | tr -d ' ') paths)"
+FILE_COUNT="$(printf '%s\n' "$NPM_FILES" | grep -c . || true)"
+echo "verify-savepoints-vendor: ok ($INSTALLED, $FILE_COUNT skills files, manifest $(wc -l < "$EXPECTED" | tr -d ' ') paths)"

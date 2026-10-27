@@ -18,7 +18,9 @@ npm run sync:savepoints-vendor    # after bumping the devDependency pin
 npm run verify:savepoints-vendor  # CI + pre-merge check
 ```
 
-`verify:savepoints-vendor` byte-compares vendored skills to the pinned npm install. Drift fails CI until `sync:savepoints-vendor` is run and committed.
+`verify:savepoints-vendor` requires the **full** `skills/` file inventory under vendor to match the pinned npm package (no missing or extra files) and byte-compares every manifest path. Drift fails CI until `sync:savepoints-vendor` is run and committed.
+
+`sh scripts/verify-savepoints-marketplace-layout.sh` checks wrapper → vendor path resolution and the marketplace install-root contract (and optionally an installed plugin under `~/.cursor/plugins/cache/.../team-harness/` after refresh).
 
 ## Operator workflow (consumers)
 
@@ -28,6 +30,12 @@ npm run verify:savepoints-vendor  # CI + pre-merge check
 4. Invoke `/savepoints` (or follow wrapper delegation when User Rules require ongoing session logging).
 
 Per-repo `AGENTS.md` activation and `node_modules` skill paths are **deprecated** after consumer cleanup (see marketplace distribution plan); until then, follow the activation model documented in each repo.
+
+## Vendored README vs marketplace distribution
+
+Files under `vendor/savepoints-lite/skills/` (including [`skills/README.md`](../vendor/savepoints-lite/skills/README.md)) are **unchanged** upstream copies. That README correctly tells standalone consumers to install via npm and not vendor skills locally.
+
+**In team-harness, that guidance is superseded:** the marketplace **commits** a vendored copy for plugin install, and the [`/savepoints` wrapper](../skills/savepoints/SKILL.md) defines the **package-equivalent install root** and path precedence over canonical `node_modules` wording. Operators and agents should follow the wrapper + this document, not the vendored README’s install/distribution notes.
 
 ## Architectural boundaries
 
