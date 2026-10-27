@@ -44,7 +44,7 @@ npm run verify:savepoints-vendor  # CI + pre-merge check
 
 `verify:savepoints-vendor` requires the **full** `skills/` file inventory under vendor to match the pinned npm package (no missing or extra files), asserts every path in the independent manifest exists, and **byte-compares every file** in the matched inventory. Drift fails CI until `sync:savepoints-vendor` is run and committed.
 
-`sh scripts/verify-savepoints-marketplace-layout.sh` verifies the repo plugin tree (wrapper, vendored router/provider, wrapper-relative paths, install-root and destination-handoff contract). When a refreshed team-harness install exists under `~/.cursor/plugins/cache/.../team-harness/<sha>/`, the same checks run against that cache; otherwise the script reports **installed-cache verification not run** while repo structural checks still pass.
+`sh scripts/verify-savepoints-marketplace-layout.sh` verifies the repo plugin tree (wrapper, vendored router/provider, wrapper-relative paths, install-root and destination-handoff contract). When a team-harness install at the **same version as this repo** exists under `~/.cursor/plugins/cache/.../<marketplace>/team-harness/<sha>/` (discovered via `**/team-harness/*/skills/savepoints/SKILL.md`), the same checks run against that cache. Older cached versions are ignored (not treated as proof). If no matching-version cache exists, the script reports **installed-cache verification not run** while repo structural checks still pass.
 
 ## Operator workflow (consumers)
 

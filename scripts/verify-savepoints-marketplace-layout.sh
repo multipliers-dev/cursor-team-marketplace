@@ -51,37 +51,68 @@ verify_plugin_savepoints_layout() {
   return 0
 }
 
+read_team_harness_version() {
+  plugin_root="$1"
+  overlay="$plugin_root/.cursor-plugin/plugin.json"
+  package="$plugin_root/plugin.json"
+  if [ -f "$overlay" ]; then
+    node -p "require(process.argv[1]).version" "$overlay"
+    return 0
+  fi
+  if [ -f "$package" ]; then
+    node -p "require(process.argv[1]).version" "$package"
+    return 0
+  fi
+  echo ""
+}
+
 REPO_PLUGIN="$ROOT/plugins/team-harness"
+EXPECTED_VERSION="$(read_team_harness_version "$REPO_PLUGIN")"
+if [ -z "$EXPECTED_VERSION" ]; then
+  echo "verify-savepoints-marketplace-layout: could not read expected team-harness version from $REPO_PLUGIN" >&2
+  exit 1
+fi
+
 if ! verify_plugin_savepoints_layout "$REPO_PLUGIN" "repo"; then
   exit 1
 fi
 
 CACHE_ROOT="${SAVEPOINTS_PLUGIN_CACHE_ROOT:-$HOME/.cursor/plugins/cache}"
-CACHE_RAN=0
-CACHE_OK=0
+CACHE_ANY_WRAPPER=0
+CACHE_EXPECTED_MATCH=0
+CACHE_VERIFIED=0
+CACHE_VERIFIED_PATH=""
 
 if command -v rg >/dev/null 2>&1 && [ -d "$CACHE_ROOT" ]; then
   while IFS= read -r cache_wrapper; do
     [ -z "$cache_wrapper" ] && continue
     [ ! -f "$cache_wrapper" ] && continue
+    CACHE_ANY_WRAPPER=1
     cache_plugin="$(cd "$(dirname "$cache_wrapper")/../.." && pwd)"
-    CACHE_RAN=1
-    if verify_plugin_savepoints_layout "$cache_plugin" "installed-cache"; then
-      CACHE_OK=1
-      echo "verify-savepoints-marketplace-layout: ok (repo + installed cache $cache_plugin)"
-      exit 0
+    cache_version="$(read_team_harness_version "$cache_plugin")"
+    if [ "$cache_version" != "$EXPECTED_VERSION" ]; then
+      continue
     fi
+    CACHE_EXPECTED_MATCH=1
+    if ! verify_plugin_savepoints_layout "$cache_plugin" "installed-cache v$EXPECTED_VERSION"; then
+      exit 1
+    fi
+    CACHE_VERIFIED=1
+    CACHE_VERIFIED_PATH="$cache_plugin"
   done <<EOF
-$(rg --files -g 'team-harness/*/skills/savepoints/SKILL.md' "$CACHE_ROOT" 2>/dev/null || true)
+$(rg --files -g '**/team-harness/*/skills/savepoints/SKILL.md' "$CACHE_ROOT" 2>/dev/null || true)
 EOF
-  if [ "$CACHE_RAN" -eq 1 ] && [ "$CACHE_OK" -eq 0 ]; then
-    echo "verify-savepoints-marketplace-layout: installed cache present but failed full Savepoints layout checks" >&2
-    exit 1
-  fi
+fi
+
+if [ "$CACHE_VERIFIED" -eq 1 ]; then
+  echo "verify-savepoints-marketplace-layout: ok (repo + installed cache v$EXPECTED_VERSION at $CACHE_VERIFIED_PATH)"
+  exit 0
 fi
 
 echo "verify-savepoints-marketplace-layout: ok (repo layout)"
-if [ "$CACHE_RAN" -eq 0 ]; then
+if [ "$CACHE_ANY_WRAPPER" -eq 1 ] && [ "$CACHE_EXPECTED_MATCH" -eq 0 ]; then
+  echo "verify-savepoints-marketplace-layout: installed-cache verification not run (team-harness cache found but none at version $EXPECTED_VERSION — refresh plugin)"
+elif [ "$CACHE_ANY_WRAPPER" -eq 0 ]; then
   echo "verify-savepoints-marketplace-layout: installed-cache verification not run (no team-harness savepoints wrapper under $CACHE_ROOT — refresh plugin after merge)"
 fi
 exit 0
