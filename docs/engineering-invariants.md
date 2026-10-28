@@ -64,20 +64,31 @@
 
 ## Session log
 
-Write session logs to Notion using the installed team-harness `/savepoints` skill.
+Maintain a continuous session log in Notion using the installed team-harness `/savepoints` skill.
 
-Do not wait for the session to end. Write after every finished piece of work, after every decision, and whenever we switch tasks.
+**Every engineering session must produce at least one Savepoint.** Sessions can produce multiple Savepoints as work progresses. Do not wait until the end of the session to begin logging.
+
+Write a Savepoint:
+
+- After every finished piece of work, including commits, completed investigations, documentation changes, and PR creation or updates.
+- After every decision.
+- Whenever we switch tasks.
+- After encountering or resolving an error.
+
+Do not combine unrelated work into a single entry merely to reduce the number of Savepoints. Frequent logging is intentional; there is no need to minimize the number of entries.
 
 Every entry must capture:
 
-- What was done: commands, files, features
-- Decisions made: decisions and rationale
-- Open threads: unfinished work and next steps
-- Errors: what went wrong and how it was handled
+- **What was done:** commands, files, features
+- **Decisions made:** decisions and rationale
+- **Open threads:** unfinished work and next steps
+- **Errors:** what went wrong and how it was handled
 
-This section authorizes ongoing logging without asking for confirmation each time.
+**Before stopping or handing control back to the user, ensure completed work has been logged.** This includes Open PR only boundaries. If no Savepoint has been written during the session, write one before finishing.
 
-If logging fails, continue the primary task without retry loops or claiming successful persistence.
+This section authorizes ongoing logging without asking for confirmation each time. Use the installed team-harness `/savepoints` skill and the configured destination.
+
+If logging is unavailable or fails, continue the primary task without retry loops or claiming successful persistence.
 
 ### Destination
 
