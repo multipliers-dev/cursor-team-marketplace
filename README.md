@@ -35,9 +35,9 @@ Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository**
 
 ## Engineering invariants
 
-Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
+Installing `team-harness` does **not** install Cursor User Rules. Rules are a separate configuration surface.
 
-Customize (sidebar) → **Rules** → **User** → **+ New** → paste [docs/engineering-invariants.md](docs/engineering-invariants.md).
+See the [Savepoints integration guide](plugins/team-harness/docs/savepoints-integration.md) for configuring your personal Notion destination and generating copy-ready User Rules. Do **not** paste the committed [docs/engineering-invariants.md](docs/engineering-invariants.md) template directly; it contains a placeholder destination.
 
 ## Plan validator
 

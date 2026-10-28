@@ -35,13 +35,13 @@ Load and follow canonical router/provider **behavior** from the vendored paths a
 
 ## Activation and authorization
 
-- **Global User Rules:** paste and maintain [Engineering invariants (Savepoints section)](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) in Cursor **User Rules**, including your personal Notion `data_source_id` under `savepoints_lite.destination`.
+- **Global User Rules:** Use the generated `docs/engineering-invariants.local.md` as the copy-ready User Rules text when working from a marketplace checkout. Generate it using `npm run generate:engineering-invariants-local` after configuring your personal `savepoints_lite.destination.data_source_id`. Do **not** paste the committed `docs/engineering-invariants.md` directly; it contains a placeholder destination. Without a checkout, manually copy the standing instructions and configure your destination. See [savepoints-integration.md](../docs/savepoints-integration.md) for operator setup.
 - **Notion MCP:** must be connected with permission to create pages in that data source when a valid destination is configured.
 - **Opt-in:** session logging runs when engineering invariants (User Rules) authorize ongoing logging — not from installing the plugin alone.
 
 ## Tier-1 destination handoff (wrapper only)
 
-Read the Savepoints Lite section in **global Cursor User Rules** (engineering invariants). Operators store the Notion destination under the `savepoints_lite` namespace:
+Read the **Session log** section in **global Cursor User Rules** (engineering invariants). Operators store the Notion destination under the `savepoints_lite` namespace:
 
 ```yaml
 savepoints_lite:

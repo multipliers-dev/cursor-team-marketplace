@@ -16,7 +16,8 @@
     "validate:plans": "tsx plugins/team-harness/scripts/validate-plans.ts --allow-empty",
     "validate:plans:template": "tsx plugins/team-harness/scripts/validate-plans.ts --profile template plugins/team-harness/skills/planning-methodology/_template.plan.md",
     "sync:savepoints-vendor": "sh scripts/sync-savepoints-vendor.sh",
-    "verify:savepoints-vendor": "sh scripts/verify-savepoints-vendor.sh"
+    "verify:savepoints-vendor": "sh scripts/verify-savepoints-vendor.sh",
+    "generate:engineering-invariants-local": "tsx scripts/generate-engineering-invariants-local.ts"
   },
   "devDependencies": {
     "@multipliers-dev/savepoints-lite": "2.0.0",
