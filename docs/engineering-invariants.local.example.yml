@@ -1,0 +1,5 @@
+# Copy to engineering-invariants.local.yml (gitignored), set your Notion data source id, then:
+# npm run generate:engineering-invariants-local
+savepoints_lite:
+  destination:
+    data_source_id: "YOUR_NOTION_DATA_SOURCE_ID"

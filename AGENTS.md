@@ -9,6 +9,7 @@ Cursor plugin marketplace for [multipliers-dev](https://github.com/multipliers-d
 | `npm test` | Build plan-validator workspace and run Vitest |
 | `npm run typecheck` | Typecheck scripts |
 | `npm run validate:plans` | Structural checks for `.cursor/plans/*.plan.md` |
+| `npm run generate:engineering-invariants-local` | Gitignored User Rules paste from `docs/engineering-invariants.local.yml` |
 
 See [README.md](README.md) for install, components, and engineering invariants. Session logging uses the installed team-harness Savepoints integration (global User Rules + vendored skills under `plugins/team-harness/vendor/savepoints-lite/`); see [engineering invariants](docs/engineering-invariants.md).
 
