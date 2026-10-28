@@ -7,7 +7,7 @@ Distribute **instruction-only** session Savepoints through the team-harness Curs
 | **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver for sync/verify against npm |
 | **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills at plugin install |
 | **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` handoff |
-| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) Savepoints section) | `savepoints_lite.destination.data_source_id` only — not in vendor or npm defaults (`@2.0.0`) |
+| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** section) | `savepoints_lite.destination.data_source_id` only — not in vendor or npm defaults (`@2.0.0`) |
 | **Persistence** | Consumer Notion MCP | Provider skill performs `notion-create-pages` |
 
 ## User Rules → tier-1 destination mapping
@@ -49,15 +49,15 @@ npm run verify:savepoints-vendor  # CI + pre-merge check
 ## Operator workflow (consumers)
 
 1. Install or refresh the **team-harness** plugin from this marketplace.
-2. Paste [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) into Cursor **User Rules** (global), not only in a single repo. Set your personal `savepoints_lite.destination.data_source_id` in that paste (see **Personal destination** below and the Savepoints Lite section in engineering invariants).
+2. Paste [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) into Cursor **User Rules** (global), not only in a single repo. Set your personal `savepoints_lite.destination.data_source_id` under **Destination** in that paste (see **User Rules → tier-1 destination mapping** below and the **Session log** section in engineering invariants).
 3. Connect **Notion MCP** with write access to your Savepoints data source.
-4. Invoke `/savepoints` for manual verification, or rely on ongoing session logging when the Savepoints Lite section is present in User Rules (see **Ongoing logging authorization**).
+4. Invoke `/savepoints` for manual verification, or rely on ongoing session logging when the **Session log** section is present in User Rules (see **Ongoing logging authorization**).
 
 ### Ongoing logging authorization
 
-Installing the plugin or connecting Notion MCP does **not** alone authorize production Notion writes. **Opt-in** = the Savepoints Lite section from engineering invariants present in **User Rules** (or explicit per-session operator consent for manual verification). Once opted in, agents should maintain the session log without asking for separate authorization before each entry, subject to Notion MCP permissions. If activation is absent or consent is unclear, do not write; fail open without claiming persistence.
+Installing the plugin or connecting Notion MCP does **not** alone authorize production Notion writes. **Opt-in** = the **Session log** section from engineering invariants present in **User Rules** (or explicit per-session operator consent for manual verification). Once opted in, agents should maintain the session log without asking for separate authorization before each entry, subject to Notion MCP permissions. If activation is absent or consent is unclear, do not write; fail open without claiming persistence.
 
-Capture triggers and fail-open behavior for standing agent instructions live in engineering invariants; this document owns adoption steps and implementation boundaries.
+Capture triggers, required entry fields, and fail-open behavior for standing agent instructions live in engineering invariants **Session log**; this document owns adoption steps and implementation boundaries.
 
 Per-repo `AGENTS.md` activation and `node_modules` skill paths are **deprecated** after consumer cleanup (see marketplace distribution plan); until then, follow the activation model documented in each repo.
 

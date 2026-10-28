@@ -62,19 +62,24 @@
 
 - **Layer 2a (`afterFileEdit` / format hook) is agent ergonomics only** — not a substitute for Husky, pre-commit checks, or CI.
 
-## Savepoints Lite (session logging)
+## Session log
 
-- Session logging is enabled through the installed team-harness `/savepoints` skill and Notion MCP. This section in global Cursor **User Rules** authorizes ongoing logging without per-entry confirmation (plugin install and Notion MCP alone do not).
+Write session logs to Notion using the installed team-harness `/savepoints` skill.
 
-- Record a Savepoint immediately after every completed meaningful work unit, significant decision, task switch, or primary-task error or resolution. Complete the logging attempt before stopping or handing off, including at Open PR only boundaries.
+Do not wait for the session to end. Write after every finished piece of work, after every decision, and whenever we switch tasks.
 
-- Use `/savepoints` and its canonical skills for destination resolution, persistence, and error handling. Do not substitute repository-local activation or logging implementations. Operator setup and router/provider behavior: [savepoints-integration.md](../plugins/team-harness/docs/savepoints-integration.md).
+Every entry must capture:
 
-- If logging is unavailable or fails, continue primary work without retry loops or claiming successful persistence. If this Savepoints section is absent from User Rules and there is no explicit per-session operator consent, do not write; fail open.
+- What was done: commands, files, features
+- Decisions made: decisions and rationale
+- Open threads: unfinished work and next steps
+- Errors: what went wrong and how it was handled
 
-### Personal destination (User Rules only)
+This section authorizes ongoing logging without asking for confirmation each time.
 
-Keep the Notion data source id here — not in vendored plugin files, not in `@multipliers-dev/savepoints-lite` defaults, and not committed to shared repositories:
+If logging fails, continue the primary task without retry loops or claiming successful persistence.
+
+### Destination
 
 ```yaml
 savepoints_lite:
