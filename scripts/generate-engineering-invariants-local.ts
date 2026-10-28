@@ -4,10 +4,16 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const templatePath = join(repoRoot, "docs/engineering-invariants.md");
-const configPath = join(repoRoot, "docs/engineering-invariants.local.yml");
+const templatePath =
+  process.env.ENGINEERING_INVARIANTS_TEMPLATE ??
+  join(repoRoot, "docs/engineering-invariants.md");
+const configPath =
+  process.env.ENGINEERING_INVARIANTS_CONFIG ??
+  join(repoRoot, "docs/engineering-invariants.local.yml");
 const examplePath = join(repoRoot, "docs/engineering-invariants.local.example.yml");
-const outPath = join(repoRoot, "docs/engineering-invariants.local.md");
+const outPath =
+  process.env.ENGINEERING_INVARIANTS_OUT ??
+  join(repoRoot, "docs/engineering-invariants.local.md");
 
 const PLACEHOLDER = "YOUR_NOTION_DATA_SOURCE_ID";
 

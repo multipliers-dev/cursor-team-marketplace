@@ -37,17 +37,19 @@ Customize (sidebar) → **Plugins** → **+ Add** → **From GitHub Repository**
 
 Installing `team-harness` does **not** install Cursor rules. Rules are a separate surface from the plugin.
 
-Customize (sidebar) → **Rules** → **User** → **+ New** → paste the committed template [docs/engineering-invariants.md](docs/engineering-invariants.md) (placeholder Notion destination).
+Standing instructions live in [docs/engineering-invariants.md](docs/engineering-invariants.md) (committed source; includes a placeholder Notion destination — **do not paste that file directly into User Rules**).
 
-For a copy-ready paste with your personal Savepoints destination filled in (gitignored):
+From a marketplace checkout, generate a gitignored copy with your personal Savepoints destination filled in, then paste that into User Rules:
 
 ```bash
 cp docs/engineering-invariants.local.example.yml docs/engineering-invariants.local.yml
-# edit data_source_id in engineering-invariants.local.yml
+# edit savepoints_lite.destination.data_source_id
 npm run generate:engineering-invariants-local
 ```
 
-Open [docs/engineering-invariants.local.md](docs/engineering-invariants.local.md) and paste into User Rules. Regenerate after pulling changes to `engineering-invariants.md`.
+Open [docs/engineering-invariants.local.md](docs/engineering-invariants.local.md) → Customize (sidebar) → **Rules** → **User** → paste. Regenerate after pulling changes to `engineering-invariants.md`.
+
+If you do not have this repository checked out, copy the **Session log** and **Destination** sections from engineering invariants manually and set `data_source_id` yourself (see [savepoints-integration.md](plugins/team-harness/docs/savepoints-integration.md)).
 
 ## Plan validator
 

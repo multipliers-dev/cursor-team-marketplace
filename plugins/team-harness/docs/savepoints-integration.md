@@ -49,7 +49,7 @@ npm run verify:savepoints-vendor  # CI + pre-merge check
 ## Operator workflow (consumers)
 
 1. Install or refresh the **team-harness** plugin from this marketplace.
-2. Paste [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) into Cursor **User Rules** (global), not only in a single repo. Set your personal `savepoints_lite.destination.data_source_id` under **Destination** in that paste (see **User Rules → tier-1 destination mapping** and the **Session log** section in engineering invariants). In a marketplace checkout, `npm run generate:engineering-invariants-local` (from `engineering-invariants.local.yml`) writes a gitignored `docs/engineering-invariants.local.md` for copy-paste.
+2. Add standing instructions to Cursor **User Rules** (global), not only in a single repo. Source text: [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) (**Session log** + **Destination**). **Do not paste the committed file as-is** — it contains a placeholder `data_source_id`. With a marketplace checkout, run `npm run generate:engineering-invariants-local` (after `engineering-invariants.local.yml`; see repo README) and paste gitignored `docs/engineering-invariants.local.md`. Without a checkout, copy those sections manually and set `savepoints_lite.destination.data_source_id` (see **User Rules → tier-1 destination mapping**).
 3. Connect **Notion MCP** with write access to your Savepoints data source.
 4. Invoke `/savepoints` for manual verification, or rely on ongoing session logging when the **Session log** section is present in User Rules (see **Ongoing logging authorization**).
 
