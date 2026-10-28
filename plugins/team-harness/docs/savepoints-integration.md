@@ -49,9 +49,15 @@ npm run verify:savepoints-vendor  # CI + pre-merge check
 ## Operator workflow (consumers)
 
 1. Install or refresh the **team-harness** plugin from this marketplace.
-2. Paste [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) into Cursor **User Rules**; set `savepoints_lite.destination.data_source_id`.
-3. Connect Notion MCP.
-4. Invoke `/savepoints` (or follow wrapper delegation when User Rules require ongoing session logging).
+2. Paste [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) into Cursor **User Rules** (global), not only in a single repo. Set your personal `savepoints_lite.destination.data_source_id` in that paste (see **Personal destination** below and the Savepoints Lite section in engineering invariants).
+3. Connect **Notion MCP** with write access to your Savepoints data source.
+4. Invoke `/savepoints` for manual verification, or rely on ongoing session logging when the Savepoints Lite section is present in User Rules (see **Ongoing logging authorization**).
+
+### Ongoing logging authorization
+
+Installing the plugin or connecting Notion MCP does **not** alone authorize production Notion writes. **Opt-in** = the Savepoints Lite section from engineering invariants present in **User Rules** (or explicit per-session operator consent for manual verification). Once opted in, agents should maintain the session log without asking for separate authorization before each entry, subject to Notion MCP permissions. If activation is absent or consent is unclear, do not write; fail open without claiming persistence.
+
+Capture triggers and fail-open behavior for standing agent instructions live in engineering invariants; this document owns adoption steps and implementation boundaries.
 
 Per-repo `AGENTS.md` activation and `node_modules` skill paths are **deprecated** after consumer cleanup (see marketplace distribution plan); until then, follow the activation model documented in each repo.
 

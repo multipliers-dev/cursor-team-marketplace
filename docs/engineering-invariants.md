@@ -64,30 +64,20 @@
 
 ## Savepoints Lite (session logging)
 
-Global integration for append-only session Savepoints via the **team-harness** marketplace plugin and Notion MCP.
+- Session logging is enabled through the installed team-harness `/savepoints` skill and Notion MCP. This section in global Cursor **User Rules** authorizes ongoing logging without per-entry confirmation (plugin install and Notion MCP alone do not).
 
-### Operator setup
+- Record a Savepoint immediately after every completed meaningful work unit, significant decision, task switch, or primary-task error or resolution. Complete the logging attempt before stopping or handing off, including at Open PR only boundaries.
 
-1. Install or refresh the **team-harness** plugin from `multipliers-dev/cursor-team-marketplace`.
-2. Keep this **Engineering invariants** document in Cursor **User Rules** (global), not only in a single repo.
-3. Connect **Notion MCP** with write access to your Savepoints data source.
+- Use `/savepoints` and its canonical skills for destination resolution, persistence, and error handling. Do not substitute repository-local activation or logging implementations. Operator setup and router/provider behavior: [savepoints-integration.md](../plugins/team-harness/docs/savepoints-integration.md).
 
-### Personal Notion destination (User Rules only)
+- If logging is unavailable or fails, continue primary work without retry loops or claiming successful persistence. If this Savepoints section is absent from User Rules and there is no explicit per-session operator consent, do not write; fail open.
 
-Set your Savepoints database id here — **not** in vendored plugin files, not in `@multipliers-dev/savepoints-lite` defaults, and not committed to shared repositories:
+### Personal destination (User Rules only)
+
+Keep the Notion data source id here — not in vendored plugin files, not in `@multipliers-dev/savepoints-lite` defaults, and not committed to shared repositories:
 
 ```yaml
 savepoints_lite:
   destination:
     data_source_id: "YOUR_NOTION_DATA_SOURCE_ID"
 ```
-
-The team-harness `/savepoints` wrapper reads `savepoints_lite.destination` from User Rules, unwraps it to tier-1 `destination` (inner block only — not the `savepoints_lite` namespace), and passes that into the vendored router → Notion provider instruction context. If `savepoints_lite`, `destination`, or `data_source_id` is missing or unusable, do not attempt Notion persistence. The provider skill does **not** read User Rules.
-
-### Ongoing logging authorization
-
-Installing the plugin or connecting Notion MCP does **not** alone authorize production Notion writes. **Opt-in** = this Savepoints Lite section present in **User Rules** (or explicit per-session operator consent for manual verification). Once opted in, maintain the session log without asking for separate authorization before each entry, subject to Notion MCP permissions. If activation is absent or consent is unclear, do not write; fail open without claiming persistence.
-
-Record a Savepoint immediately after every completed meaningful work unit, significant decision, task switch, or primary-task error or resolution. Use the `/savepoints` wrapper and vendored canonical skills — see [savepoints-integration.md](../plugins/team-harness/docs/savepoints-integration.md).
-
-If logging fails, continue primary work without retry loops.
