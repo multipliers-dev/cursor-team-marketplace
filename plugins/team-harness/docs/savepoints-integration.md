@@ -2,12 +2,19 @@
 
 Distribute **instruction-only** session Savepoints through the team-harness Cursor plugin without a runtime `node_modules` dependency in the installed plugin.
 
+| Document | Responsibility |
+| --- | --- |
+| [README.md](../../../README.md) | Marketplace overview, installation, links to setup |
+| [docs/engineering-invariants.md](../../../docs/engineering-invariants.md) | Standing agent instructions (committed source) |
+| This guide | Operator adoption, configuration, generation, troubleshooting |
+| [`/savepoints` wrapper](../skills/savepoints/SKILL.md) | Agent execution, authorization, destination handoff |
+
 | Layer | Location | Role |
 | --- | --- | --- |
 | **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver for sync/verify against npm |
 | **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills at plugin install |
 | **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` handoff |
-| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** section) | `savepoints_lite.destination.data_source_id` only — not in vendor or npm defaults (`@2.0.0`) |
+| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** + **Destination**) | `savepoints_lite.destination.data_source_id` only — not in vendor or npm defaults (`@2.0.0`) |
 | **Persistence** | Consumer Notion MCP | Provider skill performs `notion-create-pages` |
 
 ## User Rules → tier-1 destination mapping
@@ -49,9 +56,23 @@ npm run verify:savepoints-vendor  # CI + pre-merge check
 ## Operator workflow (consumers)
 
 1. Install or refresh the **team-harness** plugin from this marketplace.
-2. Add standing instructions to Cursor **User Rules** (global), not only in a single repo. Source text: [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) (**Session log** + **Destination**). **Do not paste the committed file as-is** — it contains a placeholder `data_source_id`. With a marketplace checkout, run `npm run generate:engineering-invariants-local` (after `engineering-invariants.local.yml`; see repo README) and paste gitignored `docs/engineering-invariants.local.md`. Without a checkout, copy those sections manually and set `savepoints_lite.destination.data_source_id` (see **User Rules → tier-1 destination mapping**).
+2. Add standing instructions to Cursor **User Rules** (global), not only in a single repo. **Do not paste** [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) as-is — it contains a placeholder `data_source_id`. With a marketplace checkout, follow **Generate copy-ready User Rules** below. Without a checkout, copy the **Session log** and **Destination** sections manually and set `savepoints_lite.destination.data_source_id` (see **User Rules → tier-1 destination mapping**).
 3. Connect **Notion MCP** with write access to your Savepoints data source.
 4. Invoke `/savepoints` for manual verification, or rely on ongoing session logging when the **Session log** section is present in User Rules (see **Ongoing logging authorization**).
+
+### Generate copy-ready User Rules (marketplace checkout)
+
+Committed source (placeholder destination): [`docs/engineering-invariants.md`](../../../docs/engineering-invariants.md). Generate a gitignored paste with your personal Savepoints destination filled in:
+
+```bash
+cp docs/engineering-invariants.local.example.yml docs/engineering-invariants.local.yml
+# edit savepoints_lite.destination.data_source_id
+npm run generate:engineering-invariants-local
+```
+
+Gitignored operator files: `docs/engineering-invariants.local.yml` (your id), `docs/engineering-invariants.local.md` (full User Rules text).
+
+Paste into Cursor: Customize (sidebar) → **Rules** → **User**. **Regenerate** after pulling changes to `engineering-invariants.md` so User Rules stay aligned with the committed standing instructions.
 
 ### Ongoing logging authorization
 
