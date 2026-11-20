@@ -75,7 +75,8 @@ Operators may optionally configure:
 savepoints_lite:
   destination:
     data_source_id: "<NOTION_DATA_SOURCE_ID>"
-  # Optional — omit for packaged default (false)
+  # Optional — omit to fall through upstream precedence (defaults false
+  # when no consumer .agents override exists)
   validation:
     post_write: true
 ```
@@ -85,7 +86,7 @@ savepoints_lite:
 | User Rules | Tier-1 YAML passed to the router |
 | --- | --- |
 | `savepoints_lite.validation.post_write` is an explicit boolean (`true` or `false`) | Include labelled `validation: { post_write: <bool> }` alongside `destination` when destination is valid |
-| `validation` key absent / not an explicit boolean | **Omit** tier-1 `validation` entirely so router/provider fall through to packaged default `false` |
+| `validation` key absent / not an explicit boolean | **Omit** tier-1 `validation` entirely so router/provider fall through to upstream configuration precedence (optional consumer `.agents/savepoints-lite.yml`, then packaged default), which defaults to `false` when no other override exists |
 
 Do **not** always inject `post_write: false` from this wrapper when the operator never configured validation (that would claim tier-1 when none was configured).
 

@@ -15,7 +15,7 @@ Distribute **instruction-only** session Savepoints through the team-harness Curs
 | **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills, `schema.json` / `mapping.json`, optional `skills/bin/` CLI at plugin install |
 | **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` (+ optional `validation`) handoff |
 | **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** + **Destination**) | `savepoints_lite.destination.data_source_id` — not in vendor or npm defaults |
-| **Optional validation** | Same User Rules namespace (`savepoints_lite.validation.post_write`) | Mapped to tier-1 `validation` only when an explicit boolean is set; omit → packaged `false` |
+| **Optional validation** | Same User Rules namespace (`savepoints_lite.validation.post_write`) | Mapped to tier-1 `validation` only when an explicit boolean is set; omit → upstream precedence (`.agents` then packaged `false`) |
 | **Persistence** | Consumer Notion MCP | Provider skill performs `notion-create-pages` |
 
 ## User Rules → tier-1 destination mapping
@@ -58,9 +58,9 @@ savepoints_lite:
 | User Rules | Wrapper behaviour |
 | --- | --- |
 | Explicit `validation.post_write: true\|false` | Pass labelled tier-1 `validation: { post_write: <bool> }` with `destination` |
-| `validation` absent | **Omit** tier-1 `validation` → router/provider fall through to packaged `false` (instruction-only) |
+| `validation` absent | **Omit** tier-1 `validation` → fall through to upstream configuration precedence (consumer `.agents` then packaged default), which defaults to `false` when no other override exists |
 
-When enabled and Node.js ≥ 22 can run the vendored CLI, the Notion provider may read back and run `skills/bin/savepoints-lite-validate.mjs` after confirmed create (bounded repair). Missing Node/CLI → **verification unavailable**; confirmed create remains `success` (fail open). **Node is not required** for ordinary Savepoint creation when validation is off (the default).
+When enabled and Node.js ≥ 22 can run the vendored CLI, the Notion provider may read back and run `skills/bin/savepoints-lite-validate.mjs` after confirmed create (bounded repair). Missing Node/CLI → **verification unavailable**; confirmed create remains `success` (fail open). **Node is not required** for ordinary Savepoint creation when validation is off (the usual default when no override exists).
 
 Vendoring the CLI proves install-root presence and deterministic exits under automated tests — **not** that agents invoke the CLI during Notion persistence.
 
@@ -100,10 +100,13 @@ Committed source (placeholder destination): [`docs/engineering-invariants.md`](.
 
 ```bash
 cp docs/engineering-invariants.local.example.yml docs/engineering-invariants.local.yml
-# edit savepoints_lite.destination.data_source_id
-# optionally uncomment validation.post_write
+# edit savepoints_lite.destination.data_source_id only
 npm run generate:engineering-invariants-local
 ```
+
+The generator (`scripts/generate-engineering-invariants-local.ts`) is **destination-id-only** — it substitutes `savepoints_lite.destination.data_source_id` into the Markdown template and does **not** read `validation` from the local YAML. Uncommenting `validation` in `engineering-invariants.local.yml` has **no** effect on the generated User Rules.
+
+To opt in to post-write validation: after generate, uncomment the commented `validation` block in `docs/engineering-invariants.local.md` (or hand-edit Cursor User Rules after paste). Do **not** expect the YAML config alone to enable validation.
 
 Gitignored operator files: `docs/engineering-invariants.local.yml` (your id), `docs/engineering-invariants.local.md` (full User Rules text).
 
@@ -128,6 +131,6 @@ Files under `vendor/savepoints-lite/skills/` (including [`skills/README.md`](../
 - **No duplicate logic** in the marketplace — router/provider behavior stays in vendored canonical skills copied from `@multipliers-dev/savepoints-lite`.
 - **No upstream edits** from this repo — bump the pin and re-sync vendor when releasing new package versions.
 - **No package-wide default destination** in the plugin for all consumers — tier-1 ids come from each operator’s User Rules only.
-- **No marketplace override of packaged validation defaults** — wrapper maps User Rules → labelled tier-1 YAML only; omitting `validation` preserves packaged `false`.
+- **No marketplace override of packaged validation defaults** — wrapper maps User Rules → labelled tier-1 YAML only; omitting `validation` falls through to upstream precedence (`.agents` then packaged `false`).
 
 Configuration precedence inside canonical skills: integration tier-1 `destination` / optional `validation.post_write` → optional consumer `.agents` YAML → packaged defaults (`validation.post_write: false` in `@2.1.0`). See [savepoints-lite architecture](https://github.com/multipliers-dev/savepoints-lite/blob/main/docs/architecture.md).

@@ -1,9 +1,9 @@
 # Copy to engineering-invariants.local.yml (gitignored), set your Notion data source id, then:
 # npm run generate:engineering-invariants-local
+#
+# Generator is destination-id-only: it does not read validation settings from this YAML.
+# To opt in to post-write validation, uncomment validation in the generated Markdown
+# (docs/engineering-invariants.local.md) or edit Cursor User Rules after paste.
 savepoints_lite:
   destination:
     data_source_id: "YOUR_NOTION_DATA_SOURCE_ID"
-  # Optional — omit for packaged default (false). Generator remains destination-id-only;
-  # uncomment in the generated User Rules paste (or hand-edit User Rules) to opt in.
-  # validation:
-  #   post_write: true
