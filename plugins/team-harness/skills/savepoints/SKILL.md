@@ -38,7 +38,7 @@ Load and follow canonical router/provider **behavior** from the vendored paths a
 
 ## Activation and authorization
 
-- **Global User Rules:** Use the generated `docs/engineering-invariants.local.md` as the copy-ready User Rules text when working from a marketplace checkout. Generate it using `npm run generate:engineering-invariants-local` after configuring your personal `savepoints_lite.destination.data_source_id`. Do **not** paste the committed `docs/engineering-invariants.md` directly; it contains a placeholder destination. Without a checkout, manually copy the standing instructions and configure your destination. See [savepoints-integration.md](../docs/savepoints-integration.md) for operator setup.
+- **Global User Rules:** Use the generated `docs/engineering-invariants.local.md` as the copy-ready User Rules text when working from a marketplace checkout. Generate it using `npm run generate:engineering-invariants-local` after configuring your personal `savepoints_lite.destination.data_source_id`. Do **not** paste the committed `docs/engineering-invariants.md` directly; it contains a placeholder destination. Without a checkout, manually copy the standing instructions and configure your destination. See [savepoints-integration.md](../../docs/savepoints-integration.md) for operator setup.
 - **Notion MCP:** must be connected with permission to create pages in that data source when a valid destination is configured.
 - **Opt-in:** session logging runs when engineering invariants (User Rules) authorize ongoing logging — not from installing the plugin alone.
 
@@ -104,8 +104,8 @@ This wrapper adds **no** validation logic, MCP sequences, property mapping, or C
 ## Delegation
 
 1. Follow activation/authorization and the **package-equivalent install root** table above.
-2. Map `savepoints_lite.destination` → tier-1 `destination` when valid; otherwise skip Notion persistence for that Savepoint.
-3. When `savepoints_lite.validation.post_write` is an explicit boolean, also pass tier-1 `validation: { post_write: <bool> }`; otherwise omit `validation`.
+2. Map `savepoints_lite.destination` → tier-1 `destination` when valid; otherwise skip Notion persistence for that Savepoint and do **not** pass tier-1 `validation`.
+3. Only when destination is valid **and** `savepoints_lite.validation.post_write` is an explicit boolean, also pass tier-1 `validation: { post_write: <bool> }`; if destination is valid but validation is absent / not an explicit boolean, omit `validation`.
 4. Load and follow the vendored **router** skill for when to Savepoint, schema, `storage.provider` / `validation.post_write` resolution, and provider delegation (vendor paths only).
 5. When `storage.provider` is `notion`, load the vendored **Notion provider** from the vendor tree (not consumer `node_modules`).
 
