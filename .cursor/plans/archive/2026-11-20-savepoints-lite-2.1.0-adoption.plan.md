@@ -7,12 +7,48 @@ todos:
     status: completed
   - id: manual-verification
     content: "Manual verification gate: live Notion MCP scenarios 14–19 (default off, validate, repair, unavailable)"
-    status: pending
+    status: completed
   - id: plan-closure
     content: Docs-only archive PR after adopt merge + manual verdict
-    status: pending
+    status: completed
 isProject: false
 ---
+
+# Shipped
+
+**Date:** 20 Nov 2026
+
+Adopted published `@multipliers-dev/savepoints-lite@2.1.0` into team-harness **1.16.0** (pin, vendor sync including CLI + contracts, thin User Rules → tier-1 `validation.post_write` handoff, vendored CLI smoke, docs). Default instruction-only path unchanged; post-write validation remains opt-in.
+
+### Marketplace PRs
+
+| Slice | PR |
+| --- | --- |
+| plan-review (plan-only) | [#77](https://github.com/multipliers-dev/cursor-team-marketplace/pull/77) |
+| adopt-2.1.0 | [#78](https://github.com/multipliers-dev/cursor-team-marketplace/pull/78) (`MERGED` 2026-11-20; merge commit `6a4449a`) |
+| plan-closure | (this PR) |
+
+### `manual-verification` (manual verification gate)
+
+Recorded during the gate slice (chat report; no tracked plan edit during gate). Operator-authorized live Notion MCP against checkout vendor `plugins/team-harness/vendor/savepoints-lite` (`PACKAGE_VERSION=2.1.0`). Automated tests were **not** treated as proof of agent behavior.
+
+| Scenario | Verdict | Evidence |
+| --- | --- | --- |
+| Default off (verification.md 14) | **pass** | Confirmed create; no CLI. [page](https://app.notion.com/p/41e6cffaff9c8186b4b6f8ad4c2fce1d) |
+| Validation enabled + Node (15) | **pass** | Create → read-back → vendored CLI `--stdin` exit 0, `ok: true`. [page](https://app.notion.com/p/41e6cffaff9c81fdb1acf6fb3ba51ea3) |
+| Bounded repair (16) | **pass** | Empty `Repository` → `missing_persisted_property` → one repair → re-check `ok: true` (same page). [page](https://app.notion.com/p/41e6cffaff9c8131bb34ce1a5627835a) |
+| Node / CLI unavailable (18) | **pass** | Confirmed create; missing CLI → **verification unavailable**; no repair; `success`. [page](https://app.notion.com/p/41e6cffaff9c81b68297f9af76ff6966) |
+| Validation disabled | **pass** | Explicit `post_write: false`; instruction-only; no CLI. [page](https://app.notion.com/p/41e6cffaff9c8166a65dff51fed99366) |
+
+**Gate-time host install note:** Cursor plugin cache was still team-harness **1.15.0** / vendor **2.0.0** during the gate, so claims about the *installed* plugin path were **inconclusive** then. Scenarios ran against the merged checkout vendor tree. Upstream rows **17** (irreparable) and **19** (repair confirmation unknown) were **not run** (outside the plan table).
+
+**Closure-time plugin refresh:** Operator cache now includes team-harness **1.16.0** at `~/.cursor/plugins/cache/multipliers-dev-cursor-team-marketplace/team-harness/6a4449ab730ac20d2be07e1e83644f483d8e1a3c/` (CLI present under vendor `skills/bin/`).
+
+### Deferred work
+
+- Optional operator paste of generated User Rules with `validation.post_write: true` (committed invariants keep the flag commented / off by default).
+- Upstream verification.md rows **17** and **19** remain unexercised unless a future session re-runs the fuller hub table.
+- Agents may still ignore opt-in CLI instructions even when files are present — documented; not mitigated by CLI smoke alone.
 
 # Adopt Savepoints Lite v2.1.0
 
@@ -274,7 +310,7 @@ After `adopt-2.1.0` merges and `manual-verification` has a recorded verdict:
 ### adopt-2.1.0
 
 ```text
-@.cursor/plans/2026-11-20-savepoints-lite-2.1.0-adoption.plan.md
+@.cursor/plans/archive/2026-11-20-savepoints-lite-2.1.0-adoption.plan.md
 
 Implement slice adopt-2.1.0 only. Do not start manual-verification or plan-closure. Do not archive the plan. Do not modify multipliers-dev/savepoints-lite.
 
@@ -290,7 +326,7 @@ Verification: npm ci; npm run verify:savepoints-vendor; sh scripts/verify-savepo
 ### manual-verification
 
 ```text
-@.cursor/plans/2026-11-20-savepoints-lite-2.1.0-adoption.plan.md
+@.cursor/plans/archive/2026-11-20-savepoints-lite-2.1.0-adoption.plan.md
 
 Execute only slice manual-verification. Prerequisite: adopt-2.1.0 merged and team-harness plugin refreshed to 1.16.0.
 
@@ -306,7 +342,7 @@ Verification: operator-authorized live Notion MCP session only; do not claim aut
 ### plan-closure
 
 ```text
-@.cursor/plans/2026-11-20-savepoints-lite-2.1.0-adoption.plan.md
+@.cursor/plans/archive/2026-11-20-savepoints-lite-2.1.0-adoption.plan.md
 
 Execute only plan-closure.
 
