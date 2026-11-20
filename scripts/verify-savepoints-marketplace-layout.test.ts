@@ -75,6 +75,9 @@ function installCacheCopy(cacheRoot: string, hash: string, mutate?: (pluginRoot:
     "skills/savepoints/SKILL.md",
     "vendor/savepoints-lite/skills/savepoints/SKILL.md",
     "vendor/savepoints-lite/skills/savepoints-notion/SKILL.md",
+    "vendor/savepoints-lite/skills/bin/savepoints-lite-validate.mjs",
+    "vendor/savepoints-lite/skills/savepoints/schema.json",
+    "vendor/savepoints-lite/skills/savepoints-notion/mapping.json",
     ".cursor-plugin/plugin.json",
   ];
   for (const rel of paths) {

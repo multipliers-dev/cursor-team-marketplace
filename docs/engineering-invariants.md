@@ -96,4 +96,8 @@ If logging is unavailable or fails, continue the primary task without retry loop
 savepoints_lite:
   destination:
     data_source_id: "YOUR_NOTION_DATA_SOURCE_ID"
+  # Optional — omit for packaged default (false). Uncomment to opt in to
+  # post-write CLI property checks (Node ≥ 22; fail-open if unavailable).
+  # validation:
+  #   post_write: true
 ```

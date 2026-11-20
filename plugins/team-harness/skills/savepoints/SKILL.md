@@ -2,14 +2,15 @@
 name: savepoints
 description: >-
   Team-harness Savepoints Lite integration — session logging via vendored router
-  and Notion provider skills. Supplies tier-1 Notion destination from global Cursor
-  User Rules (engineering invariants) into router/provider instruction context.
+  and Notion provider skills. Supplies tier-1 Notion destination (and optional
+  validation.post_write) from global Cursor User Rules (engineering invariants)
+  into router/provider instruction context.
   Use when maintaining append-only session Savepoints through Notion MCP.
 ---
 
 # Savepoints (team-harness integration)
 
-Thin **marketplace wrapper** around canonical Savepoints Lite skills vendored in this plugin. Event detection, schema, configuration precedence, Notion mapping, and MCP writes live in the **vendored package copy** — not in this file.
+Thin **marketplace wrapper** around canonical Savepoints Lite skills vendored in this plugin. Event detection, schema, configuration precedence, Notion mapping, MCP writes, and optional post-write CLI validation live in the **vendored package copy** — not in this file.
 
 **Canonical router (installed plugin):** [`../../vendor/savepoints-lite/skills/savepoints/SKILL.md`](../../vendor/savepoints-lite/skills/savepoints/SKILL.md)
 
@@ -28,6 +29,8 @@ Vendored files under `vendor/savepoints-lite/` are a **byte-identical copy** of 
 | Install root | `plugins/team-harness/vendor/savepoints-lite/` is the **package-equivalent install root** (same layout as `@multipliers-dev/savepoints-lite` inside `node_modules`, without requiring `npm ci` in the consumer repo). |
 | Router skill | [`../../vendor/savepoints-lite/skills/savepoints/SKILL.md`](../../vendor/savepoints-lite/skills/savepoints/SKILL.md) — not `node_modules/@multipliers-dev/savepoints-lite/...`. |
 | Notion provider | [`../../vendor/savepoints-lite/skills/savepoints-notion/SKILL.md`](../../vendor/savepoints-lite/skills/savepoints-notion/SKILL.md) — sibling under the same vendor `skills/` tree (equivalent to the router’s `../savepoints-notion/SKILL.md` relative link). |
+| Optional validator CLI | [`../../vendor/savepoints-lite/skills/bin/savepoints-lite-validate.mjs`](../../vendor/savepoints-lite/skills/bin/savepoints-lite-validate.mjs) — self-contained under the vendor install root (Node ≥ 22 when invoked). |
+| `schema.json` / `mapping.json` | Resolve under the vendor install root: `vendor/savepoints-lite/skills/savepoints/schema.json` and `vendor/savepoints-lite/skills/savepoints-notion/mapping.json` (CLI walk-up finds them from `skills/bin/`). |
 | `node_modules must exist` | **Do not apply.** Do not look for Savepoints skills in the consumer repository’s `node_modules`. After consumer cleanup, session logging uses **only** this vendor tree via the installed plugin. |
 | `defaults.yml` / `schema.md` | Resolve next to the vendored router (`vendor/savepoints-lite/skills/savepoints/`), not under consumer `node_modules`. |
 
@@ -62,12 +65,48 @@ destination:
 
 The **Notion provider skill does not read User Rules.** Only this wrapper may read User Rules and perform the `savepoints_lite` → tier-1 `destination` mapping.
 
+## Tier-1 validation handoff (optional — wrapper only)
+
+Upstream router precedence already accepts labelled `validation` in the **integration instruction/delegation context** as highest tier for `validation.post_write` (then optional consumer `.agents/savepoints-lite.yml`, then packaged `false`). This wrapper maps User Rules onto that channel only — it does **not** invent a parallel precedence or override packaged defaults by other means.
+
+Operators may optionally configure:
+
+```yaml
+savepoints_lite:
+  destination:
+    data_source_id: "<NOTION_DATA_SOURCE_ID>"
+  # Optional — omit for packaged default (false)
+  validation:
+    post_write: true
+```
+
+**Mapping rules:**
+
+| User Rules | Tier-1 YAML passed to the router |
+| --- | --- |
+| `savepoints_lite.validation.post_write` is an explicit boolean (`true` or `false`) | Include labelled `validation: { post_write: <bool> }` alongside `destination` when destination is valid |
+| `validation` key absent / not an explicit boolean | **Omit** tier-1 `validation` entirely so router/provider fall through to packaged default `false` |
+
+Do **not** always inject `post_write: false` from this wrapper when the operator never configured validation (that would claim tier-1 when none was configured).
+
+Example when both destination and explicit validation are present:
+
+```yaml
+destination:
+  data_source_id: "<NOTION_DATA_SOURCE_ID from savepoints_lite.destination>"
+validation:
+  post_write: true
+```
+
+This wrapper adds **no** validation logic, MCP sequences, property mapping, or CLI invocation rules — those stay in the vendored router/provider. Bundling the CLI under the vendor install root does **not** by itself prove agents invoke it during Notion persistence.
+
 ## Delegation
 
 1. Follow activation/authorization and the **package-equivalent install root** table above.
 2. Map `savepoints_lite.destination` → tier-1 `destination` when valid; otherwise skip Notion persistence for that Savepoint.
-3. Load and follow the vendored **router** skill for when to Savepoint, schema, `storage.provider` resolution, and provider delegation (vendor paths only).
-4. When `storage.provider` is `notion`, load the vendored **Notion provider** from the vendor tree (not consumer `node_modules`).
+3. When `savepoints_lite.validation.post_write` is an explicit boolean, also pass tier-1 `validation: { post_write: <bool> }`; otherwise omit `validation`.
+4. Load and follow the vendored **router** skill for when to Savepoint, schema, `storage.provider` / `validation.post_write` resolution, and provider delegation (vendor paths only).
+5. When `storage.provider` is `notion`, load the vendored **Notion provider** from the vendor tree (not consumer `node_modules`).
 
 Do not duplicate router/provider logic here. Do not add marketplace-specific Notion property mapping or MCP call sequences.
 
