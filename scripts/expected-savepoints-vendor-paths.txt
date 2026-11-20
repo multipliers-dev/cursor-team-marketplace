@@ -1,7 +1,10 @@
 skills/README.md
+skills/bin/savepoints-lite-validate.mjs
 skills/savepoints-notion/defaults.yml
+skills/savepoints-notion/mapping.json
 skills/savepoints-notion/SKILL.md
 skills/savepoints/defaults.yml
+skills/savepoints/schema.json
 skills/savepoints/schema.md
 skills/savepoints/SKILL.md
 skills/savepoints/verification.md

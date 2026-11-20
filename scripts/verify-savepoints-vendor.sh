@@ -60,6 +60,46 @@ while IFS= read -r rel || [ -n "$rel" ]; do
   fi
 done < "$EXPECTED"
 
+CLI_REL="skills/bin/savepoints-lite-validate.mjs"
+CLI_VENDOR="$VENDOR_ROOT/$CLI_REL"
+if [ ! -f "$CLI_VENDOR" ]; then
+  echo "verify-savepoints-vendor: missing vendored CLI $CLI_REL" >&2
+  exit 1
+fi
+CLI_HEAD="$(head -n 1 "$CLI_VENDOR")"
+if [ "$CLI_HEAD" != "#!/usr/bin/env node" ]; then
+  echo "verify-savepoints-vendor: vendored CLI shebang must be '#!/usr/bin/env node' (got: $CLI_HEAD)" >&2
+  exit 1
+fi
+if [ ! -x "$CLI_VENDOR" ]; then
+  echo "verify-savepoints-vendor: vendored CLI must be executable: $CLI_REL" >&2
+  exit 1
+fi
+
+# Post-sync upstream contract: integration-tier validation.post_write remains highest precedence.
+VENDOR_ROUTER="$VENDOR_ROOT/skills/savepoints/SKILL.md"
+VENDOR_PROVIDER="$VENDOR_ROOT/skills/savepoints-notion/SKILL.md"
+if ! grep -q '### `validation.post_write`' "$VENDOR_ROUTER"; then
+  echo "verify-savepoints-vendor: vendored router missing ### validation.post_write section" >&2
+  exit 1
+fi
+if ! grep -q 'integration instruction/delegation context' "$VENDOR_ROUTER"; then
+  echo "verify-savepoints-vendor: vendored router missing integration-tier validation.post_write precedence" >&2
+  exit 1
+fi
+if ! grep -q 'post_write: false' "$VENDOR_ROOT/skills/savepoints/defaults.yml"; then
+  echo "verify-savepoints-vendor: packaged defaults must keep validation.post_write: false" >&2
+  exit 1
+fi
+if ! grep -q 'validation.post_write' "$VENDOR_PROVIDER"; then
+  echo "verify-savepoints-vendor: vendored Notion provider missing validation.post_write consumption" >&2
+  exit 1
+fi
+if ! grep -q 'router handoff' "$VENDOR_PROVIDER"; then
+  echo "verify-savepoints-vendor: vendored Notion provider missing router handoff for validation.post_write" >&2
+  exit 1
+fi
+
 while IFS= read -r rel || [ -n "$rel" ]; do
   [ -z "$rel" ] && continue
   src="$PKG_ROOT/$rel"
@@ -74,4 +114,4 @@ EOF
 
 FILE_COUNT="$(printf '%s\n' "$NPM_FILES" | grep -c . || true)"
 MANIFEST_COUNT="$(grep -cve '^[[:space:]]*$' "$EXPECTED" || true)"
-echo "verify-savepoints-vendor: ok ($INSTALLED, $FILE_COUNT skills files byte-checked, manifest $MANIFEST_COUNT paths)"
+echo "verify-savepoints-vendor: ok ($INSTALLED, $FILE_COUNT skills files byte-checked, manifest $MANIFEST_COUNT paths, CLI shebang/executable + validation.post_write contract)"

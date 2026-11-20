@@ -175,7 +175,32 @@ for plugin in plugins:
     wrapper_skill = skills_dir / "savepoints" / "SKILL.md"
     if not wrapper_skill.is_file():
         die(f"missing savepoints wrapper skill: {wrapper_skill}")
-    print("ok savepoints vendor + wrapper skill")
+    vendor_cli = (
+        plugin_dir
+        / "vendor"
+        / "savepoints-lite"
+        / "skills"
+        / "bin"
+        / "savepoints-lite-validate.mjs"
+    )
+    if not vendor_cli.is_file():
+        die(f"missing vendored savepoints validator CLI: {vendor_cli}")
+    vendor_schema = (
+        plugin_dir / "vendor" / "savepoints-lite" / "skills" / "savepoints" / "schema.json"
+    )
+    if not vendor_schema.is_file():
+        die(f"missing vendored savepoints schema.json: {vendor_schema}")
+    vendor_mapping = (
+        plugin_dir
+        / "vendor"
+        / "savepoints-lite"
+        / "skills"
+        / "savepoints-notion"
+        / "mapping.json"
+    )
+    if not vendor_mapping.is_file():
+        die(f"missing vendored savepoints mapping.json: {vendor_mapping}")
+    print("ok savepoints vendor + wrapper skill + CLI/contracts")
 
 print("ok marketplace plugin")
 PY

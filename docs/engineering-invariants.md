@@ -96,4 +96,10 @@ If logging is unavailable or fails, continue the primary task without retry loop
 savepoints_lite:
   destination:
     data_source_id: "YOUR_NOTION_DATA_SOURCE_ID"
+  # Optional — omit to fall through upstream precedence (defaults false
+  # unless a consumer .agents override exists). Uncomment in User Rules
+  # (or the generated Markdown paste) to opt in; Node ≥ 22; fail-open
+  # if unavailable. The local YAML generator does not apply this key.
+  # validation:
+  #   post_write: true
 ```

@@ -4,7 +4,7 @@ overview: Adopt published `@multipliers-dev/savepoints-lite@2.1.0` into team-har
 todos:
   - id: adopt-2.1.0
     content: "PR: pin savepoints-lite@2.1.0, sync vendor (CLI+contracts), wrapper validation handoff (upstream-verified), vendored CLI smoke test, docs, team-harness 1.16.0"
-    status: pending
+    status: completed
   - id: manual-verification
     content: "Manual verification gate: live Notion MCP scenarios 14–19 (default off, validate, repair, unavailable)"
     status: pending

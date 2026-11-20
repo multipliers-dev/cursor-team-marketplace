@@ -9,8 +9,11 @@ verify_plugin_savepoints_layout() {
   wrapper="$plugin_root/skills/savepoints/SKILL.md"
   vendor_router="$plugin_root/vendor/savepoints-lite/skills/savepoints/SKILL.md"
   vendor_provider="$plugin_root/vendor/savepoints-lite/skills/savepoints-notion/SKILL.md"
+  vendor_cli="$plugin_root/vendor/savepoints-lite/skills/bin/savepoints-lite-validate.mjs"
+  vendor_schema="$plugin_root/vendor/savepoints-lite/skills/savepoints/schema.json"
+  vendor_mapping="$plugin_root/vendor/savepoints-lite/skills/savepoints-notion/mapping.json"
 
-  for path in "$wrapper" "$vendor_router" "$vendor_provider"; do
+  for path in "$wrapper" "$vendor_router" "$vendor_provider" "$vendor_cli" "$vendor_schema" "$vendor_mapping"; do
     if [ ! -f "$path" ]; then
       echo "verify-savepoints-marketplace-layout: [$label] missing $path" >&2
       return 1
@@ -37,10 +40,25 @@ verify_plugin_savepoints_layout() {
     echo "verify-savepoints-marketplace-layout: [$label] wrapper missing tier-1 destination handoff section" >&2
     return 1
   fi
+  if ! grep -q 'Tier-1 validation handoff' "$wrapper"; then
+    echo "verify-savepoints-marketplace-layout: [$label] wrapper missing tier-1 validation handoff section" >&2
+    return 1
+  fi
+  if ! grep -q 'savepoints_lite.validation.post_write' "$wrapper"; then
+    echo "verify-savepoints-marketplace-layout: [$label] wrapper missing savepoints_lite.validation.post_write mapping" >&2
+    return 1
+  fi
+  if ! grep -q 'skills/bin/savepoints-lite-validate.mjs' "$wrapper"; then
+    echo "verify-savepoints-marketplace-layout: [$label] wrapper missing optional validator CLI install-root path" >&2
+    return 1
+  fi
 
   wrapper_dir="$(cd "$(dirname "$wrapper")" && pwd)"
   for rel in ../../vendor/savepoints-lite/skills/savepoints/SKILL.md \
-    ../../vendor/savepoints-lite/skills/savepoints-notion/SKILL.md; do
+    ../../vendor/savepoints-lite/skills/savepoints-notion/SKILL.md \
+    ../../vendor/savepoints-lite/skills/bin/savepoints-lite-validate.mjs \
+    ../../vendor/savepoints-lite/skills/savepoints/schema.json \
+    ../../vendor/savepoints-lite/skills/savepoints-notion/mapping.json; do
     target="$wrapper_dir/$rel"
     if [ ! -f "$target" ]; then
       echo "verify-savepoints-marketplace-layout: [$label] wrapper link does not resolve: $rel" >&2

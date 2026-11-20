@@ -95,7 +95,8 @@ describe("@multipliers-dev/plan-validator dist parity", () => {
     ).toBe(0);
   });
 
-  it("matches TS CLI for valid, invalid, template, and allow-empty cases", () => {
+  // Multiple npx tsx + isolated package CLI spawns; keep above default 5s under suite load.
+  it("matches TS CLI for valid, invalid, template, and allow-empty cases", { timeout: 20_000 }, () => {
     expectParity([join(fixturesDir, "valid-minimal.plan.md")], repoRoot);
 
     const invalid = join(fixturesDir, "invalid-prompts-missing.plan.md");

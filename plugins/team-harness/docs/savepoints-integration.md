@@ -1,20 +1,21 @@
 # Savepoints Lite integration (team-harness)
 
-Distribute **instruction-only** session Savepoints through the team-harness Cursor plugin without a runtime `node_modules` dependency in the installed plugin.
+Distribute **instruction-only** session Savepoints through the team-harness Cursor plugin without a runtime `node_modules` dependency in the installed plugin. Pin **`@multipliers-dev/savepoints-lite@2.1.0`**.
 
 | Document | Responsibility |
 | --- | --- |
 | [README.md](../../../README.md) | Marketplace overview, installation, links to setup |
 | [docs/engineering-invariants.md](../../../docs/engineering-invariants.md) | Standing agent instructions (committed source) |
 | This guide | Operator adoption, configuration, generation, troubleshooting |
-| [`/savepoints` wrapper](../skills/savepoints/SKILL.md) | Agent execution, authorization, destination handoff |
+| [`/savepoints` wrapper](../skills/savepoints/SKILL.md) | Agent execution, authorization, destination + optional validation handoff |
 
 | Layer | Location | Role |
 | --- | --- | --- |
-| **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver for sync/verify against npm |
-| **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills at plugin install |
-| **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` handoff |
-| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** + **Destination**) | `savepoints_lite.destination.data_source_id` only — not in vendor or npm defaults (`@2.0.0`) |
+| **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver (`2.1.0`) for sync/verify against npm |
+| **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills, `schema.json` / `mapping.json`, optional `skills/bin/` CLI at plugin install |
+| **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` (+ optional `validation`) handoff |
+| **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** + **Destination**) | `savepoints_lite.destination.data_source_id` — not in vendor or npm defaults |
+| **Optional validation** | Same User Rules namespace (`savepoints_lite.validation.post_write`) | Mapped to tier-1 `validation` only when an explicit boolean is set; omit → upstream precedence (`.agents` then packaged `false`) |
 | **Persistence** | Consumer Notion MCP | Provider skill performs `notion-create-pages` |
 
 ## User Rules → tier-1 destination mapping
@@ -41,22 +42,55 @@ Rules:
 - Do **not** change canonical configuration precedence inside vendored skills.
 - If User Rules omit `savepoints_lite`, omit `destination`, or `data_source_id` is missing/empty/unusable → **no** tier-1 block, **no** Notion persistence attempt for that Savepoint (fail open).
 
+## Optional User Rules → tier-1 validation handoff
+
+Upstream Savepoints Lite (`@2.1.0`) documents integration-tier `validation.post_write` as the highest precedence over consumer `.agents` and packaged `false`. The marketplace wrapper uses **that** channel only — it does not invent a parallel override of packaged defaults.
+
+```yaml
+savepoints_lite:
+  destination:
+    data_source_id: "<NOTION_DATA_SOURCE_ID>"
+  # Optional — omit for packaged default (false)
+  validation:
+    post_write: true
+```
+
+| User Rules | Wrapper behaviour |
+| --- | --- |
+| Explicit `validation.post_write: true\|false` | Pass labelled tier-1 `validation: { post_write: <bool> }` with `destination` |
+| `validation` absent | **Omit** tier-1 `validation` → fall through to upstream configuration precedence (consumer `.agents` then packaged default), which defaults to `false` when no other override exists |
+
+When enabled and Node.js ≥ 22 can run the vendored CLI, the Notion provider may read back and run `skills/bin/savepoints-lite-validate.mjs` after confirmed create (bounded repair). Missing Node/CLI → **verification unavailable**; confirmed create remains `success` (fail open). **Node is not required** for ordinary Savepoint creation when validation is off (the usual default when no override exists).
+
+Vendoring the CLI proves install-root presence and deterministic exits under automated tests — **not** that agents invoke the CLI during Notion persistence.
+
+### Plan Validator vs bundled Savepoints validator
+
+Both tools separate agent orchestration from deterministic checks; they differ in **who else executes the check** (mirror of upstream [architecture](https://github.com/multipliers-dev/savepoints-lite/blob/main/docs/architecture.md)):
+
+| | `@multipliers-dev/plan-validator` | Savepoints Lite post-write validator |
+| --- | --- | --- |
+| **Home** | Standalone package / marketplace `packages/plan-validator` | Bundled under vendored `skills/bin/` + contracts |
+| **Consumer** | CI and scripts call it directly (`npm run validate:plans`, reusable workflow) | Agent may call it when `validation.post_write` is enabled |
+| **Independent CI consumer** | Yes | No — no separate CI package for Savepoints property checks |
+| **Bundling ≠ invocation** | n/a | Automated vendor/layout/CLI smoke proves files + exits only |
+
 ## Maintainer workflow (this repository)
 
 ```bash
 npm ci
 npm run sync:savepoints-vendor    # after bumping the devDependency pin
-npm run verify:savepoints-vendor  # CI + pre-merge check
+npm run verify:savepoints-vendor  # CI + pre-merge check (byte match, CLI shebang/executable, validation.post_write contract)
 ```
 
-`verify:savepoints-vendor` requires the **full** `skills/` file inventory under vendor to match the pinned npm package (no missing or extra files), asserts every path in the independent manifest exists, and **byte-compares every file** in the matched inventory. Drift fails CI until `sync:savepoints-vendor` is run and committed.
+`verify:savepoints-vendor` requires the **full** `skills/` file inventory under vendor to match the pinned npm package (no missing or extra files), asserts every path in the independent manifest exists (including CLI + `schema.json` + `mapping.json`), and **byte-compares every file** in the matched inventory. Drift fails CI until `sync:savepoints-vendor` is run and committed.
 
-`sh scripts/verify-savepoints-marketplace-layout.sh` verifies the repo plugin tree (wrapper, vendored router/provider, wrapper-relative paths, install-root and destination-handoff contract). When a team-harness install at the **same version as this repo** exists under `~/.cursor/plugins/cache/.../<marketplace>/team-harness/<sha>/` (discovered with portable `find` on `*/team-harness/*/skills/savepoints/SKILL.md` under `SAVEPOINTS_PLUGIN_CACHE_ROOT` or the default `~/.cursor/plugins/cache`), the same checks run against that cache. Older cached versions are ignored (not treated as proof). If no matching-version cache exists, the script reports **installed-cache verification not run** while repo structural checks still pass. Discovery failures (unreadable cache root) exit non-zero and are not treated as an empty cache.
+`sh scripts/verify-savepoints-marketplace-layout.sh` verifies the repo plugin tree (wrapper, vendored router/provider/CLI/contracts, wrapper-relative paths, install-root and destination/validation-handoff contract). When a team-harness install at the **same version as this repo** exists under `~/.cursor/plugins/cache/.../<marketplace>/team-harness/<sha>/` (discovered with portable `find` on `*/team-harness/*/skills/savepoints/SKILL.md` under `SAVEPOINTS_PLUGIN_CACHE_ROOT` or the default `~/.cursor/plugins/cache`), the same checks run against that cache. Older cached versions are ignored (not treated as proof). If no matching-version cache exists, the script reports **installed-cache verification not run** while repo structural checks still pass. Discovery failures (unreadable cache root) exit non-zero and are not treated as an empty cache.
 
 ## Operator workflow (consumers)
 
 1. Install or refresh the **team-harness** plugin from this marketplace.
-2. Add standing instructions to Cursor **User Rules** (global), not only in a single repo. **Do not paste** [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) as-is — it contains a placeholder `data_source_id`. With a marketplace checkout, follow **Generate copy-ready User Rules** below. Without a checkout, copy the **Session log** and **Destination** sections manually and set `savepoints_lite.destination.data_source_id` (see **User Rules → tier-1 destination mapping**).
+2. Add standing instructions to Cursor **User Rules** (global), not only in a single repo. **Do not paste** [engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) as-is — it contains a placeholder `data_source_id`. With a marketplace checkout, follow **Generate copy-ready User Rules** below. Without a checkout, copy the **Session log** and **Destination** sections manually and set `savepoints_lite.destination.data_source_id` (see **User Rules → tier-1 destination mapping**). Optionally enable `savepoints_lite.validation.post_write` when you want post-write CLI checks.
 3. Connect **Notion MCP** with write access to your Savepoints data source.
 4. Invoke `/savepoints` for manual verification, or rely on ongoing session logging when the **Session log** section is present in User Rules (see **Ongoing logging authorization**).
 
@@ -66,9 +100,13 @@ Committed source (placeholder destination): [`docs/engineering-invariants.md`](.
 
 ```bash
 cp docs/engineering-invariants.local.example.yml docs/engineering-invariants.local.yml
-# edit savepoints_lite.destination.data_source_id
+# edit savepoints_lite.destination.data_source_id only
 npm run generate:engineering-invariants-local
 ```
+
+The generator (`scripts/generate-engineering-invariants-local.ts`) is **destination-id-only** — it substitutes `savepoints_lite.destination.data_source_id` into the Markdown template and does **not** read `validation` from the local YAML. Uncommenting `validation` in `engineering-invariants.local.yml` has **no** effect on the generated User Rules.
+
+To opt in to post-write validation: after generate, uncomment the commented `validation` block in `docs/engineering-invariants.local.md` (or hand-edit Cursor User Rules after paste). Do **not** expect the YAML config alone to enable validation.
 
 Gitignored operator files: `docs/engineering-invariants.local.yml` (your id), `docs/engineering-invariants.local.md` (full User Rules text).
 
@@ -93,5 +131,6 @@ Files under `vendor/savepoints-lite/skills/` (including [`skills/README.md`](../
 - **No duplicate logic** in the marketplace — router/provider behavior stays in vendored canonical skills copied from `@multipliers-dev/savepoints-lite`.
 - **No upstream edits** from this repo — bump the pin and re-sync vendor when releasing new package versions.
 - **No package-wide default destination** in the plugin for all consumers — tier-1 ids come from each operator’s User Rules only.
+- **No marketplace override of packaged validation defaults** — wrapper maps User Rules → labelled tier-1 YAML only; omitting `validation` falls through to upstream precedence (`.agents` then packaged `false`).
 
-Configuration precedence inside canonical skills: integration tier-1 `destination` → optional consumer `.agents/savepoints-notion.yml` → packaged defaults (no id in `@2.0.0`). See [savepoints-lite architecture](https://github.com/multipliers-dev/savepoints-lite/blob/main/docs/architecture.md).
+Configuration precedence inside canonical skills: integration tier-1 `destination` / optional `validation.post_write` → optional consumer `.agents` YAML → packaged defaults (`validation.post_write: false` in `@2.1.0`). See [savepoints-lite architecture](https://github.com/multipliers-dev/savepoints-lite/blob/main/docs/architecture.md).
