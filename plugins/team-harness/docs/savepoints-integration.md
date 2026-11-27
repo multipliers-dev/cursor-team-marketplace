@@ -1,6 +1,6 @@
 # Savepoints Lite integration (team-harness)
 
-Distribute **instruction-only** session Savepoints through the team-harness Cursor plugin without a runtime `node_modules` dependency in the installed plugin. Pin **`@multipliers-dev/savepoints-lite@2.1.0`**.
+Distribute **instruction-only** session Savepoints through the team-harness Cursor plugin without a runtime `node_modules` dependency in the installed plugin. Pin **`@multipliers-dev/savepoints-lite@2.2.0`**.
 
 | Document | Responsibility |
 | --- | --- |
@@ -11,7 +11,7 @@ Distribute **instruction-only** session Savepoints through the team-harness Curs
 
 | Layer | Location | Role |
 | --- | --- | --- |
-| **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver (`2.1.0`) for sync/verify against npm |
+| **Build-time pin** | Root `package.json` `devDependencies["@multipliers-dev/savepoints-lite"]` | Exact semver (`2.2.0`) for sync/verify against npm |
 | **Committed vendor** | `plugins/team-harness/vendor/savepoints-lite/skills/` | Canonical router + Notion provider skills, `schema.json` / `mapping.json`, optional `skills/bin/` CLI at plugin install |
 | **Discovery wrapper** | `plugins/team-harness/skills/savepoints/SKILL.md` | `/savepoints` — User Rules → tier-1 `destination` (+ optional `validation`) handoff |
 | **Personal destination** | Global Cursor **User Rules** ([engineering invariants](https://github.com/multipliers-dev/cursor-team-marketplace/blob/main/docs/engineering-invariants.md) **Session log** + **Destination**) | `savepoints_lite.destination.data_source_id` — not in vendor or npm defaults |
@@ -44,7 +44,7 @@ Rules:
 
 ## Optional User Rules → tier-1 validation handoff
 
-Upstream Savepoints Lite (`@2.1.0`) documents integration-tier `validation.post_write` as the highest precedence over consumer `.agents` and packaged `false`. The marketplace wrapper uses **that** channel only — it does not invent a parallel override of packaged defaults.
+Upstream Savepoints Lite (`@2.2.0`) documents integration-tier `validation.post_write` as the highest precedence over consumer `.agents` and packaged `false`. The marketplace wrapper uses **that** channel only — it does not invent a parallel override of packaged defaults.
 
 ```yaml
 savepoints_lite:
@@ -61,6 +61,8 @@ savepoints_lite:
 | `validation` absent | **Omit** tier-1 `validation` → fall through to upstream configuration precedence (consumer `.agents` then packaged default), which defaults to `false` when no other override exists |
 
 When enabled and Node.js ≥ 22 can run the vendored CLI, the Notion provider may read back and run `skills/bin/savepoints-lite-validate.mjs` after confirmed create (bounded repair). Missing Node/CLI → **verification unavailable**; confirmed create remains `success` (fail open). **Node is not required** for ordinary Savepoint creation when validation is off (the usual default when no override exists).
+
+Verification stays optional and agent-judged per append. From `@2.2.0` the CLI reads piped stdin without `--stdin` and accepts a `notion-fetch` result (or its `<properties>` block) directly, so the agent can pipe the persisted read-back instead of rebuilding JSON; structured JSON, JSON output, and exit codes (0 ok, 1 issues, 2 usage or invalid input) remain the stable integration surface. An advisory `repository_format` warning is reported without failing the check or triggering repair. This follows the Savepoints Lite principle, [deterministic capabilities, flexible orchestration](https://github.com/multipliers-dev/savepoints-lite#design-principle-deterministic-capabilities-flexible-orchestration): the package provides the capabilities; the consumer owns when to invoke them.
 
 Vendoring the CLI proves install-root presence and deterministic exits under automated tests — **not** that agents invoke the CLI during Notion persistence.
 
@@ -133,4 +135,4 @@ Files under `vendor/savepoints-lite/skills/` (including [`skills/README.md`](../
 - **No package-wide default destination** in the plugin for all consumers — tier-1 ids come from each operator’s User Rules only.
 - **No marketplace override of packaged validation defaults** — wrapper maps User Rules → labelled tier-1 YAML only; omitting `validation` falls through to upstream precedence (`.agents` then packaged `false`).
 
-Configuration precedence inside canonical skills: integration tier-1 `destination` / optional `validation.post_write` → optional consumer `.agents` YAML → packaged defaults (`validation.post_write: false` in `@2.1.0`). See [savepoints-lite architecture](https://github.com/multipliers-dev/savepoints-lite/blob/main/docs/architecture.md).
+Configuration precedence inside canonical skills: integration tier-1 `destination` / optional `validation.post_write` → optional consumer `.agents` YAML → packaged defaults (`validation.post_write: false` in `@2.2.0`). See [savepoints-lite architecture](https://github.com/multipliers-dev/savepoints-lite/blob/main/docs/architecture.md).
