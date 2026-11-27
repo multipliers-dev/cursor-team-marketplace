@@ -20,7 +20,7 @@
     "generate:engineering-invariants-local": "tsx scripts/generate-engineering-invariants-local.ts"
   },
   "devDependencies": {
-    "@multipliers-dev/savepoints-lite": "2.1.0",
+    "@multipliers-dev/savepoints-lite": "2.2.0",
     "@types/node": "^24.13.4",
     "esbuild": "0.28.2",
     "tsx": "^4.23.13",
